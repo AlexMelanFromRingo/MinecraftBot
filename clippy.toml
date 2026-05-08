@@ -1,0 +1,9 @@
+# clippy configuration for the minecraft_bot crate.
+# Enforce on the warning side of style; deny is on individual lints below.
+
+# Cognitive complexity threshold for protocol decoders (NBT, Slot, etc.) is naturally high.
+cognitive-complexity-threshold = 50
+
+# Function size: protocol decoders may legitimately be large.
+too-many-arguments-threshold = 8
+type-complexity-threshold = 350

@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minecraft_bot"
+version = "0.1.0"
+description = "Minecraft Java Edition bot/agent framework — Python reference implementation."
+readme = "../README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Alex Melan", email = "cleverbotam@gmail.com" }]
+keywords = ["minecraft", "bot", "agent", "protocol", "asyncio"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+]
+# Constitution VI — zero runtime deps in core. Stdlib only.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-benchmark>=4.0",
+    "ruff>=0.5",
+    "black>=24",
+]
+
+[project.urls]
+Homepage = "https://github.com/AlexMelanFromRingo/MinecraftBot"
+Issues = "https://github.com/AlexMelanFromRingo/MinecraftBot/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["minecraft_bot*"]
+
+[tool.pytest.ini_options]
+testpaths = ["../tests/python"]
+asyncio_mode = "auto"
+markers = [
+    "live: tests that require a reachable Paper 1.20.1 server (default 172.26.160.1:25565). Run with `pytest -m live`.",
+    "slow: long-running tests (e.g., 10-minute uptime). Run with `pytest -m 'live and slow'`.",
+]
+filterwarnings = [
+    "error::DeprecationWarning:minecraft_bot",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["minecraft_bot"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",  # pycodestyle, pyflakes
+    "I",            # isort
+    "B",            # bugbear
+    "UP",           # pyupgrade
+    "RUF",          # ruff-specific
+]
+ignore = [
+    "E501",  # line length (handled by formatter)
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]

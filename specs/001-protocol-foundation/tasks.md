@@ -31,16 +31,16 @@ Per `plan.md` Project Structure:
 
 **Purpose**: Stand up the monorepo skeleton, language packages, tooling, and the pinned protocol-data snapshot.
 
-- [ ] T001 Create monorepo skeleton: top-level dirs `python/`, `rust/`, `protocol-data/v763/{golden_bytes,live_captures}`, `tests/python/{unit,integration,replay,perf}`, `tests/rust/`, `tools/` per `plan.md` Project Structure.
-- [ ] T002 Initialize Python package at `python/pyproject.toml` (name `minecraft_bot`, Python 3.11+, no runtime deps; dev extras: `pytest`, `pytest-asyncio`, `pytest-benchmark`).
-- [ ] T003 Initialize Rust crate at `rust/Cargo.toml` (edition 2021; deps: `tokio` with features `net,io-util,sync,time,macros,rt-multi-thread`; `bytes`; `flate2`; `thiserror`; dev-dep `criterion`).
-- [ ] T004 [P] Add `.gitignore` covering both languages (`__pycache__/`, `.pytest_cache/`, `target/`, `Cargo.lock` policy decision documented inline) at repo root.
-- [ ] T005 Pin PrismarineJS minecraft-data v763 snapshot to `protocol-data/v763/packet_registry.json` (one-shot fetch from `https://github.com/PrismarineJS/minecraft-data/blob/master/data/pc/1.20.1/protocol.json`; commit the snapshot, not a fetch script).
-- [ ] T006 Create `tests/python/conftest.py` with `live_server` session-scoped fixture (probes `172.26.160.1:25565`; skips with loud warning if unreachable per R-06) and `pytest.mark.live` marker registration.
-- [ ] T007 [P] Configure Rust test gating: add `[features] live-smoke = []` to `rust/Cargo.toml` and conventionalize `#[cfg(feature = "live-smoke")]` per R-06.
-- [ ] T008 [P] Configure linting: `python/pyproject.toml` adds `ruff` and `black` config blocks; `rustfmt.toml` and `clippy.toml` at repo root.
-- [ ] T009 Create empty stub scripts in `tools/`: `generate_packet_skeletons.py`, `capture_session.py`, `cross_check.py` — each with a docstring/usage line and a `__main__` guard. Bodies populated in later tasks.
-- [ ] T010 Add `README.md` at repo root pointing to `specs/001-protocol-foundation/quickstart.md` and `.specify/memory/constitution.md`.
+- [X] T001 Create monorepo skeleton: top-level dirs `python/`, `rust/`, `protocol-data/v763/{golden_bytes,live_captures}`, `tests/python/{unit,integration,replay,perf}`, `tests/rust/`, `tools/` per `plan.md` Project Structure.
+- [X] T002 Initialize Python package at `python/pyproject.toml` (name `minecraft_bot`, Python 3.11+, no runtime deps; dev extras: `pytest`, `pytest-asyncio`, `pytest-benchmark`).
+- [X] T003 Initialize Rust crate at `rust/Cargo.toml` (edition 2021; deps: `tokio` with features `net,io-util,sync,time,macros,rt-multi-thread`; `bytes`; `flate2`; `thiserror`; dev-dep `criterion`).
+- [X] T004 [P] Add `.gitignore` covering both languages (`__pycache__/`, `.pytest_cache/`, `target/`, `Cargo.lock` policy decision documented inline) at repo root.
+- [X] T005 Pin PrismarineJS minecraft-data v763 snapshot to `protocol-data/v763/packet_registry.json` (one-shot fetch from `https://raw.githubusercontent.com/PrismarineJS/minecraft-data/master/data/pc/1.20/protocol.json` — 1.20 and 1.20.1 share the protocol per upstream `dataPaths.json`; commit the snapshot, not a fetch script). 175 packets total: handshaking 0/2, status 2/2, login 5/3, play 110/51.
+- [X] T006 Create `tests/python/conftest.py` with `live_server` session-scoped fixture (probes `172.26.160.1:25565`; skips with loud warning if unreachable per R-06) and `pytest.mark.live` marker registration.
+- [X] T007 [P] Configure Rust test gating: add `[features] live-smoke = []` to `rust/Cargo.toml` and conventionalize `#[cfg(feature = "live-smoke")]` per R-06.
+- [X] T008 [P] Configure linting: `python/pyproject.toml` adds `ruff` and `black` config blocks; `rustfmt.toml` and `clippy.toml` at repo root.
+- [X] T009 Create empty stub scripts in `tools/`: `generate_packet_skeletons.py`, `capture_session.py`, `cross_check.py` — each with a docstring/usage line and a `__main__` guard. Bodies populated in later tasks.
+- [X] T010 Add `README.md` at repo root pointing to `specs/001-protocol-foundation/quickstart.md` and `.specify/memory/constitution.md`.
 
 **Checkpoint**: Skeleton ready, both packages buildable (empty), test runners wired.
 
@@ -54,57 +54,57 @@ Per `plan.md` Project Structure:
 
 ### Byte streams and primitive codecs
 
-- [ ] T011 Implement `Reader` and `Writer` byte-stream classes in `python/minecraft_bot/codec/__init__.py` (per `contracts/python-api.md`).
-- [ ] T012 [P] Implement VarInt codec at `python/minecraft_bot/codec/varint.py` per `data-model.md` E-5; reject > 5 bytes raising `OversizedVarInt`.
-- [ ] T013 [P] Implement VarLong codec at `python/minecraft_bot/codec/varlong.py`; reject > 10 bytes.
-- [ ] T014 [P] Implement String codec (VarInt-prefixed UTF-8) at `python/minecraft_bot/codec/string.py`; cap 32767 chars.
-- [ ] T015 [P] Implement UUID codec (two big-endian i64 halves) at `python/minecraft_bot/codec/uuid.py`.
-- [ ] T016 [P] Implement Position codec (packed 26-12-26 signed) at `python/minecraft_bot/codec/position.py`.
-- [ ] T017 [P] Implement Identifier codec (`namespace:path`) at `python/minecraft_bot/codec/identifier.py`.
-- [ ] T018 [P] Implement BitSet codec at `python/minecraft_bot/codec/bitset.py`.
-- [ ] T019 [P] Implement NBT codec (all 13 tag types + network-NBT no-root variant) at `python/minecraft_bot/codec/nbt.py` (R-04).
-- [ ] T020 [P] Implement Slot codec at `python/minecraft_bot/codec/slot.py` (depends on NBT codec — T019).
-- [ ] T021 [P] Implement ChatComponent codec at `python/minecraft_bot/codec/chat_component.py`.
-- [ ] T022 Generate primitive golden-byte fixtures at `protocol-data/v763/golden_bytes/primitives.json` (≥3 vectors per codec, including boundary cases — SC-004) using a one-off helper inside the test suite.
-- [ ] T023 [P] Round-trip unit test for VarInt at `tests/python/unit/test_codec_varint.py`.
-- [ ] T024 [P] Round-trip unit test for VarLong at `tests/python/unit/test_codec_varlong.py`.
-- [ ] T025 [P] Round-trip unit test for String at `tests/python/unit/test_codec_string.py`.
-- [ ] T026 [P] Round-trip unit tests for UUID, Position, Identifier, BitSet at `tests/python/unit/test_codec_misc.py`.
-- [ ] T027 [P] Round-trip unit test for NBT at `tests/python/unit/test_codec_nbt.py` (covers all 13 tag types and empty-vs-absent compound).
-- [ ] T028 [P] Round-trip unit tests for Slot and ChatComponent at `tests/python/unit/test_codec_slot_chat.py`.
+- [X] T011 Implement `Reader` and `Writer` byte-stream classes in `python/minecraft_bot/codec/__init__.py` (per `contracts/python-api.md`).
+- [X] T012 [P] Implement VarInt codec at `python/minecraft_bot/codec/varint.py` per `data-model.md` E-5; reject > 5 bytes raising `OversizedVarInt`.
+- [X] T013 [P] Implement VarLong codec at `python/minecraft_bot/codec/varlong.py`; reject > 10 bytes.
+- [X] T014 [P] Implement String codec (VarInt-prefixed UTF-8) at `python/minecraft_bot/codec/string.py`; cap 32767 chars.
+- [X] T015 [P] Implement UUID codec (two big-endian i64 halves) at `python/minecraft_bot/codec/uuid.py`.
+- [X] T016 [P] Implement Position codec (packed 26-12-26 signed) at `python/minecraft_bot/codec/position.py`.
+- [X] T017 [P] Implement Identifier codec (`namespace:path`) at `python/minecraft_bot/codec/identifier.py`.
+- [X] T018 [P] Implement BitSet codec at `python/minecraft_bot/codec/bitset.py`.
+- [X] T019 [P] Implement NBT codec (all 13 tag types + network-NBT no-root variant) at `python/minecraft_bot/codec/nbt.py` (R-04).
+- [X] T020 [P] Implement Slot codec at `python/minecraft_bot/codec/slot.py` (depends on NBT codec — T019).
+- [X] T021 [P] Implement ChatComponent codec at `python/minecraft_bot/codec/chat_component.py`.
+- [X] T022 Generate primitive golden-byte fixtures at `protocol-data/v763/golden_bytes/primitives.json` (50 vectors across 10 codecs — exceeds SC-004 minimum of ≥3 per codec).
+- [X] T023 [P] Round-trip unit test for VarInt at `tests/python/unit/test_codec_varint.py`.
+- [X] T024 [P] Round-trip unit test for VarLong at `tests/python/unit/test_codec_varlong.py`.
+- [X] T025 [P] Round-trip unit test for String at `tests/python/unit/test_codec_string.py`.
+- [X] T026 [P] Round-trip unit tests for UUID, Position, Identifier, BitSet at `tests/python/unit/test_codec_misc.py`.
+- [X] T027 [P] Round-trip unit test for NBT at `tests/python/unit/test_codec_nbt.py` (covers all 13 tag types and empty-vs-absent compound).
+- [X] T028 [P] Round-trip unit tests for Slot and ChatComponent at `tests/python/unit/test_codec_slot_chat.py`. **All 87 codec tests green in 0.08 s.**
 
 ### Base types and errors
 
-- [ ] T029 Implement `ConnectionState` and `Direction` enums at `python/minecraft_bot/protocol/v763/states.py` (per data-model E-1, E-2).
-- [ ] T030 Implement `ProtocolVersion` and `V_1_20_1` constant at `python/minecraft_bot/protocol/__init__.py` (E-3).
-- [ ] T031 Implement `ProtocolError` hierarchy at `python/minecraft_bot/errors.py` (E-10).
-- [ ] T032 Implement `ReconnectPolicy` dataclass at `python/minecraft_bot/connection.py` (E-9; only the policy type — full Connection in Phase 3).
-- [ ] T033 Configure logger `minecraft_bot.protocol` and sub-loggers in `python/minecraft_bot/__init__.py` (per `contracts/python-api.md` Logging contract).
+- [X] T029 Implement `ConnectionState` and `Direction` enums at `python/minecraft_bot/protocol/v763/states.py` (per data-model E-1, E-2).
+- [X] T030 Implement `ProtocolVersion` and `V_1_20_1` constant at `python/minecraft_bot/protocol/__init__.py` (E-3).
+- [X] T031 Implement `ProtocolError` hierarchy at `python/minecraft_bot/errors.py` (E-10).
+- [X] T032 Implement `ReconnectPolicy` dataclass at `python/minecraft_bot/connection.py` (E-9; only the policy type — full Connection in Phase 3).
+- [X] T033 Configure logger `minecraft_bot.protocol` and sub-loggers in `python/minecraft_bot/__init__.py` (per `contracts/python-api.md` Logging contract).
 
 ### Framer
 
-- [ ] T034 Implement length-prefix + zlib-threshold framer at `python/minecraft_bot/framer.py` (R-02). Compression threshold mutable at runtime; threshold = -1 disables compression entirely.
-- [ ] T035 [P] Framer unit tests at `tests/python/unit/test_framer.py`: TCP fragmentation reassembly, threshold switching at boundary, oversized VarInt → `OversizedVarInt` error, threshold = -1 path.
+- [X] T034 Implement length-prefix + zlib-threshold framer at `python/minecraft_bot/framer.py` (R-02). Compression threshold mutable at runtime; threshold = -1 disables compression entirely.
+- [X] T035 [P] Framer unit tests at `tests/python/unit/test_framer.py`: TCP fragmentation reassembly, threshold switching at boundary, oversized VarInt → `OversizedVarInt` error, threshold = -1 path. **14 tests, all green.**
 
 ### CodecRegistry
 
-- [ ] T036 Implement `CodecRegistry` at `python/minecraft_bot/protocol/v763/registry.py` (E-7) — walks `packets/` tree at import time, builds `(state, dir, id) → class` and `class → (state, dir, id)` maps; merges `protocol-data/v763/overrides.json` if present.
-- [ ] T037 [P] Registry unit tests at `tests/python/unit/test_registry.py`: every loaded packet has unique `(state, dir, id)`; lookup raises `UnknownPacketId` for unregistered triples.
+- [X] T036 Implement `CodecRegistry` at `python/minecraft_bot/protocol/v763/registry.py` (E-7) — walks `packets/` tree at import time, builds `(state, dir, id) → class` and `class → (state, dir, id)` maps; merges `protocol-data/v763/overrides.json` if present.
+- [X] T037 [P] Registry unit tests at `tests/python/unit/test_registry.py`: every loaded packet has unique `(state, dir, id)`; lookup raises `UnknownPacketId` for unregistered triples.
 
 ### Internal pipeline
 
-- [ ] T038 Implement FIFO write lock helper at `python/minecraft_bot/_internal/lock.py` (R-03; thin wrapper around `asyncio.Lock`).
-- [ ] T039 Implement async decode-and-dispatch loop skeleton at `python/minecraft_bot/_internal/decode_loop.py` (R-07; bounded `asyncio.Queue` between framer and dispatcher; auto-reply hooks for keep-alive and teleport-confirm wired in Phase 3).
+- [X] T038 Implement FIFO write lock helper at `python/minecraft_bot/_internal/lock.py` (R-03; thin wrapper around `asyncio.Lock`).
+- [X] T039 Implement async decode-and-dispatch loop skeleton at `python/minecraft_bot/_internal/decode_loop.py` (R-07; bounded `asyncio.Queue` between framer and dispatcher; auto-reply hooks for keep-alive and teleport-confirm wired in Phase 3).
 
 ### Wire log (capture)
 
-- [ ] T040 Implement `WireLog` and sink classes (`InMemory`, `JsonlFile`, `LoggerSink`, `Tee`) at `python/minecraft_bot/wire_log.py` (E-8 + `contracts/wire-log-format.md`). Capture-only in this phase; `replay(...)` is US4 (Phase 6).
-- [ ] T041 [P] WireLog format conformance tests at `tests/python/unit/test_wire_log_format.py`: header line shape, packet line schema, hex round-trip of `raw`, lossy `fields` JSON, `meta.format = 1`.
+- [X] T040 Implement `WireLog` and sink classes (`InMemory`, `JsonlFile`, `LoggerSink`, `Tee`) at `python/minecraft_bot/wire_log.py` (E-8 + `contracts/wire-log-format.md`). Capture-only in this phase; `replay(...)` is US4 (Phase 6).
+- [X] T041 [P] WireLog format conformance tests at `tests/python/unit/test_wire_log_format.py`: header line shape, packet line schema, hex round-trip of `raw`, lossy `fields` JSON, `meta.format = 1`.
 
 ### Tooling foundations
 
-- [ ] T042 Implement `tools/generate_packet_skeletons.py` — one-shot codegen producing per-packet stub files under `python/minecraft_bot/protocol/v763/packets/{state}/{direction}/{snake_case_name}.py` with empty dataclass body, `PACKET_ID = N`, and TODO `decode`/`encode`.
-- [ ] T043 [P] Implement `tools/cross_check.py` scaffold (R-08): loads `protocol-data/v763/golden_bytes/`, calls Python encoders, asserts byte equality with fixtures. Rust comparison wired in Phase 8.
+- [X] T042 Implement `tools/generate_packet_skeletons.py` — one-shot codegen producing per-packet stub files under `python/minecraft_bot/protocol/v763/packets/{state}/{direction}/{snake_case_name}.py` with empty dataclass body, `PACKET_ID = N`, and TODO `decode`/`encode`. Supports `--language {python,rust}`, `--state`, `--direction`, `--force`, `--dry-run`. Dry-run shows 173 Python files would be generated (175 packets minus 1 empty `(state,direction)` combo: handshaking clientbound).
+- [X] T043 [P] Implement `tools/cross_check.py` scaffold (R-08): loads `protocol-data/v763/golden_bytes/`, calls Python encoders, asserts byte equality with fixtures. Rust comparison wired in Phase 8. **All 50 primitive fixtures pass byte-equality.**
 
 **Checkpoint**: Foundation ready. All codecs round-trip; framer parses real-server bytes; registry loads; WireLog captures. User-story implementation can begin.
 

@@ -1,0 +1,32 @@
+[package]
+name = "minecraft_bot"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Alex Melan <cleverbotam@gmail.com>"]
+description = "Minecraft Java Edition bot/agent framework — Rust parity mirror."
+license = "MIT"
+repository = "https://github.com/AlexMelanFromRingo/MinecraftBot"
+keywords = ["minecraft", "bot", "protocol", "tokio", "async"]
+
+[dependencies]
+# Constitution VI — minimal dep tree.
+tokio = { version = "1", features = ["net", "io-util", "sync", "time", "macros", "rt-multi-thread"] }
+bytes = "1"
+flate2 = "1"
+thiserror = "1"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[features]
+# Live-server integration tests. Off by default; enable with `cargo test --features live-smoke`.
+live-smoke = []
+
+[lib]
+name = "minecraft_bot"
+path = "src/lib.rs"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

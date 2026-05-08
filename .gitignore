@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+build/
+dist/
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Rust
+target/
+Cargo.lock.bak
+*.rs.bk
+*.pdb
+.idea/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+*.tmp
+
+# Secrets / env
+.env
+.env.local
+*.key
+*.pem
+
+# Generated
+*.log
+
+# Allowlist: keep wire-log captures committed when they're test fixtures
+!tests/**/*.jsonl
+!protocol-data/**/*.jsonl
