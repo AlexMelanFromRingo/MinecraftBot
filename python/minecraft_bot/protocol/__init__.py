@@ -33,5 +33,11 @@ class ProtocolVersion:
 # Constants for each implemented protocol version.
 V_1_20_1: ProtocolVersion = ProtocolVersion(number=763, display_name="1.20.1")
 
+# v764 (Minecraft 1.20.2) is **demonstrative only** in this milestone — it
+# exists to prove FR-016 (single-file ports) is executable. The v764
+# directory contains exactly one tweaked packet alongside an empty
+# registry; full v764 implementation lands in a future milestone.
+V_1_20_2: ProtocolVersion = ProtocolVersion(number=764, display_name="1.20.2")
 
-__all__ = ["ProtocolVersion", "V_1_20_1"]
+
+__all__ = ["ProtocolVersion", "V_1_20_1", "V_1_20_2"]
