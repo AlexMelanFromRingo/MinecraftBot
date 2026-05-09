@@ -1,0 +1,17 @@
+# Repo-root pytest configuration. The actual Python package config lives
+# under python/pyproject.toml; this file just lets `pytest` invoked from
+# the repo root pick up our markers and asyncio mode.
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+asyncio_mode = "auto"
+# Default: skip live tests (they need a Paper server + connection-throttle
+# delays). Run them explicitly with `pytest -m live`.
+addopts = "-m 'not live'"
+markers = [
+    "live: tests that require a reachable Paper 1.20.1 server (default 172.26.160.1:25565). Run with `pytest -m live`.",
+    "slow: long-running tests (e.g., 10-minute uptime). Run with `pytest -m 'live and slow'`.",
+]
+filterwarnings = [
+    "error::DeprecationWarning:minecraft_bot",
+]

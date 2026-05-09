@@ -68,3 +68,21 @@ def live_server() -> Iterator[LiveServer]:
             allow_module_level=False,
         )
     yield LiveServer(host=DEFAULT_HOST, port=DEFAULT_PORT)
+
+
+# Paper's connection throttle (server.properties: ``connection-throttle``)
+# defaults to 4000 ms per IP. Live tests that connect in quick succession
+# from the same machine get kicked at login with
+# ``"Connection throttled! Please wait before reconnecting."``. Sleep
+# before every live test to respect the window. Override via
+# ``MINECRAFT_BOT_TEST_THROTTLE_DELAY``.
+THROTTLE_DELAY = float(os.environ.get("MINECRAFT_BOT_TEST_THROTTLE_DELAY", "5.0"))
+
+
+@pytest.fixture(autouse=True)
+async def _live_throttle_guard(request: pytest.FixtureRequest):
+    """Sleep before every live-marked test to avoid Paper's throttle."""
+    if "live" in request.keywords:
+        import asyncio
+        await asyncio.sleep(THROTTLE_DELAY)
+    yield

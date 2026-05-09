@@ -322,7 +322,24 @@ class Connection:
             self._decode_task = asyncio.create_task(
                 self._play_decode_loop(), name=f"mc-bot:{self._username}:decode",
             )
+            # Wait for the LoginPlay packet so connect() returns with
+            # entity_id/world_name populated. Without this, the first 50ms
+            # post-connect see a "PLAY but data unset" race.
+            try:
+                await self.wait_for(p_p_cb_login.Login, timeout=10.0)
+            except asyncio.TimeoutError as exc:
+                raise LoginFailed(
+                    "did not receive Login (Play) packet within 10s of "
+                    "transitioning to PLAY state"
+                ) from exc
         except BaseException:
+            if self._decode_task is not None and not self._decode_task.done():
+                self._decode_task.cancel()
+                try:
+                    await self._decode_task
+                except (asyncio.CancelledError, BaseException):
+                    pass
+                self._decode_task = None
             await self._close_socket_quiet()
             self._closed.set()
             raise

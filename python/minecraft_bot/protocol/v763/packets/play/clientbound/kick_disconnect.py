@@ -1,4 +1,4 @@
-"""Packet `kick_disconnect` (play/clientbound, id 0x1B).
+"""Packet `kick_disconnect` (play/clientbound, id 0x1A).
 
 Server-initiated disconnect during the PLAY state (typical "kick").
 Surfaced via :class:`~minecraft_bot.errors.KickedByServer`.
@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from minecraft_bot.codec import Reader, Writer, string
 
-PACKET_ID = 0x1B
+PACKET_ID = 0x1A
 
 
 @dataclass(frozen=True, slots=True)
