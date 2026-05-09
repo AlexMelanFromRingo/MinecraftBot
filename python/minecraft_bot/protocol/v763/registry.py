@@ -273,14 +273,34 @@ def _slot_from_module(
         and getattr(v, "__dataclass_params__", None) is not None
         and v.__dataclass_params__.frozen  # type: ignore[attr-defined]
     ]
-    if len(candidates) != 1:
+    if not candidates:
         _log.warning(
-            "module %s declares PACKET_ID but %d frozen dataclasses (need 1); skipping",
-            mod.__name__, len(candidates),
+            "module %s declares PACKET_ID but has no frozen dataclasses; skipping",
+            mod.__name__,
         )
         return None
 
-    packet_class = candidates[0]
+    if len(candidates) == 1:
+        packet_class = candidates[0]
+    else:
+        # Multiple frozen dataclasses (e.g. helper types like ``Property``
+        # alongside the main packet class): prefer the one whose name
+        # matches the module's CamelCase form (``success.py`` -> ``Success``).
+        module_basename = mod.__name__.rsplit(".", 1)[-1]
+        expected_camel = "".join(p.capitalize() for p in module_basename.split("_"))
+        match = next(
+            (c for c in candidates if c.__name__ == expected_camel),
+            None,
+        )
+        if match is None:
+            _log.warning(
+                "module %s has %d frozen dataclasses %s but none match the "
+                "expected name %s; skipping",
+                mod.__name__, len(candidates),
+                [c.__name__ for c in candidates], expected_camel,
+            )
+            return None
+        packet_class = match
     decode_fn = getattr(mod, "decode", None)
     encode_fn = getattr(mod, "encode", None)
     if decode_fn is None or encode_fn is None:

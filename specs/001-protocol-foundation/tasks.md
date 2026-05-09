@@ -118,37 +118,37 @@ Per `plan.md` Project Structure:
 
 ### Packets needed for US1
 
-- [ ] T044 [P] [US1] Implement `Handshake` (serverbound, handshaking) at `python/minecraft_bot/protocol/v763/packets/handshaking/serverbound/handshake.py`.
-- [ ] T045 [P] [US1] Implement `LoginStart` (serverbound, login) at `python/minecraft_bot/protocol/v763/packets/login/serverbound/login_start.py`.
-- [ ] T046 [P] [US1] Implement `LoginSuccess` (clientbound, login) at `python/minecraft_bot/protocol/v763/packets/login/clientbound/login_success.py`.
-- [ ] T047 [P] [US1] Implement `SetCompression` (clientbound, login) at `python/minecraft_bot/protocol/v763/packets/login/clientbound/set_compression.py`.
-- [ ] T048 [P] [US1] Implement `Disconnect` (clientbound, login) at `python/minecraft_bot/protocol/v763/packets/login/clientbound/disconnect.py`.
-- [ ] T049 [P] [US1] Implement `LoginPluginRequest` and `LoginPluginResponse` at `python/minecraft_bot/protocol/v763/packets/login/{clientbound,serverbound}/login_plugin_*.py` (server may negotiate plugin channels mid-login).
-- [ ] T050 [P] [US1] Implement `EncryptionRequest` clientbound stub (decode-only) at `python/minecraft_bot/protocol/v763/packets/login/clientbound/encryption_request.py` — offline mode rejects with `LoginFailed("encryption requested in offline mode")`.
-- [ ] T051 [P] [US1] Implement `StatusRequest`, `PingRequest` (serverbound) at `python/minecraft_bot/protocol/v763/packets/status/serverbound/*.py` and `StatusResponse`, `PingResponse` (clientbound) at `.../status/clientbound/*.py`.
-- [ ] T052 [P] [US1] Implement `LoginPlay` clientbound at `.../play/clientbound/login.py` — large packet defining dimension, gamemode, world list; decode only.
-- [ ] T053 [P] [US1] Implement `KeepAlive` clientbound and serverbound at `.../play/{clientbound,serverbound}/keep_alive.py` (single i64 field both sides).
-- [ ] T054 [P] [US1] Implement `SynchronizePlayerPosition` clientbound at `.../play/clientbound/synchronize_player_position.py` and `ConfirmTeleportation` serverbound at `.../play/serverbound/confirm_teleportation.py`.
-- [ ] T055 [P] [US1] Implement `Disconnect` clientbound (play state) at `.../play/clientbound/disconnect.py`.
-- [ ] T056 [P] [US1] Implement `ClientInformation` serverbound at `.../play/serverbound/client_information.py` (sent right after login per protocol).
-- [ ] T057 [P] [US1] Implement `PluginMessage` clientbound and serverbound at `.../play/{clientbound,serverbound}/plugin_message.py` (brand exchange — required by some servers).
+- [X] T044 [P] [US1] Implement `set_protocol` (handshaking/serverbound, id 0x00) at `.../packets/handshaking/serverbound/set_protocol.py`. (Renamed from spec's "Handshake" to match minecraft-data canonical name.)
+- [X] T045 [P] [US1] Implement `login_start` (login/serverbound, id 0x00) at `.../packets/login/serverbound/login_start.py`. Optional `playerUUID`.
+- [X] T046 [P] [US1] Implement `success` (login/clientbound, id 0x02; LoginSuccess) at `.../packets/login/clientbound/success.py` with optional signed `Property` list.
+- [X] T047 [P] [US1] Implement `compress` (login/clientbound, id 0x03; SetCompression) at `.../packets/login/clientbound/compress.py`.
+- [X] T048 [P] [US1] Implement `disconnect` (login/clientbound, id 0x00) at `.../packets/login/clientbound/disconnect.py`.
+- [X] T049 [P] [US1] Implement `login_plugin_request` (cb 0x04) and `login_plugin_response` (sb 0x02) at corresponding paths.
+- [X] T050 [P] [US1] Implement `encryption_begin` clientbound (id 0x01) and serverbound (id 0x01); both real codecs (not stubs). Offline-mode flow rejects clientbound EncryptionBegin with `LoginFailed`; serverbound EncryptionBegin shipped for protocol completeness.
+- [X] T051 [P] [US1] Implement status state: `server_info` (cb 0x00), `ping` (cb 0x01), `ping_start` (sb 0x00), `ping` (sb 0x01).
+- [X] T052 [P] [US1] Implement `login` (play/clientbound, id 0x28; LoginPlay) — full encode/decode including optional `DeathLocation`, NBT `dimension_codec`.
+- [X] T053 [P] [US1] Implement `keep_alive` clientbound (play, id 0x23) and serverbound (id 0x12).
+- [X] T054 [P] [US1] Implement `position` (play/clientbound, id 0x3C; SynchronizePlayerPosition) and `teleport_confirm` (play/serverbound, id 0x00; ConfirmTeleportation).
+- [X] T055 [P] [US1] Implement `kick_disconnect` (play/clientbound, id 0x1B) — play-state Disconnect.
+- [X] T056 [P] [US1] Implement `settings` (play/serverbound, id 0x08; ClientInformation).
+- [X] T057 [P] [US1] Implement `custom_payload` clientbound (play, id 0x17) and serverbound (id 0x0F) — PluginMessage in both directions.
 
 ### Connection lifecycle
 
-- [ ] T058 [US1] Implement `Connection` class with `Connection.offline(...)` factory at `python/minecraft_bot/connection.py` — fields, internal state, public properties per `contracts/python-api.md`. Depends on T029–T036.
-- [ ] T059 [US1] Implement `Connection.connect()` lifecycle: TCP open, send Handshake, run Login, transition to Play. Depends on T044–T058.
-- [ ] T060 [US1] Implement `Connection.disconnect()`: clean quit packet (clientbound side) + socket close + decode-loop cancel. Idempotent.
-- [ ] T061 [US1] Implement `Connection.__aenter__` / `__aexit__` for `async with` usage.
-- [ ] T062 [US1] Wire compression-threshold negotiation through framer at `python/minecraft_bot/connection.py` — `SetCompression.threshold` updates `framer.compression_threshold` mid-session.
-- [ ] T063 [US1] Implement KeepAlive auto-reply inside the decode loop critical path at `python/minecraft_bot/_internal/decode_loop.py` (must run BEFORE subscriber fan-out per R-07).
-- [ ] T064 [US1] Implement TeleportConfirm auto-reply inside the decode loop critical path; do NOT echo a position update back to the server (FR-006 / spec edge case "moved too quickly").
-- [ ] T065 [US1] Implement `Connection.send(packet)` using the FIFO write lock from T038.
-- [ ] T066 [US1] Implement auto-reconnect path (opt-in `auto_reconnect=True`): exponential backoff per `ReconnectPolicy`, discards per-session state, re-runs handshake, synthesizes `Reconnected` event-packet and dispatches it via the same hook system. Depends on T058–T065.
-- [ ] T067 [US1] Wire `ProtocolError` typed surface across connect/decode/disconnect paths so callers see `HandshakeFailed`, `LoginFailed`, `KickedByServer`, `ConnectionDropped`, `KeepAliveTimeout`, `PeerReset` cleanly.
+- [X] T058 [US1] Implement `Connection` class with `Connection.offline(...)` factory at `python/minecraft_bot/connection.py` — public properties `state`, `version`, `host`, `port`, `username`, `compression_threshold`, `is_connected`, `wire_log`, `entity_id`, `game_mode`, `world_name`. Validates `version.number == 763`, `username` non-empty, `write_buffer_size > 0`. Module-shared `CodecRegistry` (built once per process, FR-017a-compliant).
+- [X] T059 [US1] Implement `Connection.connect()`: TCP open via `asyncio.open_connection`, sends `set_protocol`, transitions to LOGIN, sends `login_start` with `offline_uuid()`, runs `_run_login_loop()` until `success` flips state to PLAY, then spawns `_play_decode_loop` as background task.
+- [X] T060 [US1] Implement `Connection.disconnect()`: cancels decode task, closes writer/reader, sets `_closed`. Idempotent. (Note: the protocol has no client-initiated disconnect packet; TCP close is the canonical signal.)
+- [X] T061 [US1] Implement `__aenter__` / `__aexit__` — exit calls `disconnect()` only if connected.
+- [X] T062 [US1] Compression negotiation: receiving `compress` packet during login updates both `Connection._compression_threshold` and `Framer.compression_threshold` mid-session.
+- [X] T063 [US1] KeepAlive auto-reply inside `_play_decode_loop` BEFORE subscriber fan-out (R-07) — `clientbound.keep_alive` triggers immediate `serverbound.keep_alive` send.
+- [X] T064 [US1] TeleportConfirm auto-reply inside `_play_decode_loop` BEFORE subscriber fan-out — `clientbound.position` triggers immediate `serverbound.teleport_confirm` send. **No echoed position update** (prevents "moved too quickly" anti-cheat per FR-006).
+- [X] T065 [US1] `Connection.send(packet)` per FR-013a: encode body OUTSIDE write lock (R-03), then lock around `writer.write + drain`. Validates packet is registered and serverbound; raises `ConnectionClosed` on closed sockets.
+- [X] T066 [US1] Auto-reconnect: `_connect_with_reconnect()` retries on `ConnectionDropped`/`HandshakeFailed`/`LoginFailed` with exp-backoff per `ReconnectPolicy`, discards per-session state, dispatches synthetic `Reconnected(attempts, elapsed)` event after success.
+- [X] T067 [US1] Typed error surface: `connect()` raises `ConnectionDropped`/`HandshakeFailed`/`LoginFailed`/`KickedByServer`; clientbound `EncryptionBegin` in offline mode raises `LoginFailed`; clientbound `kick_disconnect` in play state surfaces `KickedByServer` via `_loop_error`; TCP errors map to `PeerReset`/`ConnectionDropped`.
 
 ### Tests for US1
 
-- [ ] T068 [P] [US1] Round-trip unit tests for the 14 handshake/status/login/keep-alive/sync-position/disconnect packets at `tests/python/unit/test_codec_us1_packets.py`.
+- [X] T068 [P] [US1] Round-trip unit tests for the 23 US1 packets at `tests/python/unit/test_codec_us1_packets.py`. **All passing** (153/153 unit tests green).
 - [ ] T069 [US1] Integration test `tests/python/integration/test_us1_connect.py` (markers: `live`): connect, assert `state == PLAY`, sleep 60 s, assert no disconnect, clean shutdown. Acceptance scenarios 1–4 from US1 spec.
 - [ ] T070 [US1] Integration test `tests/python/integration/test_us1_keepalive.py` (live): hold connection 5 minutes idle, assert no `KeepAliveTimeout`. (Slow test, opt-in via `pytest -m "live and slow"`.)
 - [ ] T071 [US1] Integration test `tests/python/integration/test_us1_reconnect.py` (live): force a server kick (admin command), assert with `auto_reconnect=False` raises `KickedByServer`; with `auto_reconnect=True` synthesizes `Reconnected`.

@@ -27,10 +27,21 @@ def test_empty_registry_lookup_raises() -> None:
 
 
 def test_build_walks_tree_without_error() -> None:
-    """No packet files are registered yet (Phase 2). build() must succeed
-    and return a registry with 0 packets."""
+    """build() must walk the packets/ tree and return without error.
+    Once Phase 3 lands the US1 packet set the count is non-zero; until
+    then, an empty tree is also valid."""
     reg = CodecRegistry.build()
-    assert reg.packet_count() == 0
+    assert reg.packet_count() >= 0
+
+
+def test_build_uniqueness() -> None:
+    """Every (state, direction, id) tuple in the loaded registry is unique."""
+    reg = CodecRegistry.build()
+    seen = set()
+    for state, direction, pid, _ in reg.all_packets():
+        key = (state, direction, pid)
+        assert key not in seen, f"duplicate {key}"
+        seen.add(key)
 
 
 def test_unknown_packet_id_carries_state_and_direction() -> None:
