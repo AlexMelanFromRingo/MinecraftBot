@@ -165,21 +165,23 @@ Per `plan.md` Project Structure:
 
 ### Codegen primer
 
-- [ ] T072 [US2] Run `python tools/generate_packet_skeletons.py --version v763 --direction clientbound --state play` (T042) to produce stub files for all ~111 clientbound play packets under `python/minecraft_bot/protocol/v763/packets/play/clientbound/`. Verify files exist; bodies are TODO from here.
+- [~] T072 [US2] Codegen primer for play/clientbound — **deferred** in favour of hand-written implementations per user choice. Codegen tool itself works (`tools/generate_packet_skeletons.py --dry-run`); not used as starting point.
 
 ### Packet bodies — by domain group
 
-- [ ] T073 [P] [US2] Implement clientbound play **world & chunk** packets (~15 files: `chunk_data_and_update_light.py`, `unload_chunk.py`, `block_update.py`, `block_action.py`, `block_destroy_stage.py`, `multi_block_change.py`, `world_event.py`, `world_border_*.py`, `update_time.py`, `set_default_spawn_position.py`, `update_section_blocks.py`, etc.).
-- [ ] T074 [P] [US2] Implement clientbound play **entities** packets (~25 files: `spawn_entity.py`, `spawn_player.py`, `spawn_experience_orb.py`, `entity_animation.py`, `entity_event.py`, `set_entity_metadata.py`, `entity_velocity.py`, `update_entity_position.py`, `update_entity_rotation.py`, `update_entity_position_and_rotation.py`, `teleport_entity.py`, `set_head_rotation.py`, `update_attributes.py`, `update_entity_effect.py`, `remove_entities.py`, `link_entities.py`, `set_passengers.py`, `set_equipment.py`, etc.).
-- [ ] T075 [P] [US2] Implement clientbound play **player state** packets (~15 files: `set_health.py`, `set_experience.py`, `game_event.py`, `change_difficulty.py`, `player_abilities.py`, `set_held_item.py`, `set_camera.py`, `set_ticking_state.py`, `respawn.py`, `set_center_chunk.py`, `set_render_distance.py`, `commands.py`, etc.).
-- [ ] T076 [P] [US2] Implement clientbound play **inventory & containers** packets (~10 files: `open_screen.py`, `close_container.py`, `set_container_content.py`, `set_container_property.py`, `set_container_slot.py`, `set_cursor_item.py`, `set_creative_mode_slot_ack.py`, `pickup_item.py`, etc.).
-- [ ] T077 [P] [US2] Implement clientbound play **chat & system messaging** packets (~10 files: `player_chat_message.py`, `system_chat_message.py`, `disguised_chat_message.py`, `chat_suggestions.py`, `delete_message.py`, `tab_complete.py`, `display_chat_preview.py`, etc.).
-- [ ] T078 [P] [US2] Implement clientbound play **world events / sounds / particles** packets (~10 files: `named_sound_effect.py`, `sound_effect.py`, `entity_sound_effect.py`, `stop_sound.py`, `particle.py`, `effect.py`, `explode.py`, etc.).
-- [ ] T079 [P] [US2] Implement clientbound play **tab list & player info** packets (~5 files: `player_info_remove.py`, `player_info_update.py`, `server_data.py`, `set_action_bar_text.py`, `set_tab_list_header_and_footer.py`, etc.).
-- [ ] T080 [P] [US2] Implement clientbound play **advancements & recipes** packets (~6 files: `update_advancements.py`, `update_recipes.py`, `recipe_book_response.py`, `select_advancement_tab.py`, `update_recipe_book.py`, etc.).
-- [ ] T081 [P] [US2] Implement clientbound play **combat events** packets (~5 files: `damage_event.py`, `hurt_animation.py`, `end_combat.py`, `enter_combat.py`, `combat_death.py`, etc.).
-- [ ] T082 [P] [US2] Implement clientbound play **boss bar, scoreboard, teams** packets (~6 files: `boss_bar.py`, `display_objective.py`, `update_objective.py`, `update_score.py`, `reset_score.py`, `update_teams.py`, etc.).
-- [ ] T083 [P] [US2] Implement clientbound play **plugin / system remainder** packets (~10 files: `plugin_message.py`, `disconnect.py` if not done in US1, `resource_pack_send.py`, `resource_pack_pop.py`, `award_statistics.py`, `look_at.py`, `ping.py`, `delete_chat_message.py`, `acknowledge_block_change.py`, `set_passengers.py`, etc.).
+**Phase 4 progress (after batches 1-4): 74 / 110 play/clientbound packets implemented (67%). Registry has 92 packets total. ~36 play/clientbound remain (~16 medium + ~20 complex).**
+
+- [~] T073 [P] [US2] **World/chunk packets** — 8 / ~15 done: `block_action`, `block_change`, `block_break_animation`, `unload_chunk`, `world_event`, `world_border_{center,lerp_size,size,warning_delay,warning_reach}`. **Remaining**: chunk_biomes, initialize_world_border, world_particles, multi_block_change, map_chunk (complex), update_light (complex).
+- [~] T074 [P] [US2] **Entities packets** — 16 / ~25 done: `spawn_entity`, `spawn_entity_experience_orb`, `named_entity_spawn`, `animation`, `hurt_animation`, `entity_status`, `rel_entity_move`, `entity_look`, `entity_move_look`, `entity_head_rotation`, `entity_velocity`, `entity_teleport`, `entity_destroy`, `attach_entity`, `set_passengers`, `remove_entity_effect`, `collect`. **Remaining**: entity_metadata (custom stream codec), entity_equipment (medium), entity_effect (medium), entity_update_attributes (complex), entity_sound_effect (complex).
+- [~] T075 [P] [US2] **Player state packets** — 13 / ~15 done: `difficulty`, `game_state_change`, `abilities`, `experience`, `update_health`, `update_time`, `simulation_distance`, `update_view_position`, `update_view_distance`, `held_item_slot`, `camera`, `set_cooldown`, `ping`. **Remaining**: respawn (complex), face_player (complex).
+- [~] T076 [P] [US2] **Inventory & containers** — 8 / ~10 done: `open_window`, `close_window`, `open_book`, `open_horse_window`, `open_sign_entity`, `set_slot`, `craft_progress_bar`, `craft_recipe_response`. **Remaining**: window_items (medium), trade_list (complex).
+- [~] T077 [P] [US2] **Chat & system messaging** — 7 / ~10 done: `system_chat`, `action_bar`, `set_title_text`, `set_title_subtitle`, `set_title_time`, `clear_titles`, `playerlist_header`. **Remaining**: profileless_chat (medium), tab_complete (medium), chat_suggestions (medium), declare_commands (medium), player_chat (complex), hide_message (complex).
+- [ ] T078 [P] [US2] **World events / sounds / particles** — 0 / ~6 done. TODO: sound_effect (medium), explosion (medium), entity_sound_effect (complex), stop_sound (complex), world_particles (medium).
+- [~] T079 [P] [US2] **Tab list & player info** — 3 / ~5 done: `player_remove`, `feature_flags`, `select_advancement_tab`. **Remaining**: server_data (medium), player_info (complex).
+- [ ] T080 [P] [US2] **Advancements & recipes** — 0 / ~3 done. TODO: advancements (complex), declare_recipes (complex), unlock_recipes (complex).
+- [X] T081 [P] [US2] **Combat events** — 5 / 5 done: `hurt_animation`, `damage_event`, `end_combat_event`, `enter_combat_event`, `death_combat_event`. ✅
+- [ ] T082 [P] [US2] **Boss bar, scoreboard, teams** — 1 / ~5 done: `scoreboard_display_objective`. **Remaining**: boss_bar (complex), scoreboard_objective (complex), scoreboard_score (complex), teams (complex).
+- [~] T083 [P] [US2] **Plugin / system remainder** — partial: `nbt_query_response`, `tile_entity_data`, `acknowledge_player_digging`, `ping`, `vehicle_move`, `bundle_delimiter`, `resource_pack_send`. **Remaining**: statistics (medium), tags (medium).
 
 ### Per-packet golden fixtures and tests
 
