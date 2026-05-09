@@ -4,8 +4,13 @@
 //! this crate mirrors it byte-for-byte. See
 //! `specs/001-protocol-foundation/contracts/rust-api.md` for the normative
 //! public API contract.
-//!
-//! Concrete modules land in subsequent tasks (T112+).
 
-#![deny(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
+
+pub mod codec;
+pub mod errors;
+pub mod protocol;
+
+pub use crate::errors::ProtocolError;
+pub use crate::protocol::{ProtocolVersion, V_1_20_1, V_1_20_2};
+pub use crate::protocol::v763::states::{ConnectionState, Direction};

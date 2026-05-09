@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
-"""Cross-language byte-parity check.
+"""Cross-language byte-parity check (R-08).
 
 For every test vector in ``protocol-data/v763/golden_bytes/primitives.json``,
-encode with the Python implementation and assert the output matches the
-golden hex. The Rust comparison (R-08) wires in once the Rust crate
-ships its codecs (Phase 8); this Phase-2 scaffold validates Python
-against the fixtures and is ready to extend.
-
-Exit code 0 = all checks passed; 1 = at least one mismatch.
+encode with both Python and (optionally) Rust and assert the bytes match.
 
 Usage::
 
-    python tools/cross_check.py [--rust-bin <path>] [--python-only]
+    python tools/cross_check.py
+    python tools/cross_check.py --rust-bin rust/target/release/examples/encode_one
+    python tools/cross_check.py --python-only
+
+When ``--rust-bin`` is omitted, it auto-discovers
+``rust/target/release/examples/encode_one`` if it exists.
+
+Exit code 0 = all checks passed; 1 = at least one mismatch.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import uuid as _uuid
 from pathlib import Path
@@ -28,8 +31,10 @@ GOLDEN_DIR = REPO_ROOT / "protocol-data" / "v763" / "golden_bytes"
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--rust-bin", type=str, default=None)
-    parser.add_argument("--python-only", action="store_true")
+    parser.add_argument("--rust-bin", type=str, default=None,
+                        help="Path to the Rust `encode_one` example binary")
+    parser.add_argument("--python-only", action="store_true",
+                        help="Skip Rust comparison")
     args = parser.parse_args(argv)
 
     primitives_path = GOLDEN_DIR / "primitives.json"
@@ -46,50 +51,80 @@ def main(argv: list[str] | None = None) -> int:
 
     fixtures = json.loads(primitives_path.read_text(encoding="utf-8"))
 
-    failures: list[str] = []
-    total = 0
-
+    # Python encode pass.
+    python_failures: list[str] = []
+    py_total = 0
     for codec_name, vectors in fixtures.items():
         for fx in vectors:
-            total += 1
+            py_total += 1
             expected = bytes.fromhex(fx["hex"])
             try:
                 encoded = _encode_python(codec_name, fx, varint, varlong, string,
                                           uuid_codec, position, identifier, bitset,
-                                          nbt, slot, chat_component, Writer)
+                                          nbt, slot, chat_component, Writer, Reader)
             except Exception as exc:  # noqa: BLE001
-                failures.append(f"{codec_name}: encode error on {fx!r}: {exc}")
+                python_failures.append(f"{codec_name}: encode error on {fx!r}: {exc}")
                 continue
             if encoded != expected:
-                failures.append(
+                python_failures.append(
                     f"{codec_name}: encode mismatch — got {encoded.hex()}, "
                     f"expected {fx['hex']}, fixture={fx!r}"
                 )
-                continue
-            try:
-                decoded = _decode_python(codec_name, expected, varint, varlong, string,
-                                          uuid_codec, position, identifier, bitset,
-                                          nbt, slot, chat_component, Reader)
-                _ = decoded  # round-trip is implicit; we just need no exception
-            except Exception as exc:  # noqa: BLE001
-                failures.append(f"{codec_name}: decode error on {fx['hex']}: {exc}")
 
-    if args.python_only or args.rust_bin is None:
-        print(f"python-only: checked {total} fixtures, {len(failures)} failures")
+    print(f"Python: {py_total} fixtures, {len(python_failures)} failures")
+    if python_failures:
+        for f in python_failures:
+            print(f"  PY: {f}", file=sys.stderr)
+
+    # Rust comparison.
+    rust_bin = args.rust_bin
+    if not args.python_only and rust_bin is None:
+        candidate = REPO_ROOT / "rust" / "target" / "release" / "examples" / "encode_one"
+        if candidate.exists():
+            rust_bin = str(candidate)
+
+    rust_failures: list[str] = []
+    rust_total = 0
+    if not args.python_only and rust_bin is not None:
+        for codec_name, vectors in fixtures.items():
+            for fx in vectors:
+                rust_total += 1
+                req = {"codec": codec_name}
+                if codec_name in ("nbt", "slot"):
+                    req["hex"] = fx["hex"]
+                else:
+                    req["value"] = fx["value"]
+                try:
+                    out = subprocess.run(
+                        [rust_bin, json.dumps(req)],
+                        check=True, capture_output=True, text=True, timeout=10,
+                    )
+                    rust_hex = out.stdout.strip()
+                except subprocess.CalledProcessError as exc:
+                    rust_failures.append(
+                        f"{codec_name}: rust crashed — stderr: {exc.stderr.strip()}"
+                    )
+                    continue
+                if rust_hex != fx["hex"]:
+                    rust_failures.append(
+                        f"{codec_name}: rust mismatch — got {rust_hex}, "
+                        f"expected {fx['hex']}, fixture={fx!r}"
+                    )
+        print(f"Rust:   {rust_total} fixtures, {len(rust_failures)} failures (bin: {rust_bin})")
+    elif args.python_only:
+        print("Rust:   skipped (--python-only)")
     else:
-        print(f"TODO Phase 8: invoke {args.rust_bin} for parity comparison")
+        print("Rust:   skipped (no --rust-bin and no auto-discovered binary)")
 
-    if failures:
-        print("FAILURES:", file=sys.stderr)
-        for f in failures:
-            print(f"  {f}", file=sys.stderr)
-        return 1
-    return 0
+    if rust_failures:
+        for f in rust_failures:
+            print(f"  RS: {f}", file=sys.stderr)
+
+    return 1 if python_failures or rust_failures else 0
 
 
-def _encode_python(codec_name: str, fx: dict, varint, varlong, string, uuid_codec,
-                    position, identifier, bitset, nbt, slot, chat_component, Writer) -> bytes:
-    """Dispatch to the right codec's write() given a fixture."""
+def _encode_python(codec_name, fx, varint, varlong, string, uuid_codec,
+                    position, identifier, bitset, nbt, slot, chat_component, Writer, Reader):
     w = Writer()
     if codec_name == "varint":
         varint.write(fx["value"], w)
@@ -107,46 +142,15 @@ def _encode_python(codec_name: str, fx: dict, varint, varlong, string, uuid_code
         bitset.write(set(fx["value"]), w)
     elif codec_name == "chat_component":
         chat_component.write(fx["value"], w)
-    elif codec_name == "nbt" or codec_name == "slot":
-        # These fixtures only carry hex (no value form); we re-encode by
-        # decoding the hex first, then encoding. That's a lossless
-        # round-trip iff our decode/encode are mutual inverses.
-        from minecraft_bot.codec import Reader as _Reader
-        if codec_name == "nbt":
-            decoded = nbt.read(_Reader(bytes.fromhex(fx["hex"])))
-            nbt.write(decoded, w)
-        else:
-            decoded = slot.read(_Reader(bytes.fromhex(fx["hex"])))
-            slot.write(decoded, w)
+    elif codec_name == "nbt":
+        decoded = nbt.read(Reader(bytes.fromhex(fx["hex"])))
+        nbt.write(decoded, w)
+    elif codec_name == "slot":
+        decoded = slot.read(Reader(bytes.fromhex(fx["hex"])))
+        slot.write(decoded, w)
     else:
         raise KeyError(f"unknown codec: {codec_name}")
     return w.bytes()
-
-
-def _decode_python(codec_name: str, raw: bytes, varint, varlong, string, uuid_codec,
-                    position, identifier, bitset, nbt, slot, chat_component, Reader):
-    r = Reader(raw)
-    if codec_name == "varint":
-        return varint.read(r)
-    if codec_name == "varlong":
-        return varlong.read(r)
-    if codec_name == "string":
-        return string.read(r)
-    if codec_name == "uuid":
-        return uuid_codec.read(r)
-    if codec_name == "position":
-        return position.read(r)
-    if codec_name == "identifier":
-        return identifier.read(r)
-    if codec_name == "bitset":
-        return bitset.read(r)
-    if codec_name == "chat_component":
-        return chat_component.read(r)
-    if codec_name == "nbt":
-        return nbt.read(r)
-    if codec_name == "slot":
-        return slot.read(r)
-    raise KeyError(f"unknown codec: {codec_name}")
 
 
 if __name__ == "__main__":
