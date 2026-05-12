@@ -30,15 +30,15 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 **Purpose**: Land the new module directories, fetch the per-version data tables (block states, entity metadata, foods, hitboxes), wire the codegen tool for entity subclasses.
 
-- [ ] T001 Create new module dirs: `python/minecraft_bot/world/`, `python/minecraft_bot/entities/`, `python/minecraft_bot/entities/types/`, `python/minecraft_bot/inventory/`, `python/minecraft_bot/behaviour/`. Add empty `__init__.py` to each.
-- [ ] T002 Create `tools/fetch_block_states.py` — one-shot fetcher that pulls `data/pc/1.20/blocks.json` from PrismarineJS minecraft-data and converts it to `protocol-data/v763/block_states.json` with `{state_id: {name, properties}}`.
-- [ ] T003 Run T002 to populate `protocol-data/v763/block_states.json` (~21000 entries).
-- [ ] T004 Create `tools/fetch_foods.py` — pulls `data/pc/1.20/foods.json` from minecraft-data and writes `protocol-data/v763/foods.json` with `{item_id: {food_points, saturation_modifier, can_always_eat}}`.
-- [ ] T005 Run T004 to populate `protocol-data/v763/foods.json`.
-- [ ] T006 Create `protocol-data/v763/entity_metadata.json` derived from minecraft-data's `entities.json` + `protocol.json` entityMetadata switch table. One entry per entity-type-id with `{name, parent, metadata_indices: [{index, type, name}]}`. Hand-edit if upstream is incomplete; document in `protocol-data/v763/README.md`.
-- [ ] T007 Create `protocol-data/v763/entity_hitboxes.json` from minecraft.wiki "Entity" tables — `{entity_type_name: {width, height}}` AABB for collision.
-- [ ] T008 [P] Create `tools/generate_entity_subclasses.py` scaffold — reads `entity_metadata.json`, emits one file per entity type at `entities/types/{snake_name}.py` with typed accessors. Idempotent (`--force` reruns; preserves hand-edits outside auto-generated blocks).
-- [ ] T009 [P] Update `tests/python/conftest.py` if new fixtures needed (probably no change; the existing `live_server` + throttle fixture covers 002).
+- [X] T001 Create new module dirs: `python/minecraft_bot/world/`, `python/minecraft_bot/entities/`, `python/minecraft_bot/entities/types/`, `python/minecraft_bot/inventory/`, `python/minecraft_bot/behaviour/`. Add empty `__init__.py` to each.
+- [X] T002 Create `tools/fetch_block_states.py` — one-shot fetcher that pulls `data/pc/1.20/blocks.json` from PrismarineJS minecraft-data and converts it to `protocol-data/v763/block_states.json` with `{state_id: {name, properties}}`.
+- [X] T003 Run T002 to populate `protocol-data/v763/block_states.json` (~21000 entries).
+- [X] T004 Create `tools/fetch_foods.py` — pulls `data/pc/1.20/foods.json` from minecraft-data and writes `protocol-data/v763/foods.json` with `{item_id: {food_points, saturation_modifier, can_always_eat}}`.
+- [X] T005 Run T004 to populate `protocol-data/v763/foods.json`.
+- [X] T006 Create `protocol-data/v763/entity_metadata.json` derived from minecraft-data's `entities.json` + `protocol.json` entityMetadata switch table. One entry per entity-type-id with `{name, parent, metadata_indices: [{index, type, name}]}`. Hand-edit if upstream is incomplete; document in `protocol-data/v763/README.md`.
+- [X] T007 Create `protocol-data/v763/entity_hitboxes.json` from minecraft.wiki "Entity" tables — `{entity_type_name: {width, height}}` AABB for collision.
+- [X] T008 [P] Create `tools/generate_entity_subclasses.py` scaffold — reads `entity_metadata.json`, emits one file per entity type at `entities/types/{snake_name}.py` with typed accessors. Idempotent (`--force` reruns; preserves hand-edits outside auto-generated blocks).
+- [X] T009 [P] Update `tests/python/conftest.py` if new fixtures needed (probably no change; the existing `live_server` + throttle fixture covers 002).
 
 **Checkpoint**: Skeleton dirs ready, all data tables on disk, codegen tool present.
 
@@ -50,47 +50,47 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 ### Slot model + events + errors
 
-- [ ] T010 Implement `python/minecraft_bot/slots.py` — `BotBusy` exception, slot-lock helpers (`MovementSlot`, `ActionSlot`, `ContainerSlot`), each wrapping `asyncio.Lock` with `__aenter__` / `__aexit__` and a `wait_for_slot` flag (raises `BotBusy` if already held and `wait_for_slot=False`).
-- [ ] T011 [P] Unit test slot model at `tests/python/unit/test_slot_model.py` — verify concurrent acquire raises `BotBusy` when `wait_for_slot=False`, queues when `True`, releases on exception.
-- [ ] T012 Implement `python/minecraft_bot/events.py` — base `Event` + 13 concrete dataclasses per FR-101 (ChatMessageEvent, EntityDamageEvent, EntityDeathEvent, ItemPickupEvent, InventoryChangeEvent, BlockBreakEvent, ContainerOpenEvent, ContainerCloseEvent, TeleportedEvent, InLavaEvent, DimensionChangedEvent, RespawnEvent; re-export `Reconnected` from 001).
-- [ ] T013 Extend 001's `python/minecraft_bot/errors.py` with new exceptions (in-place edit): `NoPathFound`, `WalkTimeout`, `DigFailed`, `TargetLost`, `ContainerClosed`, `InventoryStateMismatch`, `InVehicle`. All extend `ProtocolError`.
+- [X] T010 Implement `python/minecraft_bot/slots.py` — `BotBusy` exception, slot-lock helpers (`MovementSlot`, `ActionSlot`, `ContainerSlot`), each wrapping `asyncio.Lock` with `__aenter__` / `__aexit__` and a `wait_for_slot` flag (raises `BotBusy` if already held and `wait_for_slot=False`).
+- [X] T011 [P] Unit test slot model at `tests/python/unit/test_slot_model.py` — verify concurrent acquire raises `BotBusy` when `wait_for_slot=False`, queues when `True`, releases on exception.
+- [X] T012 Implement `python/minecraft_bot/events.py` — base `Event` + 13 concrete dataclasses per FR-101 (ChatMessageEvent, EntityDamageEvent, EntityDeathEvent, ItemPickupEvent, InventoryChangeEvent, BlockBreakEvent, ContainerOpenEvent, ContainerCloseEvent, TeleportedEvent, InLavaEvent, DimensionChangedEvent, RespawnEvent; re-export `Reconnected` from 001).
+- [X] T013 Extend 001's `python/minecraft_bot/errors.py` with new exceptions (in-place edit): `NoPathFound`, `WalkTimeout`, `DigFailed`, `TargetLost`, `ContainerClosed`, `InventoryStateMismatch`, `InVehicle`. All extend `ProtocolError`.
 
 ### Block-state table
 
-- [ ] T014 Implement `python/minecraft_bot/world/block_table.py` — loads `protocol-data/v763/block_states.json` at import time, exposes `get_name(state_id) -> str | None`, `get_properties(state_id) -> dict`, plus classification predicates `is_solid(state_id)`, `is_water(state_id)`, `is_navigable_obstacle(state_id)`, `step_height(state_id) -> float` (for slabs/stairs). Rules built from name + properties (e.g., `is_solid = state.name not in PASSTHROUGH_NAMES`).
-- [ ] T015 [P] Unit test block table at `tests/python/unit/test_block_table.py` — every state_id resolves to a name; spot-check classifications for stone (solid), air (not solid), water (water), oak_door[open=true] (navigable obstacle), oak_slab[type=top] (step height 0.5).
+- [X] T014 Implement `python/minecraft_bot/world/block_table.py` — loads `protocol-data/v763/block_states.json` at import time, exposes `get_name(state_id) -> str | None`, `get_properties(state_id) -> dict`, plus classification predicates `is_solid(state_id)`, `is_water(state_id)`, `is_navigable_obstacle(state_id)`, `step_height(state_id) -> float` (for slabs/stairs). Rules built from name + properties (e.g., `is_solid = state.name not in PASSTHROUGH_NAMES`).
+- [X] T015 [P] Unit test block table at `tests/python/unit/test_block_table.py` — every state_id resolves to a name; spot-check classifications for stone (solid), air (not solid), water (water), oak_door[open=true] (navigable obstacle), oak_slab[type=top] (step height 0.5).
 
 ### Chunk decoder + paletted containers
 
-- [ ] T016 Implement `python/minecraft_bot/world/chunk.py` — `PalettedContainer` (with bits_per_entry, palette, long-packed data, single_value mode), `ChunkSection` (block_count + block_states PalettedContainer + biomes PalettedContainer), `Chunk` (cx, cz, sections, biomes, block_entities, heightmaps), `Chunk.get_block(local_x, y, local_z) -> int`.
-- [ ] T017 Implement `python/minecraft_bot/world/decode_chunk.py` — structured decoder for the `map_chunk` packet's `payload` bytes (currently opaque in 001). Parses heightmaps NBT, then per section: short block_count + paletted block-state container + paletted biomes container. Returns a `Chunk`.
-- [ ] T018 [P] Unit test chunk decode at `tests/python/unit/test_chunk_decode.py` — paletted container in all three modes (single_value, indexed, direct); chunk with mixed empty + populated sections; block_entities NBT round-trip. Use synthetic byte payloads + a real captured chunk from `protocol-data/v763/live_captures/`.
+- [X] T016 Implement `python/minecraft_bot/world/chunk.py` — `PalettedContainer` (with bits_per_entry, palette, long-packed data, single_value mode), `ChunkSection` (block_count + block_states PalettedContainer + biomes PalettedContainer), `Chunk` (cx, cz, sections, biomes, block_entities, heightmaps), `Chunk.get_block(local_x, y, local_z) -> int`.
+- [X] T017 Implement `python/minecraft_bot/world/decode_chunk.py` — structured decoder for the `map_chunk` packet's `payload` bytes (currently opaque in 001). Parses heightmaps NBT, then per section: short block_count + paletted block-state container + paletted biomes container. Returns a `Chunk`.
+- [X] T018 [P] Unit test chunk decode at `tests/python/unit/test_chunk_decode.py` — paletted container in all three modes (single_value, indexed, direct); chunk with mixed empty + populated sections; block_entities NBT round-trip. Use synthetic byte payloads + a real captured chunk from `protocol-data/v763/live_captures/`.
 
 ### A* pathfinder (pure function)
 
-- [ ] T019 Implement `python/minecraft_bot/pathfinding.py` — 8-dir A* with octile heuristic, `heapq` open-set, configurable `max_fall`, `max_nodes` budget; consumes a World-like interface (only needs `is_solid` / `is_navigable` / `is_water` queries) so it's testable offline. Raises `NoPathFound` if A* exhausts open set or budget.
-- [ ] T020 [P] Unit test pathfinder at `tests/python/unit/test_pathfinding.py` — ASCII-art synthetic worlds: flat path, step-up, gap-jump, water swim, doored path, walled-off (raise NoPathFound), narrow corridor with diagonals.
+- [X] T019 Implement `python/minecraft_bot/pathfinding.py` — 8-dir A* with octile heuristic, `heapq` open-set, configurable `max_fall`, `max_nodes` budget; consumes a World-like interface (only needs `is_solid` / `is_navigable` / `is_water` queries) so it's testable offline. Raises `NoPathFound` if A* exhausts open set or budget.
+- [X] T020 [P] Unit test pathfinder at `tests/python/unit/test_pathfinding.py` — ASCII-art synthetic worlds: flat path, step-up, gap-jump, water swim, doored path, walled-off (raise NoPathFound), narrow corridor with diagonals.
 
 ### Physics tick (pure function)
 
-- [ ] T021 Implement `python/minecraft_bot/physics.py` — `PhysicsState` dataclass, `tick(state, world, inputs) -> new_state` pure function. Constants for gravity (0.08), friction (0.91 ground, 0.546 air, 0.8 water), step-up (0.6), water buoyancy. AABB sweep collision against world voxels.
-- [ ] T022 [P] Unit test physics at `tests/python/unit/test_physics.py` — synthetic worlds: free-fall trajectory, step-up over 1-block ledge, water entry decelerates, friction stops motion when no input, collision with wall.
+- [X] T021 Implement `python/minecraft_bot/physics.py` — `PhysicsState` dataclass, `tick(state, world, inputs) -> new_state` pure function. Constants for gravity (0.08), friction (0.91 ground, 0.546 air, 0.8 water), step-up (0.6), water buoyancy. AABB sweep collision against world voxels.
+- [X] T022 [P] Unit test physics at `tests/python/unit/test_physics.py` — synthetic worlds: free-fall trajectory, step-up over 1-block ledge, water entry decelerates, friction stops motion when no input, collision with wall.
 
 ### Entity metadata stream codec + base classes
 
-- [ ] T023 Implement `python/minecraft_bot/entities/metadata.py` — full stream codec for the `entity_metadata` packet's payload (replaces 001's opaque bytes). Type table covers all 28 metadata-value types from 1.20.1 (Byte, VarInt, VarLong, Float, String, Chat, OptChat, Slot, Bool, Rotations, Position, OptPosition, Direction, OptUUID, BlockState, OptBlockState, NBT, Particle, VillagerData, OptVarInt, Pose, CatVariant, FrogVariant, OptGlobalPos, PaintingVariant, SnifferState, Vec3f, Quaternion). Stream terminates on `index == 0xFF`.
-- [ ] T024 [P] Unit test entity metadata codec at `tests/python/unit/test_entity_metadata.py` — round-trip every type; mixed-type compound stream; truncation/0xFF terminator behaviour.
-- [ ] T025 Implement `python/minecraft_bot/entities/base.py` — `Entity` (id, uuid, type, position, yaw, pitch, head_yaw, velocity, metadata, on_ground), `Living(Entity)` (health, is_baby, pose, custom_name, custom_name_visible), `Mob(Living)`, `Player(Living)`, `ItemEntity(Entity)`, `Projectile(Entity)`, `Vehicle(Entity)`. Frozen-but-mutable-state design (use `__slots__` + replace via `dataclasses.replace`).
+- [X] T023 Implement `python/minecraft_bot/entities/metadata.py` — full stream codec for the `entity_metadata` packet's payload (replaces 001's opaque bytes). Type table covers all 28 metadata-value types from 1.20.1 (Byte, VarInt, VarLong, Float, String, Chat, OptChat, Slot, Bool, Rotations, Position, OptPosition, Direction, OptUUID, BlockState, OptBlockState, NBT, Particle, VillagerData, OptVarInt, Pose, CatVariant, FrogVariant, OptGlobalPos, PaintingVariant, SnifferState, Vec3f, Quaternion). Stream terminates on `index == 0xFF`.
+- [X] T024 [P] Unit test entity metadata codec at `tests/python/unit/test_entity_metadata.py` — round-trip every type; mixed-type compound stream; truncation/0xFF terminator behaviour.
+- [X] T025 Implement `python/minecraft_bot/entities/base.py` — `Entity` (id, uuid, type, position, yaw, pitch, head_yaw, velocity, metadata, on_ground), `Living(Entity)` (health, is_baby, pose, custom_name, custom_name_visible), `Mob(Living)`, `Player(Living)`, `ItemEntity(Entity)`, `Projectile(Entity)`, `Vehicle(Entity)`. Frozen-but-mutable-state design (use `__slots__` + replace via `dataclasses.replace`).
 
 ### Window-click protocol helper
 
-- [ ] T026 Implement `python/minecraft_bot/inventory/window.py` — high-level operations `pickup`, `pickup_half`, `quick_move`, `swap_with_hotbar`, `drop_one`, `drop_stack`, `clone`. Each produces the appropriate `WindowClick` packet (mode/button/changed_slots/carried_item) using server's last-known `state_id`. Optimistic state delta included.
-- [ ] T027 [P] Unit test window-click at `tests/python/unit/test_inventory_click.py` — for each operation, assert the resulting `WindowClick` packet has expected mode/button. State_id increments correctly. State mismatch raises `InventoryStateMismatch`.
+- [X] T026 Implement `python/minecraft_bot/inventory/window.py` — high-level operations `pickup`, `pickup_half`, `quick_move`, `swap_with_hotbar`, `drop_one`, `drop_stack`, `clone`. Each produces the appropriate `WindowClick` packet (mode/button/changed_slots/carried_item) using server's last-known `state_id`. Optimistic state delta included.
+- [X] T027 [P] Unit test window-click at `tests/python/unit/test_inventory_click.py` — for each operation, assert the resulting `WindowClick` packet has expected mode/button. State_id increments correctly. State mismatch raises `InventoryStateMismatch`.
 
 ### Food table + pickers
 
-- [ ] T028 Implement `python/minecraft_bot/inventory/food.py` — load `foods.json` at import; export `is_food(item_id) -> bool`, `food_value(item_id) -> tuple[int, float, bool]`. Implement pickers `BEST_SATURATION`, `WORST_FIRST`, `OLDEST_FIRST` per FR-090.
-- [ ] T029 [P] Unit test food pickers at `tests/python/unit/test_food_picker.py` — given a list of ItemSlots, each picker returns the expected item; ties broken deterministically.
+- [X] T028 Implement `python/minecraft_bot/inventory/food.py` — load `foods.json` at import; export `is_food(item_id) -> bool`, `food_value(item_id) -> tuple[int, float, bool]`. Implement pickers `BEST_SATURATION`, `WORST_FIRST`, `OLDEST_FIRST` per FR-090.
+- [X] T029 [P] Unit test food pickers at `tests/python/unit/test_food_picker.py` — given a list of ItemSlots, each picker returns the expected item; ties broken deterministically.
 
 **Checkpoint**: Foundation ready. Pathfinder, physics, chunk decoder, entity metadata, window-click, food, slots, events, errors — all unit-tested. User-story implementation can begin.
 

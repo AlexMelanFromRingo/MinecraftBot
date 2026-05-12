@@ -1,0 +1,261 @@
+"""Per-entity-type subclass imports + lookup map."""
+
+from __future__ import annotations
+
+from minecraft_bot.entities.types.allay import Allay
+from minecraft_bot.entities.types.area_effect_cloud import AreaEffectCloud
+from minecraft_bot.entities.types.armor_stand import ArmorStand
+from minecraft_bot.entities.types.arrow import Arrow
+from minecraft_bot.entities.types.axolotl import Axolotl
+from minecraft_bot.entities.types.bat import Bat
+from minecraft_bot.entities.types.bee import Bee
+from minecraft_bot.entities.types.blaze import Blaze
+from minecraft_bot.entities.types.block_display import BlockDisplay
+from minecraft_bot.entities.types.boat import Boat
+from minecraft_bot.entities.types.camel import Camel
+from minecraft_bot.entities.types.cat import Cat
+from minecraft_bot.entities.types.cave_spider import CaveSpider
+from minecraft_bot.entities.types.chest_boat import ChestBoat
+from minecraft_bot.entities.types.chest_minecart import ChestMinecart
+from minecraft_bot.entities.types.chicken import Chicken
+from minecraft_bot.entities.types.cod import Cod
+from minecraft_bot.entities.types.command_block_minecart import CommandBlockMinecart
+from minecraft_bot.entities.types.cow import Cow
+from minecraft_bot.entities.types.creeper import Creeper
+from minecraft_bot.entities.types.dolphin import Dolphin
+from minecraft_bot.entities.types.donkey import Donkey
+from minecraft_bot.entities.types.dragon_fireball import DragonFireball
+from minecraft_bot.entities.types.drowned import Drowned
+from minecraft_bot.entities.types.egg import Egg
+from minecraft_bot.entities.types.elder_guardian import ElderGuardian
+from minecraft_bot.entities.types.end_crystal import EndCrystal
+from minecraft_bot.entities.types.ender_dragon import EnderDragon
+from minecraft_bot.entities.types.ender_pearl import EnderPearl
+from minecraft_bot.entities.types.enderman import Enderman
+from minecraft_bot.entities.types.endermite import Endermite
+from minecraft_bot.entities.types.evoker import Evoker
+from minecraft_bot.entities.types.evoker_fangs import EvokerFangs
+from minecraft_bot.entities.types.experience_bottle import ExperienceBottle
+from minecraft_bot.entities.types.experience_orb import ExperienceOrb
+from minecraft_bot.entities.types.eye_of_ender import EyeOfEnder
+from minecraft_bot.entities.types.falling_block import FallingBlock
+from minecraft_bot.entities.types.firework_rocket import FireworkRocket
+from minecraft_bot.entities.types.fox import Fox
+from minecraft_bot.entities.types.frog import Frog
+from minecraft_bot.entities.types.furnace_minecart import FurnaceMinecart
+from minecraft_bot.entities.types.ghast import Ghast
+from minecraft_bot.entities.types.giant import Giant
+from minecraft_bot.entities.types.glow_item_frame import GlowItemFrame
+from minecraft_bot.entities.types.glow_squid import GlowSquid
+from minecraft_bot.entities.types.goat import Goat
+from minecraft_bot.entities.types.guardian import Guardian
+from minecraft_bot.entities.types.hoglin import Hoglin
+from minecraft_bot.entities.types.hopper_minecart import HopperMinecart
+from minecraft_bot.entities.types.horse import Horse
+from minecraft_bot.entities.types.husk import Husk
+from minecraft_bot.entities.types.illusioner import Illusioner
+from minecraft_bot.entities.types.interaction import Interaction
+from minecraft_bot.entities.types.iron_golem import IronGolem
+from minecraft_bot.entities.types.item import Item
+from minecraft_bot.entities.types.item_display import ItemDisplay
+from minecraft_bot.entities.types.item_frame import ItemFrame
+from minecraft_bot.entities.types.fireball import Fireball
+from minecraft_bot.entities.types.leash_knot import LeashKnot
+from minecraft_bot.entities.types.lightning_bolt import LightningBolt
+from minecraft_bot.entities.types.llama import Llama
+from minecraft_bot.entities.types.llama_spit import LlamaSpit
+from minecraft_bot.entities.types.magma_cube import MagmaCube
+from minecraft_bot.entities.types.marker import Marker
+from minecraft_bot.entities.types.minecart import Minecart
+from minecraft_bot.entities.types.mooshroom import Mooshroom
+from minecraft_bot.entities.types.mule import Mule
+from minecraft_bot.entities.types.ocelot import Ocelot
+from minecraft_bot.entities.types.painting import Painting
+from minecraft_bot.entities.types.panda import Panda
+from minecraft_bot.entities.types.parrot import Parrot
+from minecraft_bot.entities.types.phantom import Phantom
+from minecraft_bot.entities.types.pig import Pig
+from minecraft_bot.entities.types.piglin import Piglin
+from minecraft_bot.entities.types.piglin_brute import PiglinBrute
+from minecraft_bot.entities.types.pillager import Pillager
+from minecraft_bot.entities.types.polar_bear import PolarBear
+from minecraft_bot.entities.types.potion import Potion
+from minecraft_bot.entities.types.pufferfish import Pufferfish
+from minecraft_bot.entities.types.rabbit import Rabbit
+from minecraft_bot.entities.types.ravager import Ravager
+from minecraft_bot.entities.types.salmon import Salmon
+from minecraft_bot.entities.types.sheep import Sheep
+from minecraft_bot.entities.types.shulker import Shulker
+from minecraft_bot.entities.types.shulker_bullet import ShulkerBullet
+from minecraft_bot.entities.types.silverfish import Silverfish
+from minecraft_bot.entities.types.skeleton import Skeleton
+from minecraft_bot.entities.types.skeleton_horse import SkeletonHorse
+from minecraft_bot.entities.types.slime import Slime
+from minecraft_bot.entities.types.small_fireball import SmallFireball
+from minecraft_bot.entities.types.sniffer import Sniffer
+from minecraft_bot.entities.types.snow_golem import SnowGolem
+from minecraft_bot.entities.types.snowball import Snowball
+from minecraft_bot.entities.types.spawner_minecart import SpawnerMinecart
+from minecraft_bot.entities.types.spectral_arrow import SpectralArrow
+from minecraft_bot.entities.types.spider import Spider
+from minecraft_bot.entities.types.squid import Squid
+from minecraft_bot.entities.types.stray import Stray
+from minecraft_bot.entities.types.strider import Strider
+from minecraft_bot.entities.types.tadpole import Tadpole
+from minecraft_bot.entities.types.text_display import TextDisplay
+from minecraft_bot.entities.types.tnt import Tnt
+from minecraft_bot.entities.types.tnt_minecart import TntMinecart
+from minecraft_bot.entities.types.trader_llama import TraderLlama
+from minecraft_bot.entities.types.trident import Trident
+from minecraft_bot.entities.types.tropical_fish import TropicalFish
+from minecraft_bot.entities.types.turtle import Turtle
+from minecraft_bot.entities.types.vex import Vex
+from minecraft_bot.entities.types.villager import Villager
+from minecraft_bot.entities.types.vindicator import Vindicator
+from minecraft_bot.entities.types.wandering_trader import WanderingTrader
+from minecraft_bot.entities.types.warden import Warden
+from minecraft_bot.entities.types.witch import Witch
+from minecraft_bot.entities.types.wither import Wither
+from minecraft_bot.entities.types.wither_skeleton import WitherSkeleton
+from minecraft_bot.entities.types.wither_skull import WitherSkull
+from minecraft_bot.entities.types.wolf import Wolf
+from minecraft_bot.entities.types.zoglin import Zoglin
+from minecraft_bot.entities.types.zombie import Zombie
+from minecraft_bot.entities.types.zombie_horse import ZombieHorse
+from minecraft_bot.entities.types.zombie_villager import ZombieVillager
+from minecraft_bot.entities.types.zombified_piglin import ZombifiedPiglin
+from minecraft_bot.entities.types.player import Player
+from minecraft_bot.entities.types.fishing_bobber import FishingBobber
+
+# type_id -> subclass (filled in here for fast lookup at runtime)
+LOOKUP: dict[int, type] = {
+    0: Allay,  # allay
+    1: AreaEffectCloud,  # area_effect_cloud
+    2: ArmorStand,  # armor_stand
+    3: Arrow,  # arrow
+    4: Axolotl,  # axolotl
+    5: Bat,  # bat
+    6: Bee,  # bee
+    7: Blaze,  # blaze
+    8: BlockDisplay,  # block_display
+    9: Boat,  # boat
+    10: Camel,  # camel
+    11: Cat,  # cat
+    12: CaveSpider,  # cave_spider
+    13: ChestBoat,  # chest_boat
+    14: ChestMinecart,  # chest_minecart
+    15: Chicken,  # chicken
+    16: Cod,  # cod
+    17: CommandBlockMinecart,  # command_block_minecart
+    18: Cow,  # cow
+    19: Creeper,  # creeper
+    20: Dolphin,  # dolphin
+    21: Donkey,  # donkey
+    22: DragonFireball,  # dragon_fireball
+    23: Drowned,  # drowned
+    24: Egg,  # egg
+    25: ElderGuardian,  # elder_guardian
+    26: EndCrystal,  # end_crystal
+    27: EnderDragon,  # ender_dragon
+    28: EnderPearl,  # ender_pearl
+    29: Enderman,  # enderman
+    30: Endermite,  # endermite
+    31: Evoker,  # evoker
+    32: EvokerFangs,  # evoker_fangs
+    33: ExperienceBottle,  # experience_bottle
+    34: ExperienceOrb,  # experience_orb
+    35: EyeOfEnder,  # eye_of_ender
+    36: FallingBlock,  # falling_block
+    37: FireworkRocket,  # firework_rocket
+    38: Fox,  # fox
+    39: Frog,  # frog
+    40: FurnaceMinecart,  # furnace_minecart
+    41: Ghast,  # ghast
+    42: Giant,  # giant
+    43: GlowItemFrame,  # glow_item_frame
+    44: GlowSquid,  # glow_squid
+    45: Goat,  # goat
+    46: Guardian,  # guardian
+    47: Hoglin,  # hoglin
+    48: HopperMinecart,  # hopper_minecart
+    49: Horse,  # horse
+    50: Husk,  # husk
+    51: Illusioner,  # illusioner
+    52: Interaction,  # interaction
+    53: IronGolem,  # iron_golem
+    54: Item,  # item
+    55: ItemDisplay,  # item_display
+    56: ItemFrame,  # item_frame
+    57: Fireball,  # fireball
+    58: LeashKnot,  # leash_knot
+    59: LightningBolt,  # lightning_bolt
+    60: Llama,  # llama
+    61: LlamaSpit,  # llama_spit
+    62: MagmaCube,  # magma_cube
+    63: Marker,  # marker
+    64: Minecart,  # minecart
+    65: Mooshroom,  # mooshroom
+    66: Mule,  # mule
+    67: Ocelot,  # ocelot
+    68: Painting,  # painting
+    69: Panda,  # panda
+    70: Parrot,  # parrot
+    71: Phantom,  # phantom
+    72: Pig,  # pig
+    73: Piglin,  # piglin
+    74: PiglinBrute,  # piglin_brute
+    75: Pillager,  # pillager
+    76: PolarBear,  # polar_bear
+    77: Potion,  # potion
+    78: Pufferfish,  # pufferfish
+    79: Rabbit,  # rabbit
+    80: Ravager,  # ravager
+    81: Salmon,  # salmon
+    82: Sheep,  # sheep
+    83: Shulker,  # shulker
+    84: ShulkerBullet,  # shulker_bullet
+    85: Silverfish,  # silverfish
+    86: Skeleton,  # skeleton
+    87: SkeletonHorse,  # skeleton_horse
+    88: Slime,  # slime
+    89: SmallFireball,  # small_fireball
+    90: Sniffer,  # sniffer
+    91: SnowGolem,  # snow_golem
+    92: Snowball,  # snowball
+    93: SpawnerMinecart,  # spawner_minecart
+    94: SpectralArrow,  # spectral_arrow
+    95: Spider,  # spider
+    96: Squid,  # squid
+    97: Stray,  # stray
+    98: Strider,  # strider
+    99: Tadpole,  # tadpole
+    100: TextDisplay,  # text_display
+    101: Tnt,  # tnt
+    102: TntMinecart,  # tnt_minecart
+    103: TraderLlama,  # trader_llama
+    104: Trident,  # trident
+    105: TropicalFish,  # tropical_fish
+    106: Turtle,  # turtle
+    107: Vex,  # vex
+    108: Villager,  # villager
+    109: Vindicator,  # vindicator
+    110: WanderingTrader,  # wandering_trader
+    111: Warden,  # warden
+    112: Witch,  # witch
+    113: Wither,  # wither
+    114: WitherSkeleton,  # wither_skeleton
+    115: WitherSkull,  # wither_skull
+    116: Wolf,  # wolf
+    117: Zoglin,  # zoglin
+    118: Zombie,  # zombie
+    119: ZombieHorse,  # zombie_horse
+    120: ZombieVillager,  # zombie_villager
+    121: ZombifiedPiglin,  # zombified_piglin
+    122: Player,  # player
+    123: FishingBobber,  # fishing_bobber
+}
+
+def lookup_class(type_id: int) -> type:
+    """Resolve a clientbound entity-type-id to its Python subclass."""
+    from minecraft_bot.entities.base import Entity
+    return LOOKUP.get(type_id, Entity)

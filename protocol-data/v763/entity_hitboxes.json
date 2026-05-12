@@ -1,0 +1,498 @@
+{
+  "allay": {
+    "width": 0.35,
+    "height": 0.6
+  },
+  "area_effect_cloud": {
+    "width": 6.0,
+    "height": 0.5
+  },
+  "armor_stand": {
+    "width": 0.5,
+    "height": 1.975
+  },
+  "arrow": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "axolotl": {
+    "width": 0.75,
+    "height": 0.42
+  },
+  "bat": {
+    "width": 0.5,
+    "height": 0.9
+  },
+  "bee": {
+    "width": 0.7,
+    "height": 0.6
+  },
+  "blaze": {
+    "width": 0.6,
+    "height": 1.8
+  },
+  "block_display": {
+    "width": 0.0,
+    "height": 0.0
+  },
+  "boat": {
+    "width": 1.375,
+    "height": 0.5625
+  },
+  "camel": {
+    "width": 1.7,
+    "height": 2.375
+  },
+  "cat": {
+    "width": 0.6,
+    "height": 0.7
+  },
+  "cave_spider": {
+    "width": 0.7,
+    "height": 0.5
+  },
+  "chest_boat": {
+    "width": 1.375,
+    "height": 0.5625
+  },
+  "chest_minecart": {
+    "width": 0.98,
+    "height": 0.7
+  },
+  "chicken": {
+    "width": 0.4,
+    "height": 0.7
+  },
+  "cod": {
+    "width": 0.5,
+    "height": 0.3
+  },
+  "command_block_minecart": {
+    "width": 0.98,
+    "height": 0.7
+  },
+  "cow": {
+    "width": 0.9,
+    "height": 1.4
+  },
+  "creeper": {
+    "width": 0.6,
+    "height": 1.7
+  },
+  "dolphin": {
+    "width": 0.9,
+    "height": 0.6
+  },
+  "donkey": {
+    "width": 1.3964844,
+    "height": 1.5
+  },
+  "dragon_fireball": {
+    "width": 1.0,
+    "height": 1.0
+  },
+  "drowned": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "egg": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "elder_guardian": {
+    "width": 1.9975,
+    "height": 1.9975
+  },
+  "end_crystal": {
+    "width": 2.0,
+    "height": 2.0
+  },
+  "ender_dragon": {
+    "width": 16.0,
+    "height": 8.0
+  },
+  "ender_pearl": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "enderman": {
+    "width": 0.6,
+    "height": 2.9
+  },
+  "endermite": {
+    "width": 0.4,
+    "height": 0.3
+  },
+  "evoker": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "evoker_fangs": {
+    "width": 0.5,
+    "height": 0.8
+  },
+  "experience_bottle": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "experience_orb": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "eye_of_ender": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "falling_block": {
+    "width": 0.98,
+    "height": 0.98
+  },
+  "firework_rocket": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "fox": {
+    "width": 0.6,
+    "height": 0.7
+  },
+  "frog": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "furnace_minecart": {
+    "width": 0.98,
+    "height": 0.7
+  },
+  "ghast": {
+    "width": 4.0,
+    "height": 4.0
+  },
+  "giant": {
+    "width": 3.6,
+    "height": 12.0
+  },
+  "glow_item_frame": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "glow_squid": {
+    "width": 0.8,
+    "height": 0.8
+  },
+  "goat": {
+    "width": 0.9,
+    "height": 1.3
+  },
+  "guardian": {
+    "width": 0.85,
+    "height": 0.85
+  },
+  "hoglin": {
+    "width": 1.3964844,
+    "height": 1.4
+  },
+  "hopper_minecart": {
+    "width": 0.98,
+    "height": 0.7
+  },
+  "horse": {
+    "width": 1.3964844,
+    "height": 1.6
+  },
+  "husk": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "illusioner": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "interaction": {
+    "width": 0.0,
+    "height": 0.0
+  },
+  "iron_golem": {
+    "width": 1.4,
+    "height": 2.7
+  },
+  "item": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "item_display": {
+    "width": 0.0,
+    "height": 0.0
+  },
+  "item_frame": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "fireball": {
+    "width": 1.0,
+    "height": 1.0
+  },
+  "leash_knot": {
+    "width": 0.375,
+    "height": 0.5
+  },
+  "lightning_bolt": {
+    "width": 0.0,
+    "height": 0.0
+  },
+  "llama": {
+    "width": 0.9,
+    "height": 1.87
+  },
+  "llama_spit": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "magma_cube": {
+    "width": 2.04,
+    "height": 2.04
+  },
+  "marker": {
+    "width": 0.0,
+    "height": 0.0
+  },
+  "minecart": {
+    "width": 0.98,
+    "height": 0.7
+  },
+  "mooshroom": {
+    "width": 0.9,
+    "height": 1.4
+  },
+  "mule": {
+    "width": 1.3964844,
+    "height": 1.6
+  },
+  "ocelot": {
+    "width": 0.6,
+    "height": 0.7
+  },
+  "painting": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "panda": {
+    "width": 1.3,
+    "height": 1.25
+  },
+  "parrot": {
+    "width": 0.5,
+    "height": 0.9
+  },
+  "phantom": {
+    "width": 0.9,
+    "height": 0.5
+  },
+  "pig": {
+    "width": 0.9,
+    "height": 0.9
+  },
+  "piglin": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "piglin_brute": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "pillager": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "polar_bear": {
+    "width": 1.4,
+    "height": 1.4
+  },
+  "potion": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "pufferfish": {
+    "width": 0.7,
+    "height": 0.7
+  },
+  "rabbit": {
+    "width": 0.4,
+    "height": 0.5
+  },
+  "ravager": {
+    "width": 1.95,
+    "height": 2.2
+  },
+  "salmon": {
+    "width": 0.7,
+    "height": 0.4
+  },
+  "sheep": {
+    "width": 0.9,
+    "height": 1.3
+  },
+  "shulker": {
+    "width": 1.0,
+    "height": 1.0
+  },
+  "shulker_bullet": {
+    "width": 0.3125,
+    "height": 0.3125
+  },
+  "silverfish": {
+    "width": 0.4,
+    "height": 0.3
+  },
+  "skeleton": {
+    "width": 0.6,
+    "height": 1.99
+  },
+  "skeleton_horse": {
+    "width": 1.3964844,
+    "height": 1.6
+  },
+  "slime": {
+    "width": 2.04,
+    "height": 2.04
+  },
+  "small_fireball": {
+    "width": 0.3125,
+    "height": 0.3125
+  },
+  "sniffer": {
+    "width": 1.9,
+    "height": 1.75
+  },
+  "snow_golem": {
+    "width": 0.7,
+    "height": 1.9
+  },
+  "snowball": {
+    "width": 0.25,
+    "height": 0.25
+  },
+  "spawner_minecart": {
+    "width": 0.98,
+    "height": 0.7
+  },
+  "spectral_arrow": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "spider": {
+    "width": 1.4,
+    "height": 0.9
+  },
+  "squid": {
+    "width": 0.8,
+    "height": 0.8
+  },
+  "stray": {
+    "width": 0.6,
+    "height": 1.99
+  },
+  "strider": {
+    "width": 0.9,
+    "height": 1.7
+  },
+  "tadpole": {
+    "width": 0.4,
+    "height": 0.3
+  },
+  "text_display": {
+    "width": 0.0,
+    "height": 0.0
+  },
+  "tnt": {
+    "width": 0.98,
+    "height": 0.98
+  },
+  "tnt_minecart": {
+    "width": 0.98,
+    "height": 0.7
+  },
+  "trader_llama": {
+    "width": 0.9,
+    "height": 1.87
+  },
+  "trident": {
+    "width": 0.5,
+    "height": 0.5
+  },
+  "tropical_fish": {
+    "width": 0.5,
+    "height": 0.4
+  },
+  "turtle": {
+    "width": 1.2,
+    "height": 0.4
+  },
+  "vex": {
+    "width": 0.4,
+    "height": 0.8
+  },
+  "villager": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "vindicator": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "wandering_trader": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "warden": {
+    "width": 0.9,
+    "height": 2.9
+  },
+  "witch": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "wither": {
+    "width": 0.9,
+    "height": 3.5
+  },
+  "wither_skeleton": {
+    "width": 0.7,
+    "height": 2.4
+  },
+  "wither_skull": {
+    "width": 0.3125,
+    "height": 0.3125
+  },
+  "wolf": {
+    "width": 0.6,
+    "height": 0.85
+  },
+  "zoglin": {
+    "width": 1.3964844,
+    "height": 1.4
+  },
+  "zombie": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "zombie_horse": {
+    "width": 1.3964844,
+    "height": 1.6
+  },
+  "zombie_villager": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "zombified_piglin": {
+    "width": 0.6,
+    "height": 1.95
+  },
+  "player": {
+    "width": 0.6,
+    "height": 1.8
+  },
+  "fishing_bobber": {
+    "width": 0.25,
+    "height": 0.25
+  }
+}

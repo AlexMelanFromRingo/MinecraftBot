@@ -138,6 +138,69 @@ class ValueOutOfRange(EncodeError):
         self.value = value
 
 
+# --- Bot API errors (002-bot-api) -----------------------------------------
+
+
+class NoPathFound(ProtocolError):
+    """A* pathfinder exhausted the open set or node budget without
+    reaching the target."""
+
+    def __init__(self, target: Any, nodes_explored: int):
+        super().__init__(f"no path to {target!r} ({nodes_explored} nodes explored)")
+        self.target = target
+        self.nodes_explored = nodes_explored
+
+
+class WalkTimeout(ProtocolError):
+    """A long-running movement method exceeded its ``timeout``."""
+
+    def __init__(self, target: Any, elapsed: float):
+        super().__init__(f"walk to {target!r} timed out after {elapsed:.1f}s")
+        self.target = target
+        self.elapsed = elapsed
+
+
+class DigFailed(ProtocolError):
+    """``bot.dig(x, y, z)`` could not finish — block did not break
+    within 2x the natural break time, or the block changed mid-dig."""
+
+    def __init__(self, position: Any, reason: str):
+        super().__init__(f"dig at {position!r} failed: {reason}")
+        self.position = position
+        self.reason = reason
+
+
+class TargetLost(ProtocolError):
+    """A follow / attack target vanished from the EntityTracker."""
+
+    def __init__(self, entity_id: int):
+        super().__init__(f"target entity {entity_id} lost")
+        self.entity_id = entity_id
+
+
+class ContainerClosed(ProtocolError):
+    """An operation was attempted on a container that the server has
+    already closed (e.g., chunk unloaded under us)."""
+
+
+class InventoryStateMismatch(ProtocolError):
+    """A click_slot was rejected because the bot's local state_id
+    diverged from the server's. Re-fetch ``InventoryTracker.state_id``
+    and retry."""
+
+    def __init__(self, local_state_id: int, server_state_id: int):
+        super().__init__(
+            f"inventory state mismatch: local={local_state_id}, server={server_state_id}"
+        )
+        self.local_state_id = local_state_id
+        self.server_state_id = server_state_id
+
+
+class InVehicle(ProtocolError):
+    """A movement method was called while the bot is riding a vehicle;
+    dismount first."""
+
+
 __all__ = [
     "ProtocolError",
     "HandshakeFailed",
@@ -155,4 +218,12 @@ __all__ = [
     "MalformedNbt",
     "EncodeError",
     "ValueOutOfRange",
+    # Bot API
+    "NoPathFound",
+    "WalkTimeout",
+    "DigFailed",
+    "TargetLost",
+    "ContainerClosed",
+    "InventoryStateMismatch",
+    "InVehicle",
 ]
