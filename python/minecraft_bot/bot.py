@@ -634,6 +634,70 @@ class Bot:
         from minecraft_bot.snapshot import make_snapshot, BotSnapshot
         return make_snapshot(self, nearby_radius=nearby_radius)
 
+    # --- AI observation API --------------------------------------------
+
+    def raycast(self, *, max_distance: float = 32.0):
+        """Cast a ray from the bot's eye along its look direction and
+        return a :class:`~minecraft_bot.observation.RayHit` for the
+        first solid block hit, or ``None``."""
+        from minecraft_bot.observation import _eye_direction, raycast
+        eye = (self.x, self.y + 1.62, self.z)
+        direction = _eye_direction(self.yaw, self.pitch)
+        return raycast(self.world, eye, direction, max_distance=max_distance)
+
+    def scan_volume(self, *, radius: int = 8, include_air: bool = False):
+        """Return every block within Chebyshev ``radius`` of the bot,
+        sorted by distance. ``[(x, y, z, state_id), ...]``."""
+        from minecraft_bot.observation import scan_volume
+        return scan_volume(
+            self.world, (self.x, self.y, self.z),
+            radius=radius, include_air=include_air,
+        )
+
+    def voxel_grid(self, *, radius: int = 4):
+        """Return a 3-D grid (``[y][z][x]``) of block-state IDs around
+        the bot, plus the world origin of cell ``[0][0][0]``."""
+        from minecraft_bot.observation import voxel_grid
+        return voxel_grid(self.world, (int(self.x), int(self.y), int(self.z)), radius=radius)
+
+    def chunks_around(self, *, radius_chunks: int = 2):
+        """Return ``ChunkView`` objects for loaded chunks within a
+        ``(2*radius_chunks+1)×(2*radius_chunks+1)`` window centred on
+        the bot's chunk. Useful for AI agents that want to consume
+        full chunks rather than a fixed voxel cube."""
+        from minecraft_bot.observation import chunks_around
+        return chunks_around(self.world, self.position, radius_chunks=radius_chunks)
+
+    def world_map_3d(self, *, radius_xz: int = 16, radius_y: Optional[int] = None):
+        """A larger rectangular voxel map than :meth:`voxel_grid`.
+
+        ``radius_xz`` is the horizontal Chebyshev radius (side =
+        ``2*radius_xz + 1``); ``radius_y`` defaults to the same.
+        Returns ``(grid, origin)`` where ``grid[y][z][x]`` is the
+        block-state ID. Cheap enough to call once per agent step at
+        radius_xz=16 (33×33×33 = ~36k samples ≲ 10 ms)."""
+        from minecraft_bot.observation import world_map_3d
+        return world_map_3d(
+            self.world, self.position,
+            radius_xz=radius_xz, radius_y=radius_y,
+        )
+
+    def observation(
+        self, *,
+        voxel_radius: int = 4,
+        nearby_radius: float = 16.0,
+        look_distance: float = 32.0,
+    ):
+        """Compose a full :class:`~minecraft_bot.observation.Observation`
+        for one agent step (look hit + voxel grid + entities + vitals)."""
+        from minecraft_bot.observation import make_observation
+        return make_observation(
+            self,
+            voxel_radius=voxel_radius,
+            nearby_radius=nearby_radius,
+            look_distance=look_distance,
+        )
+
     # --- inventory (FR-060..FR-073) ------------------------------------
 
     @property
