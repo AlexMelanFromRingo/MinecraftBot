@@ -67,6 +67,7 @@ def main() -> int:
             "diggable": block.get("diggable", False),
             "transparent": block.get("transparent", False),
             "material": block.get("material", "default"),
+            "requires_tool": bool(block.get("harvestTools")),
             "emit_light": block.get("emitLight", 0),
             "filter_light": block.get("filterLight", 0),
             "stack_size": block.get("stackSize", 64),

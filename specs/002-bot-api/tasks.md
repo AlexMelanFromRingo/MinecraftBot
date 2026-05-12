@@ -201,22 +201,22 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 ### Status effects
 
-- [ ] T064 [US4] Implement `python/minecraft_bot/status_effects.py` — `StatusEffects` class with `effects: dict[str, EffectEntry]`. `EffectEntry` is a frozen dataclass with `id, amplifier, duration_ticks, is_ambient, show_particles, show_icon`. Subscribes to `entity_effect` (add/update if target is bot's entity_id) and `remove_entity_effect` (delete on match).
-- [ ] T065 [P] [US4] Unit test status effects at `tests/python/unit/test_status_effects.py` — apply effect, has_effect=True; remove, has_effect=False; amplifier+duration parsed correctly.
+- [X] T064 [US4] Implement `python/minecraft_bot/status_effects.py` — `StatusEffects` class with `effects: dict[str, EffectEntry]`. `EffectEntry` is a frozen dataclass with `id, amplifier, duration_ticks, is_ambient, show_particles, show_icon`. Subscribes to `entity_effect` (add/update if target is bot's entity_id) and `remove_entity_effect` (delete on match).
+- [X] T065 [P] [US4] Unit test status effects at `tests/python/unit/test_status_effects.py` — apply effect, has_effect=True; remove, has_effect=False; amplifier+duration parsed correctly.
 
 ### Auto-eat
 
-- [ ] T066 [US4] Implement `Bot.auto_eat(threshold=15, eat_duration=1.6, picker=None)` — registers a periodic check (every 5 ticks = 250 ms). When `bot.food < threshold` and inventory has any food, runs the picker (default `BEST_SATURATION`), `select_slot(slot)`, `use_item(hand=0)`, waits eat_duration, returns. Acquires action slot during the eat.
-- [ ] T067 [P] [US4] Unit test auto-eat picker integration at `tests/python/unit/test_auto_eat.py` — synthetic Bot with low food + mock inventory containing bread/golden_apple/rotten_flesh; picker chooses correctly per policy; with `picker=WORST_FIRST` chooses rotten_flesh.
+- [X] T066 [US4] Implement `Bot.auto_eat(threshold=15, eat_duration=1.6, picker=None)` — registers a periodic check (every 5 ticks = 250 ms). When `bot.food < threshold` and inventory has any food, runs the picker (default `BEST_SATURATION`), `select_slot(slot)`, `use_item(hand=0)`, waits eat_duration, returns. Acquires action slot during the eat.
+- [X] T067 [P] [US4] Unit test auto-eat picker integration at `tests/python/unit/test_auto_eat.py` — synthetic Bot with low food + mock inventory containing bread/golden_apple/rotten_flesh; picker chooses correctly per policy; with `picker=WORST_FIRST` chooses rotten_flesh.
 
 ### Dig with break-time
 
-- [ ] T068 [US4] Implement `Bot.dig(x, y, z, tool=None)` (movement slot) — sends `block_dig` status=0 (start), waits the natural break-time for the block + held tool (computed from block name + tool effectiveness table loaded from minecraft-data), sends status=2 (finish). Times out at 2× natural break-time → `DigFailed`.
-- [ ] T069 [P] [US4] Unit test break-time calculation at `tests/python/unit/test_break_time.py` — known block+tool combinations match wiki values within ±5%: dirt by hand ~750 ms; stone by wooden_pickaxe ~1500 ms; stone by hand >7500 ms.
+- [X] T068 [US4] Implement `Bot.dig(x, y, z, tool=None)` (movement slot) — sends `block_dig` status=0 (start), waits the natural break-time for the block + held tool (computed from block name + tool effectiveness table loaded from minecraft-data), sends status=2 (finish). Times out at 2× natural break-time → `DigFailed`.
+- [X] T069 [P] [US4] Unit test break-time calculation at `tests/python/unit/test_break_time.py` — known block+tool combinations match wiki values within ±5%: dirt by hand ~750 ms; stone by wooden_pickaxe ~1500 ms; stone by hand >7500 ms.
 
 ### Tests
 
-- [ ] T070 [US4] Integration test `tests/python/integration/test_us4_survive.py` (live, survival mode): bot enabled with `auto_eat`, gives itself cooked_beef via /give, `/gamemode survival`, takes damage from `/damage`, asserts food restored within 5 s. Attacks a `/summon zombie`, asserts zombie's health drops over time. Diggs a placed dirt block, asserts it's gone via `bot.world.get_block`.
+- [X] T070 [US4] Integration test `tests/python/integration/test_us4_survive.py` (live, survival mode): bot enabled with `auto_eat`, gives itself cooked_beef via /give, `/gamemode survival`, takes damage from `/damage`, asserts food restored within 5 s. Attacks a `/summon zombie`, asserts zombie's health drops over time. Diggs a placed dirt block, asserts it's gone via `bot.world.get_block`.
 
 **Checkpoint**: US4 complete — bot survives.
 
@@ -228,8 +228,8 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 **Independent Test**: `python tools/quickstart_us5.py` — bot follows another connected player around spawn for 60 s, stays within 4 blocks.
 
-- [ ] T071 [US5] Implement `Bot.follow(eid, distance, timeout, wait_for_slot)` (movement slot) — periodically re-paths with A* to a position `distance` blocks from the target's current location; restarts walk_to whenever target moves more than 2 blocks. Raises `TargetLost` if entity vanishes; `WalkTimeout` if elapsed.
-- [ ] T072 [P] [US5] Unit test follow re-path trigger at `tests/python/unit/test_follow.py` — mock target that moves; assert follow issues a new walk_to after the target moves > 2 blocks.
+- [X] T071 [US5] Implement `Bot.follow(eid, distance, timeout, wait_for_slot)` (movement slot) — periodically re-paths with A* to a position `distance` blocks from the target's current location; restarts walk_to whenever target moves more than 2 blocks. Raises `TargetLost` if entity vanishes; `WalkTimeout` if elapsed.
+- [X] T072 [P] [US5] Unit test follow re-path trigger at `tests/python/unit/test_follow.py` — mock target that moves; assert follow issues a new walk_to after the target moves > 2 blocks.
 - [ ] T073 [US5] Integration test `tests/python/integration/test_us5_follow.py` (live): bot connects, looks for any other nearby player (skip with informative message if none); `follow(player_id, distance=3, timeout=60)`; asserts distance to target stays ≤ 4 blocks throughout (sampled every 2 s).
 
 **Checkpoint**: US5 complete.

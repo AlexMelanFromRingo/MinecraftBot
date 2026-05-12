@@ -39,14 +39,21 @@ from minecraft_bot.pathfinding import find_path
 from minecraft_bot.physics import (
     PhysicsIntent, PhysicsState, tick as physics_tick,
 )
+from minecraft_bot.dig import break_seconds
 from minecraft_bot.entities.base import Entity, Player
 from minecraft_bot.entities.tracker import EntityTracker
-from minecraft_bot.inventory.item import ItemSlot
+from minecraft_bot.errors import DigFailed
+from minecraft_bot.foods import (
+    BY_ID as _FOOD_BY_ID, FoodInfo, pick_highest_saturation,
+)
+from minecraft_bot.inventory.item import ItemSlot, item_name as _item_name
 from minecraft_bot.inventory.tracker import InventoryTracker
+from minecraft_bot.status_effects import StatusEffects
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
     block_change as cb_block_change,
     close_window as cb_close_window,
     entity_destroy as cb_entity_destroy,
+    entity_effect as cb_entity_effect,
     entity_look as cb_entity_look,
     entity_metadata as cb_entity_metadata,
     entity_move_look as cb_entity_move_look,
@@ -64,6 +71,7 @@ from minecraft_bot.protocol.v763.packets.play.clientbound import (
     position as cb_position,
     profileless_chat as cb_profileless_chat,
     rel_entity_move as cb_rel_move,
+    remove_entity_effect as cb_remove_effect,
     respawn as cb_respawn,
     set_slot as cb_set_slot,
     spawn_entity as cb_spawn_entity,
@@ -113,6 +121,7 @@ class Bot:
         self.world = World()
         self.entities = EntityTracker()
         self.inventory = InventoryTracker()
+        self.effects = StatusEffects()
 
         self._physics = PhysicsState(x=0.0, y=64.0, z=0.5)
         self._yaw = 0.0
@@ -135,6 +144,7 @@ class Bot:
         self._spawn_position: Optional[tuple[int, int, int]] = None
         self._has_initial_position = False
         self._server_position: Optional[tuple[float, float, float]] = None
+        self._auto_eat_task: Optional[asyncio.Task] = None
 
         # Slot locks (FR-027).
         self.movement_slot = Slot("movement")
@@ -188,6 +198,14 @@ class Bot:
             await asyncio.sleep(0.05)
 
     async def disconnect(self, reason: Optional[str] = None) -> None:
+        eat = self._auto_eat_task
+        self._auto_eat_task = None
+        if eat is not None:
+            eat.cancel()
+            try:
+                await eat
+            except (asyncio.CancelledError, Exception):
+                pass
         task = self._tick_task
         self._tick_task = None
         if task is not None:
@@ -278,6 +296,9 @@ class Bot:
         sub(c.on(cb_set_slot.SetSlot, self.inventory.on_set_slot))
         sub(c.on(cb_open_window.OpenWindow, self._on_open_window))
         sub(c.on(cb_close_window.CloseWindow, self._on_close_window))
+        # Status effects.
+        sub(c.on(cb_entity_effect.EntityEffect, self.effects.on_entity_effect))
+        sub(c.on(cb_remove_effect.RemoveEntityEffect, self.effects.on_remove_entity_effect))
         sub(c.on(Reconnected, self._on_reconnected))
 
     # --- packet handlers ----------------------------------------------
@@ -285,6 +306,7 @@ class Bot:
     def _on_login(self, p) -> None:
         self._entity_id = p.entity_id
         self.entities.bot_eid = p.entity_id
+        self.effects.bot_eid = p.entity_id
         self._game_mode = p.game_mode
         self._world_name = getattr(p, "world_name", None)
         self._dimension = getattr(p, "world_type", None) or self._dimension
@@ -987,6 +1009,130 @@ class Bot:
                     await asyncio.sleep(0.03)
         finally:
             await self.close_container()
+
+    # --- dig (FR-081..FR-085) ------------------------------------------
+
+    async def dig(
+        self,
+        x: int, y: int, z: int,
+        *,
+        tool: Optional[str] = None,
+        timeout_multiplier: float = 2.0,
+        wait_for_slot: bool = False,
+    ) -> None:
+        """Break the block at (x, y, z). Uses the movement slot.
+
+        Sequence: ``block_dig`` status=0 (start) → wait the natural break
+        time for the block + held tool → status=2 (finish) →
+        ``arm_animation``. If the block hasn't been removed from the
+        world cache within ``timeout_multiplier × natural_break_time``,
+        raises :class:`DigFailed`.
+
+        If ``tool`` is None, uses the bot's currently-held item.
+        """
+        from minecraft_bot.protocol.v763.packets.play.serverbound import (
+            block_dig as sb_block_dig,
+        )
+        name = self.world.get_block_name(x, y, z) or "minecraft:air"
+        if tool is None:
+            held = self.held_item
+            tool = held.name if held is not None else None
+        natural = break_seconds(name, tool)
+        if natural < 0:
+            raise DigFailed((x, y, z), reason=f"{name} is unbreakable")
+        # Face = top of block (default); look_at the block first.
+        async with guard(self.movement_slot, wait_for_slot=wait_for_slot):
+            await self._look_at_block(x, y, z)
+            face, _ = self._pick_face_and_cursor(x, y, z)
+            # Send dig START.
+            await self._conn.send(sb_block_dig.BlockDig(
+                status=0, location=(x, y, z), face=face, sequence=0,
+            ))
+            # Continuous arm animation while digging.
+            await self._conn.send(sb_arm.ArmAnimation(hand=0))
+            # Wait the natural break time.
+            await asyncio.sleep(max(0.05, natural))
+            # Send dig FINISH.
+            await self._conn.send(sb_block_dig.BlockDig(
+                status=2, location=(x, y, z), face=face, sequence=0,
+            ))
+            # Poll world cache for up to timeout_multiplier × natural for
+            # the block to actually become air.
+            poll_end = time.monotonic() + timeout_multiplier * max(natural, 0.5)
+            while time.monotonic() < poll_end:
+                current = self.world.get_block(x, y, z)
+                if current == 0:
+                    return
+                await asyncio.sleep(0.05)
+            raise DigFailed(
+                (x, y, z),
+                reason=f"block {name} did not break within {timeout_multiplier * natural:.1f}s",
+            )
+
+    # --- auto-eat (FR-088..FR-092) -------------------------------------
+
+    def auto_eat(
+        self,
+        *,
+        threshold: int = 15,
+        eat_duration: float = 1.6,
+        picker=None,
+    ) -> None:
+        """Start a background task that eats food whenever
+        ``bot.food < threshold``.
+
+        ``picker`` is a callable ``(list[FoodInfo]) -> FoodInfo`` that
+        chooses which food to consume from the bot's inventory (default
+        ``pick_highest_saturation`` from foods). Pass a custom function
+        to enforce a different policy.
+
+        Idempotent: calling auto_eat() twice replaces the previous task.
+        Stop with :meth:`stop_auto_eat`.
+        """
+        self.stop_auto_eat()
+        self._auto_eat_task = asyncio.create_task(
+            self._auto_eat_loop(threshold, eat_duration, picker or pick_highest_saturation),
+            name="bot-auto-eat",
+        )
+
+    def stop_auto_eat(self) -> None:
+        task = self._auto_eat_task
+        self._auto_eat_task = None
+        if task is not None:
+            task.cancel()
+
+    async def _auto_eat_loop(self, threshold: int, eat_duration: float, picker) -> None:
+        while True:
+            try:
+                await asyncio.sleep(0.25)   # 5 ticks
+                if not self.is_connected or self._food >= threshold:
+                    continue
+                # Find food in inventory; pick by policy.
+                hotbar = [
+                    (i, slot) for i, slot in enumerate(self.inventory.hotbar_items())
+                    if slot is not None and slot.item_id in _FOOD_BY_ID
+                ]
+                if not hotbar:
+                    # Try main inventory food too — but we'd need to swap to
+                    # hotbar; for MVP we only eat from hotbar.
+                    continue
+                infos = [_FOOD_BY_ID[slot.item_id] for _, slot in hotbar]
+                chosen = picker(infos)
+                if chosen is None:
+                    continue
+                # Find the slot index of the chosen food.
+                slot_index_in_hotbar = next(
+                    i for i, slot in hotbar if slot.item_id == chosen.item_id
+                )
+                await self.select_slot(slot_index_in_hotbar)
+                await asyncio.sleep(0.1)
+                await self.use_item(hand=0)
+                await asyncio.sleep(eat_duration)
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                # Don't let one bad tick kill the loop.
+                await asyncio.sleep(0.5)
 
     # --- walk_to (FR-031..FR-035) -------------------------------------
 
