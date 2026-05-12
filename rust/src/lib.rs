@@ -15,6 +15,8 @@ pub mod protocol;
 pub mod wire_log;
 // 003 — bot-API port.
 pub mod effects;
+pub mod pathfinding;
+pub mod physics;
 pub mod world;
 
 pub use crate::connection::{offline_uuid, Connection, Reconnected, ReconnectPolicy};
