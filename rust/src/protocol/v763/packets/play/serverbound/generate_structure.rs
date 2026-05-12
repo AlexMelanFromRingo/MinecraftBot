@@ -39,6 +39,7 @@ impl ServerboundPacket for GenerateStructure {
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         position::write(&self.location, writer)?;
         varint::write(self.levels, writer)?;
+        writer.write_all(&[if self.keep_jigsaws { 1 } else { 0 }])?;
         Ok(())
     }
 }

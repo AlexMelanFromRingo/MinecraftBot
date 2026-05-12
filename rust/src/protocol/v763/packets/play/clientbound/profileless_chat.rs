@@ -21,8 +21,6 @@ pub struct ProfilelessChat {
     /// Auto-generated field.
     pub name: String,
     /// Auto-generated field.
-    pub present: u8,
-    /// Auto-generated field.
     pub target: Option<String>,
 }
 
@@ -38,7 +36,7 @@ impl ProfilelessChat {
             1 => Some(string::read(reader)?),
             other => return Err(ProtocolError::DecodeError(format!("target.present: {}", other))),
         };
-        Ok(Self { message, chat_type, name, present, target })
+        Ok(Self { message, chat_type, name, target })
     }
 }
 

@@ -34,6 +34,7 @@ impl ClientboundPacket for Animation {
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.entity_id, writer)?;
+        writer.write_all(&[self.animation])?;
         Ok(())
     }
 }

@@ -39,6 +39,7 @@ impl ServerboundPacket for CraftRecipeRequest {
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         writer.write_all(&[self.window_id as u8])?;
         string::write(&self.recipe, writer)?;
+        writer.write_all(&[if self.make_all { 1 } else { 0 }])?;
         Ok(())
     }
 }

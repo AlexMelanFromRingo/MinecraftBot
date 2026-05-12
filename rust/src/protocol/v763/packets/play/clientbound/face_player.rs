@@ -57,6 +57,7 @@ impl ClientboundPacket for FacePlayer {
         writer.write_all(&self.x.to_be_bytes())?;
         writer.write_all(&self.y.to_be_bytes())?;
         writer.write_all(&self.z.to_be_bytes())?;
+        writer.write_all(&[if self.is_entity { 1 } else { 0 }])?;
         Ok(())
     }
 }

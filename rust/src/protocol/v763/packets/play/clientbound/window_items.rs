@@ -43,6 +43,7 @@ impl ClientboundPacket for WindowItems {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
+        writer.write_all(&[self.window_id])?;
         varint::write(self.state_id, writer)?;
         varint::write(self.n, writer)?;
         slot::write(self.carried_item.as_ref(), writer)?;

@@ -38,6 +38,7 @@ impl ServerboundPacket for UpdateCommandBlockMinecart {
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.entity_id, writer)?;
         string::write(&self.command, writer)?;
+        writer.write_all(&[if self.track_output { 1 } else { 0 }])?;
         Ok(())
     }
 }

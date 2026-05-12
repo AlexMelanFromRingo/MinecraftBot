@@ -61,22 +61,38 @@ PyO3 boundary cost dominates the actual work.
 - Nothing in `minecraft_bot` imports from `minecraft_bot_accel`.
 - Python remains the spec of record; Rust and accel chase it.
 
-### Known limitations / future work
+### Motion model and packet hooks
 
-- The accel `walk_to` slides directly along the A* path rather than
-  driving motion through `physics.tick`. Functional parity holds
-  (bot arrives at the target with `on_ground=True`) but the packet
-  trace shape differs from the Python reference. The path-driven
-  variant is the right shape for current bot use; the physics-driven
-  variant is on the roadmap if motion-shape parity becomes a
-  requirement.
-- Per-packet typed pyclass wrappers (T055/T056 in the spec) are not
-  shipped. They would duplicate the Python reference's 176-packet
-  dataclass surface with no new capability. `Bot.send_raw(payload)`
-  covers the escape hatch.
-- Hazard arena live test (T084) is in the same boat as walk_to: the
-  shape of accel motion differs from physics-driven motion, so a
-  full hazard-course parity comparison is deferred.
+- Accel `walk_to` drives motion through `physics::tick` at 20 Hz
+  with the same auto-step, gravity, water drag, and walk-speed cap
+  the Python reference uses. Per-tick Player Position packets
+  follow the same shape, so anti-cheat and movement-rate behaviour
+  matches across backends. Motion-shape parity verified offline by
+  `tests/python/parity/test_walk_to_packet_trace.py`; hazard
+  traversal verified live by
+  `tests/python/integration/test_hazard_arena_parity.py`.
+- `Bot.on_packet(packet_id, callback)` lets users subscribe to any
+  clientbound packet id. The callback receives `(packet_id, body)`;
+  decode the body through the Python reference's typed decoders
+  when you need a structured view (see `docs/examples.md`).
+  `Bot.clear_hooks()` drops every registration.
+- Per-packet typed pyclass wrappers are not shipped. They would
+  duplicate the Python reference's 176-packet dataclass surface
+  with no new capability. `Bot.send_raw(payload)` covers outbound
+  raw sends; `on_packet` covers inbound typed dispatch through the
+  Python decoders.
+
+### Codegen fix
+
+- `tools/generate_rust_packets.py` was emitting Rust encoders that
+  skipped the trailing `on_ground` byte on the movement packets
+  (`flying`, `position`, `look`, `position_look`). The server
+  decoded N-1 bytes and disconnected with
+  `IndexOutOfBoundsException`. The generator now emits the matching
+  encode line for any inline-expr tail field, and the optional-byte
+  patcher in turn removes consumed control-flow temps from the
+  struct so the dataclass shape stays in sync with the Python
+  source. All 176 packets regenerated and pass round-trip tests.
 
 ## v0.1.0 (project history snapshot)
 

@@ -34,6 +34,7 @@ impl ClientboundPacket for SystemChat {
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         string::write(&self.content, writer)?;
+        writer.write_all(&[if self.is_action_bar { 1 } else { 0 }])?;
         Ok(())
     }
 }

@@ -64,6 +64,7 @@ impl ClientboundPacket for WorldParticles {
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.particle_id, writer)?;
+        writer.write_all(&[if self.long_distance { 1 } else { 0 }])?;
         writer.write_all(&self.x.to_be_bytes())?;
         writer.write_all(&self.y.to_be_bytes())?;
         writer.write_all(&self.z.to_be_bytes())?;

@@ -21,8 +21,6 @@ pub struct EditBook {
     /// Auto-generated field.
     pub pages: Vec<String>,
     /// Auto-generated field.
-    pub present: u8,
-    /// Auto-generated field.
     pub title: Option<String>,
 }
 
@@ -38,7 +36,7 @@ impl EditBook {
             1 => Some(string::read(reader)?),
             other => return Err(ProtocolError::DecodeError(format!("title.present: {}", other))),
         };
-        Ok(Self { hand, n, pages, present, title })
+        Ok(Self { hand, n, pages, title })
     }
 }
 

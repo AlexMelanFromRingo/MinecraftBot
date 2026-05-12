@@ -34,6 +34,7 @@ impl ClientboundPacket for GameStateChange {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
+        writer.write_all(&[self.reason])?;
         writer.write_all(&self.value.to_be_bytes())?;
         Ok(())
     }

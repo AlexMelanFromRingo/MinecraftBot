@@ -43,6 +43,7 @@ impl ServerboundPacket for UpdateCommandBlock {
         position::write(&self.location, writer)?;
         string::write(&self.command, writer)?;
         varint::write(self.mode, writer)?;
+        writer.write_all(&[self.flags])?;
         Ok(())
     }
 }

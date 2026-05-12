@@ -55,6 +55,7 @@ impl ClientboundPacket for EntityMoveLook {
         writer.write_all(&self.dz.to_be_bytes())?;
         writer.write_all(&[self.yaw as u8])?;
         writer.write_all(&[self.pitch as u8])?;
+        writer.write_all(&[if self.on_ground { 1 } else { 0 }])?;
         Ok(())
     }
 }

@@ -81,11 +81,12 @@ incrementally. As of 003 it exposes:
 - `minecraft_bot_accel.ItemStack`
 - `minecraft_bot_accel.errors.*` (full exception hierarchy: 23 classes)
 - `minecraft_bot_accel.WireLog`
+- `await bot.on_packet(packet_id, callback)` plus `await bot.clear_hooks()`
+- `await bot.walk_to_blind(...)` diagnostic mode
 
 Surface still landing in later phases:
 - Live `bot.inventory` tracker mirroring the Python WindowItems flow
 - Live `bot.entities` nearby-entity tracker
-- Typed on_packet hooks (raw forwarding works through send_raw today)
 - Chat / behaviour trees / dig
 
 ## Performance profile

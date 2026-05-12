@@ -21,8 +21,6 @@ pub struct ResourcePackSend {
     /// Auto-generated field.
     pub forced: bool,
     /// Auto-generated field.
-    pub p: u8,
-    /// Auto-generated field.
     pub prompt_message: Option<String>,
 }
 
@@ -38,7 +36,7 @@ impl ResourcePackSend {
             1 => Some(string::read(reader)?),
             other => return Err(ProtocolError::DecodeError(format!("prompt_message.present: {}", other))),
         };
-        Ok(Self { url, hash, forced, p, prompt_message })
+        Ok(Self { url, hash, forced, prompt_message })
     }
 }
 
@@ -48,6 +46,7 @@ impl ClientboundPacket for ResourcePackSend {
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         string::write(&self.url, writer)?;
         string::write(&self.hash, writer)?;
+        writer.write_all(&[if self.forced { 1 } else { 0 }])?;
         match &self.prompt_message {
             None => writer.write_all(&[0])?,
             Some(v) => {

@@ -37,6 +37,7 @@ impl ClientboundPacket for CraftProgressBar {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
+        writer.write_all(&[self.window_id])?;
         writer.write_all(&self.property.to_be_bytes())?;
         writer.write_all(&self.value.to_be_bytes())?;
         Ok(())

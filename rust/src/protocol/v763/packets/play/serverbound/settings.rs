@@ -56,8 +56,11 @@ impl ServerboundPacket for Settings {
         string::write(&self.locale, writer)?;
         writer.write_all(&[self.view_distance as u8])?;
         varint::write(self.chat_flags, writer)?;
+        writer.write_all(&[if self.chat_colors { 1 } else { 0 }])?;
         writer.write_all(&[self.skin_parts])?;
         varint::write(self.main_hand, writer)?;
+        writer.write_all(&[if self.enable_text_filtering { 1 } else { 0 }])?;
+        writer.write_all(&[if self.enable_server_listing { 1 } else { 0 }])?;
         Ok(())
     }
 }

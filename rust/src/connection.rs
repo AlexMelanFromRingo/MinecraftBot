@@ -343,7 +343,6 @@ impl Connection {
         // we're providing the player_uuid.
         let pkt = LoginStart {
             username: self.username.clone(),
-            present: 1,
             player_uuid,
         };
         self.send(&pkt).await

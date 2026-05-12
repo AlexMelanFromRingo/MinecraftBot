@@ -17,8 +17,6 @@ pub struct LoginPluginResponse {
     /// Auto-generated field.
     pub message_id: i32,
     /// Auto-generated field.
-    pub present: u8,
-    /// Auto-generated field.
     pub data: Option<Vec<u8>>,
 }
 
@@ -32,7 +30,7 @@ impl LoginPluginResponse {
             1 => Some(reader.read_exact(reader.remaining())?.to_vec()),
             other => return Err(ProtocolError::DecodeError(format!("data.present: {}", other))),
         };
-        Ok(Self { message_id, present, data })
+        Ok(Self { message_id, data })
     }
 }
 

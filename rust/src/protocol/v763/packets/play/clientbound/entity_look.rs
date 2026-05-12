@@ -43,6 +43,7 @@ impl ClientboundPacket for EntityLook {
         varint::write(self.entity_id, writer)?;
         writer.write_all(&[self.yaw as u8])?;
         writer.write_all(&[self.pitch as u8])?;
+        writer.write_all(&[if self.on_ground { 1 } else { 0 }])?;
         Ok(())
     }
 }

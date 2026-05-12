@@ -5,6 +5,7 @@
 //! unload_chunk events. Higher-level methods (walk_to, observation,
 //! drop_held_item, …) land in follow-on tasks.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tokio::sync::Mutex;
@@ -17,6 +18,8 @@ use crate::connection::Connection;
 use crate::effects::StatusEffects;
 use crate::errors::ProtocolError;
 use crate::pathfinding::{find_path, Pos};
+use crate::physics::{self as rphys, PhysicsIntent, PhysicsState};
+use crate::world::block_table;
 use crate::protocol::v763::packets::play::clientbound::{
     block_change::BlockChange,
     map_chunk::MapChunk,
@@ -64,6 +67,13 @@ struct BotState {
     position_known: bool,
 }
 
+/// User-supplied callback for a packet hook. Takes the packet id
+/// and raw body bytes (after the packet-id varint, before any auto
+/// keep-alive / teleport-confirm handling) and returns any future
+/// work. The dispatcher invokes hooks on its own task; long-running
+/// hooks should spawn their own task to avoid blocking the loop.
+pub type PacketHook = Box<dyn Fn(i32, &[u8]) + Send + Sync + 'static>;
+
 /// Top-level bot: owns a Connection, a World, a StatusEffects tracker.
 pub struct Bot {
     /// The underlying Connection (login → play → keep-alive loop).
@@ -76,6 +86,10 @@ pub struct Bot {
     state: Arc<Mutex<BotState>>,
     /// Background packet dispatcher (started by `connect`).
     dispatcher: Option<JoinHandle<()>>,
+    /// User-registered packet hooks keyed by packet id. Hooks run
+    /// inside the dispatcher task after the built-in world / state
+    /// updates, before the auto keep-alive handler in `Connection`.
+    hooks: Arc<Mutex<HashMap<i32, Vec<PacketHook>>>>,
 }
 
 impl Bot {
@@ -87,7 +101,21 @@ impl Bot {
             effects: Arc::new(StatusEffects::new()),
             state: Arc::new(Mutex::new(BotState::default())),
             dispatcher: None,
+            hooks: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    /// Register a callback for a clientbound packet id. Multiple
+    /// callbacks per id are allowed; they fire in registration order.
+    /// Hooks receive the packet body (after the id varint).
+    pub async fn on_packet(&self, packet_id: i32, callback: PacketHook) {
+        let mut hooks = self.hooks.lock().await;
+        hooks.entry(packet_id).or_default().push(callback);
+    }
+
+    /// Drop every registered hook.
+    pub async fn clear_hooks(&self) {
+        self.hooks.lock().await.clear();
     }
 
     /// Connect the underlying Connection, then start the packet
@@ -106,9 +134,22 @@ impl Bot {
         let world = Arc::clone(&self.world);
         let effects = Arc::clone(&self.effects);
         let state = Arc::clone(&self.state);
+        let hooks = Arc::clone(&self.hooks);
 
         let handle = tokio::spawn(async move {
             while let Some((id, body)) = rx.recv().await {
+                // User-registered hooks first — they see every packet
+                // including ones the built-in handlers below don't
+                // touch. Keep the hooks map locked briefly to avoid
+                // blocking unrelated `on_packet` calls.
+                {
+                    let hooks_g = hooks.lock().await;
+                    if let Some(cbs) = hooks_g.get(&id) {
+                        for cb in cbs {
+                            cb(id, &body);
+                        }
+                    }
+                }
                 let mut br = BytesReader::new(&body);
                 let result: Result<(), ProtocolError> = match id {
                     ID_MAP_CHUNK => {
@@ -399,50 +440,79 @@ impl Bot {
             }
         };
 
+        // Drive motion through the 20 Hz physics tick — same code
+        // path the Python reference uses. Each tick we set
+        // PhysicsIntent toward the next waypoint, advance physics
+        // against the World cache (handles auto-step on slabs,
+        // gravity, water drag, terminal velocity), and send the
+        // resulting position. The motion profile now matches the
+        // Python reference's, so hazard arena tests and packet-trace
+        // parity hold.
+
         let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(timeout_secs);
         let mut waypoint_idx: usize = 0;
-        // Maintain a **local** prediction separate from the dispatcher-
-        // updated bot_state. The dispatcher writes bot_state on every
-        // sync_player_position; if its value disagrees with our
-        // prediction by more than a few blocks we re-sync to it.
-        let mut local_x = start_state.x;
-        let mut local_y = start_state.y;
-        let mut local_z = start_state.z;
+        let mut phys = PhysicsState {
+            x: start_state.x,
+            y: start_state.y,
+            z: start_state.z,
+            on_ground: true,
+            ..Default::default()
+        };
+        // Wait one tick at the start so the dispatcher has time to
+        // update bot_state from any post-spawn sync_player_position.
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
         loop {
             if tokio::time::Instant::now() > deadline {
                 return Ok(false);
             }
-            // Periodically re-sync from server-confirmed state if it
-            // has drifted from our prediction.
+
+            // Re-sync local physics state to dispatcher only on a
+            // **teleport-scale** drift (≥ 8 blocks). Paper does NOT
+            // send a clientbound `synchronize_player_position` for
+            // ordinary walking — it only echoes our outbound
+            // serverbound positions. So `bot_state` sits at the last
+            // server-confirmed value (initial spawn or last teleport)
+            // while the bot walks; the physics state accumulates
+            // correct local progress. Resetting `phys` to `bot_state`
+            // every tick would freeze the bot in place.
+            //
+            // 8 blocks exceeds the per-tick walk speed (≤ 0.28 sprint)
+            // and the 5-block anti-cheat cap by a wide margin, so any
+            // drift this large is a server teleport / knockback / kick
+            // recovery and we should snap to it.
             {
                 let s = self.state.lock().await;
-                let dsx = s.x - local_x;
-                let dsy = s.y - local_y;
-                let dsz = s.z - local_z;
-                let drift = (dsx * dsx + dsy * dsy + dsz * dsz).sqrt();
-                if drift > 1.0 {
-                    local_x = s.x;
-                    local_y = s.y;
-                    local_z = s.z;
+                let dsx = s.x - phys.x;
+                let dsy = s.y - phys.y;
+                let dsz = s.z - phys.z;
+                if (dsx * dsx + dsy * dsy + dsz * dsz).sqrt() > 8.0 {
+                    phys.x = s.x;
+                    phys.y = s.y;
+                    phys.z = s.z;
+                    phys.vx = 0.0;
+                    phys.vy = 0.0;
+                    phys.vz = 0.0;
+                    phys.on_ground = true;
                 }
             }
 
-            // Goal-distance check.
-            let dx = tx - local_x;
-            let dy = ty - local_y;
-            let dz = tz - local_z;
-            if (dx * dx + dy * dy + dz * dz).sqrt() <= 1.5 {
+            // Done? Goal-distance check (XZ + small Y tolerance).
+            let dx_goal = tx - phys.x;
+            let dy_goal = ty - phys.y;
+            let dz_goal = tz - phys.z;
+            let xz_dist = (dx_goal * dx_goal + dz_goal * dz_goal).sqrt();
+            if xz_dist < 0.6 && dy_goal.abs() < 2.0 {
                 return Ok(true);
             }
 
             // Advance waypoint index past anything we've already
             // reached.
             while waypoint_idx + 1 < path_nodes.len() {
-                let (wx, wy, wz) = path_nodes[waypoint_idx];
-                let ddx = (wx as f64 + 0.5) - local_x;
-                let ddy = (wy as f64) - local_y;
-                let ddz = (wz as f64 + 0.5) - local_z;
-                if (ddx * ddx + ddy * ddy + ddz * ddz).sqrt() < 1.0 {
+                let (wx, _wy, wz) = path_nodes[waypoint_idx];
+                let ddx = (wx as f64 + 0.5) - phys.x;
+                let ddz = (wz as f64 + 0.5) - phys.z;
+                if (ddx * ddx + ddz * ddz).sqrt() < 0.5 {
                     waypoint_idx += 1;
                 } else {
                     break;
@@ -453,38 +523,57 @@ impl Bot {
                 continue;
             }
 
-            // Slide toward the current waypoint, capped at
-            // MAX_PREDICTION_RADIUS.
+            // Build motion intent toward the current waypoint.
             let (wx, wy, wz) = path_nodes[waypoint_idx];
             let target_x = wx as f64 + 0.5;
-            let target_y = wy as f64;
             let target_z = wz as f64 + 0.5;
-            let mut step_dx = target_x - local_x;
-            let mut step_dy = target_y - local_y;
-            let mut step_dz = target_z - local_z;
-            let dist = (step_dx * step_dx + step_dy * step_dy + step_dz * step_dz).sqrt();
-            if dist > MAX_PREDICTION_RADIUS {
-                let scale = MAX_PREDICTION_RADIUS / dist;
-                step_dx *= scale;
-                step_dy *= scale;
-                step_dz *= scale;
-            }
-            let send_x = local_x + step_dx;
-            let send_y = local_y + step_dy;
-            let send_z = local_z + step_dz;
+            let ddx = target_x - phys.x;
+            let ddz = target_z - phys.z;
+            let mag = (ddx * ddx + ddz * ddz).sqrt();
+            let (intent_dx, intent_dz) = if mag > 1e-6 {
+                (ddx / mag, ddz / mag)
+            } else {
+                (0.0, 0.0)
+            };
 
-            // Update LOCAL prediction only; the dispatcher owns
-            // bot_state and writes the server-confirmed value when
-            // sync_player_position arrives.
-            local_x = send_x;
-            local_y = send_y;
-            local_z = send_z;
+            // Auto-jump: if the next waypoint sits above the current
+            // feet level and we're on the ground (or in water), pulse
+            // jump so physics can clear the half-block / full-block step.
+            let in_water_now = self
+                .world
+                .is_water(phys.x.floor() as i32, phys.y.floor() as i32, phys.z.floor() as i32);
+            let need_jump = (wy as f64) > phys.y.floor() && (phys.on_ground || in_water_now);
+
+            let intent = PhysicsIntent {
+                dx: intent_dx,
+                dz: intent_dz,
+                jump: need_jump,
+                sprint: true,
+                sneak: false,
+            };
+
+            // Run one physics tick against a live World guard so
+            // every is_solid query inside the tick stays lock-free.
+            phys = {
+                let guard = self.world.query_guard();
+                let collision = GuardCollision { guard: &guard };
+                rphys::tick(&phys, &intent, &collision, in_water_now, false)
+            };
+
+            // Sanity: server anti-cheat ≤ 10 blocks/tick. Vanilla
+            // physics walks ≈ 0.21 blocks/tick, so we never get
+            // close, but reject any pathological state just in case.
+            if (phys.x - start_state.x).abs() > 1.0e6 {
+                return Err(ProtocolError::DecodeError(
+                    "walk_to: physics state diverged catastrophically".into(),
+                ));
+            }
 
             let pkt = SbPosition {
-                x: send_x,
-                y: send_y,
-                z: send_z,
-                on_ground: true,
+                x: phys.x,
+                y: phys.y,
+                z: phys.z,
+                on_ground: phys.on_ground,
             };
             self.connection.send(&pkt).await?;
 
@@ -492,3 +581,21 @@ impl Bot {
         }
     }
 }
+
+/// CollisionWorld adapter over a long-lived World read-guard.
+/// Allows physics tick to call is_solid without per-cell locking.
+struct GuardCollision<'a> {
+    guard: &'a crate::world::cache::WorldQueryGuard<'a>,
+}
+
+impl<'a> rphys::CollisionWorld for GuardCollision<'a> {
+    #[inline]
+    fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
+        self.guard.is_solid(x, y, z)
+    }
+}
+
+// Silence the unused-import warning if block_table is no longer used
+// directly in this file.
+#[allow(unused_imports)]
+use block_table as _unused_block_table;

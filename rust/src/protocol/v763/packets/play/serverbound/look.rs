@@ -39,6 +39,7 @@ impl ServerboundPacket for Look {
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         writer.write_all(&self.yaw.to_be_bytes())?;
         writer.write_all(&self.pitch.to_be_bytes())?;
+        writer.write_all(&[if self.on_ground { 1 } else { 0 }])?;
         Ok(())
     }
 }

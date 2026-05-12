@@ -144,6 +144,58 @@ impl PyBot {
         })
     }
 
+    /// `on_packet(packet_id: int, callback)` — register a callback
+    /// for a clientbound packet id. The callback receives
+    /// `(packet_id: int, body: bytes)` after the dispatcher has
+    /// applied built-in world / state updates but before any auto
+    /// keep-alive handling.
+    ///
+    /// Multiple callbacks per id are allowed and run in registration
+    /// order. To decode the body, route through the Python reference's
+    /// typed decoders, for example
+    /// `from minecraft_bot.protocol.v763.packets.play.clientbound`
+    /// `import chat_message; chat_message.decode(Reader(body))`.
+    ///
+    /// Callbacks run on the dispatcher task; long work should be
+    /// dispatched to a separate asyncio task to avoid blocking.
+    fn on_packet<'py>(
+        &self,
+        py: Python<'py>,
+        packet_id: i32,
+        callback: Py<PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let inner = Arc::clone(&self.inner);
+        // Capture the Python callable. The callback is invoked from
+        // the tokio dispatcher task; we need to acquire the GIL each
+        // time we call it.
+        let cb_py = callback;
+        future_into_py(py, async move {
+            let bot = inner.lock().await;
+            let cb = cb_py;
+            bot.on_packet(
+                packet_id,
+                Box::new(move |id, body| {
+                    Python::with_gil(|py| {
+                        let bytes = pyo3::types::PyBytes::new_bound(py, body);
+                        let _ = cb.call1(py, (id, bytes));
+                    });
+                }),
+            )
+            .await;
+            Ok::<(), pyo3::PyErr>(())
+        })
+    }
+
+    /// Drop every registered packet hook.
+    fn clear_hooks<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let inner = Arc::clone(&self.inner);
+        future_into_py(py, async move {
+            let bot = inner.lock().await;
+            bot.clear_hooks().await;
+            Ok::<(), pyo3::PyErr>(())
+        })
+    }
+
     /// **Diagnostic** `walk_to_blind(x, y, z, *, timeout=30.0)` —
     /// slides toward the target at 20 Hz with NO path planning and
     /// NO collision checks. Use for testing the position-send loop

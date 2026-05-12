@@ -18,8 +18,6 @@ pub struct LoginStart {
     /// Auto-generated field.
     pub username: String,
     /// Auto-generated field.
-    pub present: u8,
-    /// Auto-generated field.
     pub player_uuid: Option<Uuid>,
 }
 
@@ -33,7 +31,7 @@ impl LoginStart {
             1 => Some(uuid_c::read(reader)?),
             other => return Err(ProtocolError::DecodeError(format!("player_uuid.present: {}", other))),
         };
-        Ok(Self { username, present, player_uuid })
+        Ok(Self { username, player_uuid })
     }
 }
 

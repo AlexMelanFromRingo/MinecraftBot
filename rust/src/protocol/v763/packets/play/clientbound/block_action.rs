@@ -41,6 +41,8 @@ impl ClientboundPacket for BlockAction {
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         position::write(&self.location, writer)?;
+        writer.write_all(&[self.byte1])?;
+        writer.write_all(&[self.byte2])?;
         varint::write(self.block_type, writer)?;
         Ok(())
     }

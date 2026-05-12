@@ -43,6 +43,7 @@ impl ServerboundPacket for Position {
         writer.write_all(&self.x.to_be_bytes())?;
         writer.write_all(&self.y.to_be_bytes())?;
         writer.write_all(&self.z.to_be_bytes())?;
+        writer.write_all(&[if self.on_ground { 1 } else { 0 }])?;
         Ok(())
     }
 }

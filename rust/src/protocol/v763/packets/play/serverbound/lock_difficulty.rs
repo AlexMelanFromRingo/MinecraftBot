@@ -30,7 +30,7 @@ impl ServerboundPacket for LockDifficulty {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        Ok::<(), ProtocolError>(())?;
+        writer.write_all(&[if self.locked { 1 } else { 0 }])?;
         Ok(())
     }
 }

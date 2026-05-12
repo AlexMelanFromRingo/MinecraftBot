@@ -260,5 +260,43 @@ async with Bot.offline("172.26.160.1", 25565, "Listener") as bot:
     await asyncio.sleep(60)
 ```
 
-Accel does not yet expose typed packet hooks. To subscribe to raw
-packet bytes, drop down to the connection level (advanced usage).
+## Hooks (accel)
+
+`Bot.on_packet(packet_id, callback)` subscribes to any clientbound
+packet by numeric id. The callback receives `(packet_id, body)`
+where `body` is the raw payload bytes after the id varint. Decode
+the body through the Python reference's typed decoders when you
+need a structured view.
+
+```python
+import asyncio
+import minecraft_bot_accel as mb
+from minecraft_bot.codec import Reader
+from minecraft_bot.protocol.v763.packets.play.clientbound.system_chat import (
+    decode as decode_system_chat,
+)
+
+ID_SYSTEM_CHAT = 0x67  # play / clientbound
+
+async def main():
+    bot = mb.Bot.offline("172.26.160.1", 25565, "ChatListener")
+
+    def on_chat(packet_id, body):
+        pkt = decode_system_chat(Reader(body))
+        print(f"chat: {pkt}")
+
+    await bot.on_packet(ID_SYSTEM_CHAT, on_chat)
+    await bot.connect()
+    try:
+        await asyncio.sleep(60)
+    finally:
+        await bot.disconnect()
+
+asyncio.run(main())
+```
+
+Multiple callbacks per id are allowed and fire in registration order.
+Callbacks run on the dispatcher task, so launch any long-running
+work on a separate asyncio task (`asyncio.create_task(...)`) to
+avoid blocking the loop. `Bot.clear_hooks()` drops every
+registration.

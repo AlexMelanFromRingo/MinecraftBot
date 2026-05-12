@@ -26,8 +26,6 @@ pub struct EntityEffect {
     /// Auto-generated field.
     pub flags: i8,
     /// Auto-generated field.
-    pub present: u8,
-    /// Auto-generated field.
     pub factor_codec: Option<crate::codec::nbt::NbtTag>,
 }
 
@@ -47,7 +45,7 @@ impl EntityEffect {
             1 => nbt::read(reader)?,
             other => return Err(ProtocolError::DecodeError(format!("factor_codec.present: {}", other))),
         };
-        Ok(Self { entity_id, effect_id, amplifier, duration, flags, present, factor_codec })
+        Ok(Self { entity_id, effect_id, amplifier, duration, flags, factor_codec })
     }
 }
 

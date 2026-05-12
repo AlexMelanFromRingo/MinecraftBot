@@ -59,6 +59,7 @@ impl ServerboundPacket for BlockPlace {
         writer.write_all(&self.cursor_x.to_be_bytes())?;
         writer.write_all(&self.cursor_y.to_be_bytes())?;
         writer.write_all(&self.cursor_z.to_be_bytes())?;
+        writer.write_all(&[if self.inside_block { 1 } else { 0 }])?;
         varint::write(self.sequence, writer)?;
         Ok(())
     }

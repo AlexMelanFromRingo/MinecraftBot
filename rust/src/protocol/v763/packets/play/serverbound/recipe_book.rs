@@ -37,6 +37,8 @@ impl ServerboundPacket for RecipeBook {
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.book_id, writer)?;
+        writer.write_all(&[if self.book_open { 1 } else { 0 }])?;
+        writer.write_all(&[if self.filter_active { 1 } else { 0 }])?;
         Ok(())
     }
 }

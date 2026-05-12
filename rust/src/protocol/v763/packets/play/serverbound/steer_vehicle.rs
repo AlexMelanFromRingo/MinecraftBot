@@ -39,6 +39,7 @@ impl ServerboundPacket for SteerVehicle {
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         writer.write_all(&self.sideways.to_be_bytes())?;
         writer.write_all(&self.forward.to_be_bytes())?;
+        writer.write_all(&[self.flags])?;
         Ok(())
     }
 }

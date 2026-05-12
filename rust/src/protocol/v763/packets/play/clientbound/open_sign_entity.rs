@@ -35,6 +35,7 @@ impl ClientboundPacket for OpenSignEntity {
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         position::write(&self.location, writer)?;
+        writer.write_all(&[if self.is_front_text { 1 } else { 0 }])?;
         Ok(())
     }
 }

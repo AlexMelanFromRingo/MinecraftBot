@@ -17,8 +17,6 @@ pub struct ServerData {
     /// Auto-generated field.
     pub motd: String,
     /// Auto-generated field.
-    pub present: u8,
-    /// Auto-generated field.
     pub n: Option<i32>,
     /// Auto-generated field.
     pub enforces_secure_chat: bool,
@@ -35,7 +33,7 @@ impl ServerData {
             other => return Err(ProtocolError::DecodeError(format!("n.present: {}", other))),
         };
         let enforces_secure_chat = { let __b = reader.read_exact(1)?[0]; if __b > 1 { return Err(ProtocolError::DecodeError(format!("enforces_secure_chat: {}", __b))); } __b != 0 };
-        Ok(Self { motd, present, n, enforces_secure_chat })
+        Ok(Self { motd, n, enforces_secure_chat })
     }
 }
 
@@ -51,6 +49,7 @@ impl ClientboundPacket for ServerData {
                 varint::write(*v, writer)?;
             }
         }
+        writer.write_all(&[if self.enforces_secure_chat { 1 } else { 0 }])?;
         Ok(())
     }
 }

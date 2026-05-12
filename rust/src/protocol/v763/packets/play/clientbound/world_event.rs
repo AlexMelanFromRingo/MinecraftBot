@@ -45,6 +45,7 @@ impl ClientboundPacket for WorldEvent {
         writer.write_all(&self.effect_id.to_be_bytes())?;
         position::write(&self.location, writer)?;
         writer.write_all(&self.data.to_be_bytes())?;
+        writer.write_all(&[if self.global_event { 1 } else { 0 }])?;
         Ok(())
     }
 }

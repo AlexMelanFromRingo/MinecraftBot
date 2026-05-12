@@ -21,8 +21,6 @@ pub struct ChatMessage {
     /// Auto-generated field.
     pub salt: i64,
     /// Auto-generated field.
-    pub present: u8,
-    /// Auto-generated field.
     pub signature: Option<Vec<u8>>,
     /// Auto-generated field.
     pub message_count: i32,
@@ -47,7 +45,7 @@ impl ChatMessage {
         let __buf = reader.read_exact(3)?;
         let mut acknowledged = [0u8; 3];
         acknowledged.copy_from_slice(__buf);
-        Ok(Self { message, timestamp, salt, present, signature, message_count, acknowledged })
+        Ok(Self { message, timestamp, salt, signature, message_count, acknowledged })
     }
 }
 

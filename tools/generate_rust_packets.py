@@ -570,6 +570,12 @@ def _process_if_optional(state: EmitState, stmt: ast.If) -> Optional[str]:
         state.decode_lines.append("};")
         state.fields = [(n, t) for n, t in state.fields if n != field]
         _add_field(state, field, f"Option<{rust_ty}>")
+    # The `present_var` was a control-flow temp; remove it from the
+    # struct fields so the dataclass shape matches the Python source.
+    # The audit pass at the end of body processing will then drop any
+    # orphan `writer.write_all(&[self.{present_var}])` lines emitted
+    # by the inline-expr fallback.
+    state.fields = [(n, t) for n, t in state.fields if n != present_var]
     # Encode.
     state.encode_lines.append(f"match &self.{field} {{")
     state.encode_lines.append(f"    None => writer.write_all(&[0])?,")
@@ -839,6 +845,15 @@ def _process_body(state: EmitState, body: list[ast.stmt]) -> bool:
                     nm = stmt.targets[0].id
                     state.decode_lines.append(f"let {nm} = {rust_expr};")
                     _add_field(state, nm, rust_ty)
+                    # Also emit the matching encode line so primitive
+                    # tail-fields (notably the `og = reader.read(1)[0]`
+                    # bool used by movement packets) round-trip
+                    # correctly. The bool-conversion patcher later
+                    # rewrites this write to the `1u8/0u8` form once
+                    # it sees `field = local == 1` in the return.
+                    enc = _encode_from_read_expr(rust_expr, nm, rust_ty)
+                    if enc is not None:
+                        state.encode_lines.append(enc)
                     continue
             # Could be `items: list[T] = []` — that's an AnnAssign actually.
             return False
@@ -971,6 +986,19 @@ def _process_body(state: EmitState, body: list[ast.stmt]) -> bool:
                     line = re.sub(rf"self\.{old}\b", f"self.{new}", line)
                 patched.append(line)
             state.encode_lines = patched
+
+    # Audit: drop any encode line that references `self.<name>` where
+    # <name> is no longer a real field (a temp variable consumed by
+    # the optional / bool patchers). Without this the LoginStart-style
+    # `present` byte would get an orphan write.
+    field_names = {n for n, _ in state.fields}
+    cleaned: list[str] = []
+    for line in state.encode_lines:
+        m = re.search(r"self\.([A-Za-z_][A-Za-z0-9_]*)", line)
+        if m and m.group(1) not in field_names:
+            continue
+        cleaned.append(line)
+    state.encode_lines = cleaned
 
     return True
 

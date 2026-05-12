@@ -68,7 +68,6 @@ fn handshake_set_protocol() {
 fn login_start_with_uuid() {
     let pkt = LoginStart {
         username: "Bot".into(),
-        present: 1,
         player_uuid: Some([0x10; 16]),
     };
     let bytes = round_trip_serverbound(&pkt);
@@ -81,7 +80,6 @@ fn login_start_with_uuid() {
 fn login_start_without_uuid() {
     let pkt = LoginStart {
         username: "NoUuid".into(),
-        present: 0,
         player_uuid: None,
     };
     let bytes = round_trip_serverbound(&pkt);

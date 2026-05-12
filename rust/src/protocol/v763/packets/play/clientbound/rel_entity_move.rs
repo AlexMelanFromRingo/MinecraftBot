@@ -47,6 +47,7 @@ impl ClientboundPacket for RelEntityMove {
         writer.write_all(&self.dx.to_be_bytes())?;
         writer.write_all(&self.dy.to_be_bytes())?;
         writer.write_all(&self.dz.to_be_bytes())?;
+        writer.write_all(&[if self.on_ground { 1 } else { 0 }])?;
         Ok(())
     }
 }
