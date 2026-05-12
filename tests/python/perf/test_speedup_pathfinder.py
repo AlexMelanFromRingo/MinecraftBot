@@ -123,9 +123,13 @@ def test_pathfinder_speedup() -> None:
     print(
         f"\n  pathfinder: py={py_elapsed*1e3:.2f}ms ac={ac_elapsed*1e3:.2f}ms speedup={ratio:.2f}×"
     )
-    # **Finding**: accel pathfinder on a small 32-block grid is ~0.6×
-    # of Python because every is_solid/is_water query through the
-    # parking_lot::RwLock<HashMap> adds ~10 ns per lock-take, and A*
+    # SC-011 hard gate: ≥5×. Achieved via the WorldQueryGuard pattern
+    # (one read-lock for the whole search; per-cell queries are plain
+    # HashMap::get with no lock).
+    assert ratio >= 5.0, f"SC-011 unmet: accel pathfinder {ratio:.2f}× (need ≥5×)"
+    # Historical context (pre-snapshot fix): single-shot find_path was
+    # ~0.6× of Python because every is_solid/is_water query through
+    # parking_lot::RwLock<HashMap> added ~10 ns per lock-take, and A*
     # makes O(neighbours × expansions) such queries. The Python ref
     # has no lock; dict.get is essentially free. To hit SC-011 (≥5×)
     # we need either a lock-free chunk-cache snapshot or DashMap for

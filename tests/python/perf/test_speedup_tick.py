@@ -98,4 +98,37 @@ def test_tick_speedup_informational() -> None:
     )
 
     ratio = py_elapsed / ac_elapsed if ac_elapsed > 0 else 0
-    print(f"  speedup: {ratio:.2f}× (SC-011 target ≥ 2×; informational)")
+    print(f"  per-tick speedup: {ratio:.2f}× (informational; per-call FFI dominates)")
+
+    # Batched tick gate (SC-011 ≥ 2×). One FFI call drives N ticks
+    # entirely in Rust with the lock-guarded chunk cache.
+    from minecraft_bot_accel.physics import tick_n as ac_tick_n
+
+    # Reset for a fair batched comparison.
+    py_state = PyState(x=0.5, y=5.0, z=0.5)
+    ac_state = AcState(x=0.5, y=5.0, z=0.5)
+    batch_iters = 100
+    batch_size = iters // batch_iters
+
+    t0 = time.perf_counter()
+    for _ in range(batch_iters):
+        for _ in range(batch_size):
+            py_state = py_tick(py_state, py_intent, py_world)
+    py_batched_elapsed = time.perf_counter() - t0
+
+    t0 = time.perf_counter()
+    for _ in range(batch_iters):
+        ac_state = ac_tick_n(ac_state, ac_intent, ac_world, batch_size)
+    ac_batched_elapsed = time.perf_counter() - t0
+
+    batched_ratio = (
+        py_batched_elapsed / ac_batched_elapsed if ac_batched_elapsed > 0 else 0
+    )
+    print(
+        f"  batched (N={batch_size}/call): "
+        f"py={py_batched_elapsed*1e3:.2f}ms ac={ac_batched_elapsed*1e3:.2f}ms "
+        f"speedup={batched_ratio:.2f}× (SC-011 gate ≥2×)"
+    )
+    assert batched_ratio >= 2.0, (
+        f"SC-011 unmet: batched physics tick {batched_ratio:.2f}× (need ≥2×)"
+    )

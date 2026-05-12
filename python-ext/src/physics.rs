@@ -85,12 +85,59 @@ fn tick(
     PyPhysicsState { inner: new_state }
 }
 
+/// **Batched tick** — run `n_ticks` consecutive ticks in Rust without
+/// crossing the FFI boundary between them. Useful for client-side
+/// simulation / replay where the caller needs many ticks back-to-back.
+/// Returns the final state.
+#[pyfunction]
+#[pyo3(signature = (state, intent, world, n_ticks, *, in_water = false, in_lava = false))]
+fn tick_n(
+    py: Python<'_>,
+    state: &PyPhysicsState,
+    intent: &PyPhysicsIntent,
+    world: &PyWorld,
+    n_ticks: usize,
+    in_water: bool,
+    in_lava: bool,
+) -> PyPhysicsState {
+    let w = world.arc();
+    let initial = state.inner;
+    let intent = intent.inner;
+    let final_state = py.allow_threads(move || {
+        // Hold a single read-guard over the chunk cache for the whole
+        // tick batch — physics collides against is_solid repeatedly,
+        // so amortising the lock pays off identically to the
+        // pathfinder snapshot.
+        let guard = w.query_guard();
+        let collision = GuardCollision { guard: &guard };
+        let mut state = initial;
+        for _ in 0..n_ticks {
+            state = rphys::tick(&state, &intent, &collision, in_water, in_lava);
+        }
+        state
+    });
+    PyPhysicsState { inner: final_state }
+}
+
+/// CollisionWorld adapter over a long-lived World read-guard.
+struct GuardCollision<'a> {
+    guard: &'a minecraft_bot::world::cache::WorldQueryGuard<'a>,
+}
+
+impl<'a> minecraft_bot::physics::CollisionWorld for GuardCollision<'a> {
+    #[inline]
+    fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
+        self.guard.is_solid(x, y, z)
+    }
+}
+
 /// Register `physics` submodule.
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "physics")?;
     m.add_class::<PyPhysicsState>()?;
     m.add_class::<PyPhysicsIntent>()?;
     m.add_function(wrap_pyfunction!(tick, &m)?)?;
+    m.add_function(wrap_pyfunction!(tick_n, &m)?)?;
     // Constants.
     m.add("GRAVITY", rphys::GRAVITY)?;
     m.add("AIR_DRAG", rphys::AIR_DRAG)?;

@@ -39,7 +39,7 @@ for _sub in ("errors", "codec", "framer", "world", "pathfinding", "physics",
 # Sub-sub-modules under codec (varint, varlong, …) — same trick.
 _codec_native = getattr(_native, "codec", None)
 if _codec_native is not None:
-    for _subname in ("varint", "varlong"):
+    for _subname in ("varint", "varlong", "nbt"):
         _sub = getattr(_codec_native, _subname, None)
         if _sub is not None:
             _sys.modules[f"minecraft_bot_accel.codec.{_subname}"] = _sub

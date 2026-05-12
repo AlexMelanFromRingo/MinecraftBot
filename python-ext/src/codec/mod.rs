@@ -14,6 +14,7 @@ use pyo3::types::{PyBytes, PyType};
 
 use crate::error_map::IntoPyResult;
 
+mod nbt;
 mod varint;
 mod varlong;
 
@@ -177,6 +178,7 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     // Sub-submodules.
     varint::register(py, &m)?;
     varlong::register(py, &m)?;
+    nbt::register(py, &m)?;
 
     parent.add_submodule(&m)?;
     Ok(())

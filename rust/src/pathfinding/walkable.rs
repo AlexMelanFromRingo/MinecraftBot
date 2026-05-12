@@ -1,6 +1,7 @@
 //! Walkability predicates the A* pathfinder relies on.
 
 use crate::physics::CollisionWorld;
+use crate::world::cache::WorldQueryGuard;
 use crate::world::World;
 
 /// Minimal world-side interface the pathfinder needs.
@@ -22,6 +23,24 @@ impl NavWorld for World {
     }
     fn is_navigable_obstacle(&self, x: i32, y: i32, z: i32) -> bool {
         World::is_navigable_obstacle(self, x, y, z)
+    }
+}
+
+/// Lock-held guard implements NavWorld too. Callers that do many
+/// queries should prefer this over `&World` to skip per-call lock
+/// acquisition.
+impl<'a> NavWorld for WorldQueryGuard<'a> {
+    #[inline]
+    fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
+        WorldQueryGuard::is_solid(self, x, y, z)
+    }
+    #[inline]
+    fn is_water(&self, x: i32, y: i32, z: i32) -> bool {
+        WorldQueryGuard::is_water(self, x, y, z)
+    }
+    #[inline]
+    fn is_navigable_obstacle(&self, x: i32, y: i32, z: i32) -> bool {
+        WorldQueryGuard::is_navigable_obstacle(self, x, y, z)
     }
 }
 

@@ -27,6 +27,58 @@ struct WorldConfig {
     section_count: i32,
 }
 
+/// Lock-held view over a World's chunk map. While alive, no writer
+/// can update the cache; every block-query is a plain `HashMap::get`
+/// with no per-call lock acquisition. Holds for the duration of one
+/// pathfinder or physics walk to amortise the lock cost across
+/// thousands of block lookups.
+pub struct WorldQueryGuard<'a> {
+    chunks: parking_lot::RwLockReadGuard<'a, HashMap<(i32, i32), Chunk>>,
+}
+
+impl<'a> WorldQueryGuard<'a> {
+    /// Block-state ID at `(x, y, z)`, or `0` (air) if the chunk is
+    /// not loaded.
+    #[inline]
+    pub fn get_block_id(&self, x: i32, y: i32, z: i32) -> i32 {
+        let cx = x >> 4;
+        let cz = z >> 4;
+        match self.chunks.get(&(cx, cz)) {
+            Some(c) => c.get_block(x & 0xF, y, z & 0xF),
+            None => 0,
+        }
+    }
+
+    /// Predicate: solid block (no lock).
+    #[inline]
+    pub fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
+        block_table::is_solid(self.get_block_id(x, y, z))
+    }
+
+    /// Predicate: water cell (no lock).
+    #[inline]
+    pub fn is_water(&self, x: i32, y: i32, z: i32) -> bool {
+        block_table::is_water(self.get_block_id(x, y, z))
+    }
+
+    /// Predicate: navigable obstacle (no lock).
+    #[inline]
+    pub fn is_navigable_obstacle(&self, x: i32, y: i32, z: i32) -> bool {
+        block_table::is_navigable_obstacle(self.get_block_id(x, y, z))
+    }
+}
+
+impl World {
+    /// Take a long-lived read guard over the chunk cache for fast
+    /// repeated queries. Writers (packet handlers updating the World)
+    /// block while the guard is alive; pathfinder / physics search
+    /// holds the guard for the search duration (~milliseconds) so
+    /// the contention window stays small.
+    pub fn query_guard(&self) -> WorldQueryGuard<'_> {
+        WorldQueryGuard { chunks: self.chunks.read() }
+    }
+}
+
 impl World {
     /// Construct an empty overworld-defaulted World.
     pub fn new() -> Self {
