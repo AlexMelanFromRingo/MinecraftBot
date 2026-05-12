@@ -168,26 +168,26 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 ### ItemSlot + NBT helpers
 
-- [ ] T053 [US3] Implement `python/minecraft_bot/inventory/item.py` — `ItemSlot` frozen dataclass (item_id, count, name, nbt). Lazy parsed properties: `damage` (from NBT `Damage`), `enchantments` (list of `Enchantment(id, level)` from NBT `Enchantments`), `display_name` (from NBT `display.Name` JSON), `custom_model_data`, `is_unbreakable`. `Enchantment` is its own small frozen dataclass.
-- [ ] T054 [P] [US3] Unit test ItemSlot NBT helpers at `tests/python/unit/test_item_slot.py` — diamond pickaxe with `Damage:5` → `damage == 5`; sword with Enchantments list → `enchantments == [Enchantment("minecraft:sharpness", 5)]`; item with no display.Name → `display_name is None`.
+- [X] T053 [US3] Implement `python/minecraft_bot/inventory/item.py` — `ItemSlot` frozen dataclass (item_id, count, name, nbt). Lazy parsed properties: `damage` (from NBT `Damage`), `enchantments` (list of `Enchantment(id, level)` from NBT `Enchantments`), `display_name` (from NBT `display.Name` JSON), `custom_model_data`, `is_unbreakable`. `Enchantment` is its own small frozen dataclass.
+- [X] T054 [P] [US3] Unit test ItemSlot NBT helpers at `tests/python/unit/test_item_slot.py` — diamond pickaxe with `Damage:5` → `damage == 5`; sword with Enchantments list → `enchantments == [Enchantment("minecraft:sharpness", 5)]`; item with no display.Name → `display_name is None`.
 
 ### Inventory tracker
 
-- [ ] T055 [US3] Implement `python/minecraft_bot/inventory/tracker.py` — `InventoryTracker` class with `player_slots: list[Optional[ItemSlot]]` (46 slots), `container_window_id`, `container_type`, `container_slots`, `cursor`, `state_id`. Subscribes to `set_slot` (single slot update), `window_items` (bulk), `open_screen` (set container_window_id), `close_window` (clear container).
-- [ ] T056 [US3] Public InventoryTracker methods per FR-060…FR-070: `items()`, `hotbar_items()`, `container_items()`, `find_item(name)`, `count_item(name)`. Then async methods via window helper (T026): `click_slot`, `move_item`, `drop_item`, `equip_armor`, `unequip_armor`, `swap_to_offhand`. Each uses `Connection.send` for the underlying packet.
-- [ ] T057 [US3] Implement `Bot.select_slot(0..8)` (action slot) — sends `held_item_slot` serverbound; updates Bot's `held_slot` property on server ack (the serverbound `held_item_slot` doesn't return ack — we trust our own value optimistically and watch for server `set_slot` if it diverges).
+- [X] T055 [US3] Implement `python/minecraft_bot/inventory/tracker.py` — `InventoryTracker` class with `player_slots: list[Optional[ItemSlot]]` (46 slots), `container_window_id`, `container_type`, `container_slots`, `cursor`, `state_id`. Subscribes to `set_slot` (single slot update), `window_items` (bulk), `open_screen` (set container_window_id), `close_window` (clear container).
+- [X] T056 [US3] Public InventoryTracker methods per FR-060…FR-070: `items()`, `hotbar_items()`, `container_items()`, `find_item(name)`, `count_item(name)`. Then async methods via window helper (T026): `click_slot`, `move_item`, `drop_item`, `equip_armor`, `unequip_armor`, `swap_to_offhand`. Each uses `Connection.send` for the underlying packet.
+- [X] T057 [US3] Implement `Bot.select_slot(0..8)` (action slot) — sends `held_item_slot` serverbound; updates Bot's `held_slot` property on server ack (the serverbound `held_item_slot` doesn't return ack — we trust our own value optimistically and watch for server `set_slot` if it diverges).
 
 ### Containers
 
-- [ ] T058 [US3] Implement `Bot.open_chest(x, y, z)`, `open_furnace(x, y, z)`, `open_crafting_table(x, y, z)` (container slot) — each sends `block_place` (right-click), awaits clientbound `open_screen` + first `window_items`, returns a `Container` handle (thin wrapper exposing `items()`).
-- [ ] T059 [US3] Implement `Bot.close_container()` — sends `close_window` serverbound; clears `InventoryTracker.container_*`.
-- [ ] T060 [US3] Implement `Bot.craft(recipe, x, y, z)` via RMB+scan pattern (R-06) — opens crafting table, places ingredients into slots 1-9, polls `window_items` for result in slot 0, shift-clicks to collect.
-- [ ] T061 [US3] Implement `Bot.smelt(input_item, fuel_item, x, y, z)` via similar pattern — places fuel slot 1, input slot 0, polls slot 2 for output.
+- [X] T058 [US3] Implement `Bot.open_chest(x, y, z)`, `open_furnace(x, y, z)`, `open_crafting_table(x, y, z)` (container slot) — each sends `block_place` (right-click), awaits clientbound `open_screen` + first `window_items`, returns a `Container` handle (thin wrapper exposing `items()`).
+- [X] T059 [US3] Implement `Bot.close_container()` — sends `close_window` serverbound; clears `InventoryTracker.container_*`.
+- [X] T060 [US3] Implement `Bot.craft(recipe, x, y, z)` via RMB+scan pattern (R-06) — opens crafting table, places ingredients into slots 1-9, polls `window_items` for result in slot 0, shift-clicks to collect.
+- [X] T061 [US3] Implement `Bot.smelt(input_item, fuel_item, x, y, z)` via similar pattern — places fuel slot 1, input slot 0, polls slot 2 for output.
 
 ### Tests
 
-- [ ] T062 [P] [US3] Unit test InventoryTracker state evolution at `tests/python/unit/test_inventory_tracker.py` — apply `window_items` → items() returns those; `set_slot` updates single; `open_screen` populates container; `close_window` clears.
-- [ ] T063 [US3] Integration test `tests/python/integration/test_us3_inventory.py` (live, op-mode): bot uses `/give` to get a stack of items, asserts `find_item` works, opens a placed chest, asserts container_items reads its content; uses move_item to transfer one stack and asserts result on server side via another window_items.
+- [X] T062 [P] [US3] Unit test InventoryTracker state evolution at `tests/python/unit/test_inventory_tracker.py` — apply `window_items` → items() returns those; `set_slot` updates single; `open_screen` populates container; `close_window` clears.
+- [X] T063 [US3] Integration test `tests/python/integration/test_us3_inventory.py` (live, op-mode): bot uses `/give` to get a stack of items, asserts `find_item` works, opens a placed chest, asserts container_items reads its content; uses move_item to transfer one stack and asserts result on server side via another window_items.
 
 **Checkpoint**: US3 complete — full inventory + container mastery.
 

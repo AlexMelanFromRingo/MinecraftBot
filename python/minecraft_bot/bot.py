@@ -41,8 +41,11 @@ from minecraft_bot.physics import (
 )
 from minecraft_bot.entities.base import Entity, Player
 from minecraft_bot.entities.tracker import EntityTracker
+from minecraft_bot.inventory.item import ItemSlot
+from minecraft_bot.inventory.tracker import InventoryTracker
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
     block_change as cb_block_change,
+    close_window as cb_close_window,
     entity_destroy as cb_entity_destroy,
     entity_look as cb_entity_look,
     entity_metadata as cb_entity_metadata,
@@ -56,20 +59,25 @@ from minecraft_bot.protocol.v763.packets.play.clientbound import (
     map_chunk as cb_map_chunk,
     multi_block_change as cb_mbc,
     named_entity_spawn as cb_named_spawn,
+    open_window as cb_open_window,
     player_chat as cb_player_chat,
     position as cb_position,
     profileless_chat as cb_profileless_chat,
     rel_entity_move as cb_rel_move,
     respawn as cb_respawn,
+    set_slot as cb_set_slot,
     spawn_entity as cb_spawn_entity,
     system_chat as cb_system_chat,
     unload_chunk as cb_unload,
     update_health as cb_update_health,
+    window_items as cb_window_items,
 )
 from minecraft_bot.protocol.v763.packets.play.serverbound import (
     arm_animation as sb_arm,
     chat_command as sb_command,
     chat_message as sb_chat,
+    close_window as sb_close_window,
+    held_item_slot as sb_held,
     position as sb_position,
     position_look as sb_position_look,
     use_entity as sb_use_entity,
@@ -104,6 +112,7 @@ class Bot:
         self._conn = connection
         self.world = World()
         self.entities = EntityTracker()
+        self.inventory = InventoryTracker()
 
         self._physics = PhysicsState(x=0.0, y=64.0, z=0.5)
         self._yaw = 0.0
@@ -264,6 +273,11 @@ class Bot:
         sub(c.on(cb_entity_teleport.EntityTeleport, self.entities.on_entity_teleport))
         sub(c.on(cb_entity_velocity.EntityVelocity, self.entities.on_entity_velocity))
         sub(c.on(cb_entity_destroy.EntityDestroy, self.entities.on_entity_destroy))
+        # Inventory tracker.
+        sub(c.on(cb_window_items.WindowItems, self.inventory.on_window_items))
+        sub(c.on(cb_set_slot.SetSlot, self.inventory.on_set_slot))
+        sub(c.on(cb_open_window.OpenWindow, self._on_open_window))
+        sub(c.on(cb_close_window.CloseWindow, self._on_close_window))
         sub(c.on(Reconnected, self._on_reconnected))
 
     # --- packet handlers ----------------------------------------------
@@ -369,6 +383,20 @@ class Bot:
 
     def _on_reconnected(self, evt: Reconnected) -> None:
         self._emit(evt)
+
+    def _on_open_window(self, p) -> None:
+        self.inventory.on_open_window(p)
+        from minecraft_bot.events import ContainerOpenEvent
+        self._emit(ContainerOpenEvent(
+            window_id=p.window_id,
+            container_type=p.inventory_type,
+            window_title=p.window_title,
+        ))
+
+    def _on_close_window(self, p) -> None:
+        self.inventory.on_close_window(p)
+        from minecraft_bot.events import ContainerCloseEvent
+        self._emit(ContainerCloseEvent(window_id=p.window_id))
 
     # --- physics tick loop --------------------------------------------
 
@@ -554,6 +582,104 @@ class Bot:
 
     def distance_to(self, eid: int) -> Optional[float]:
         return self.entities.distance_to(eid, self.position)
+
+    # --- inventory (FR-060..FR-073) ------------------------------------
+
+    @property
+    def held_item(self) -> Optional[ItemSlot]:
+        """Currently held hotbar slot item (or None if empty)."""
+        from minecraft_bot.inventory.tracker import SLOT_HOTBAR_FIRST
+        idx = SLOT_HOTBAR_FIRST + self._held_slot
+        return self.inventory.player_slots[idx]
+
+    def find_item(self, name: str) -> Optional[int]:
+        """Slot index of the first stack matching ``name``, or None."""
+        return self.inventory.find_item(name)
+
+    def count_item(self, name: str) -> int:
+        """Total count of items named ``name`` across the inventory."""
+        return self.inventory.count_item(name)
+
+    async def select_slot(self, hotbar_index: int) -> None:
+        """Switch the active hotbar slot (action slot). 0..8."""
+        if not 0 <= hotbar_index <= 8:
+            raise ValueError(f"hotbar_index must be 0..8, got {hotbar_index}")
+        async with guard(self.action_slot):
+            await self._conn.send(sb_held.HeldItemSlot(slot=hotbar_index))
+        # Optimistic update; if server disagrees it'll send set_slot to fix.
+        self._held_slot = hotbar_index
+
+    async def drop_item(self, *, drop_stack: bool = False) -> None:
+        """Drop the currently-held item: one (Q key) or full stack
+        (Ctrl+Q). Uses the player_action serverbound packet."""
+        from minecraft_bot.protocol.v763.packets.play.serverbound import (
+            block_dig as sb_block_dig,
+        )
+        async with guard(self.action_slot):
+            # block_dig status codes 3=drop stack, 4=drop one
+            status = 3 if drop_stack else 4
+            await self._conn.send(sb_block_dig.BlockDig(
+                status=status,
+                location=(0, 0, 0),
+                face=0,
+                sequence=0,
+            ))
+
+    async def open_block_container(
+        self, x: int, y: int, z: int, *,
+        timeout: float = 5.0, wait_for_slot: bool = False,
+    ) -> int:
+        """Right-click the block at (x, y, z) to open its container UI
+        (chest / furnace / crafting table / barrel / shulker / etc.)
+        and wait for the server to acknowledge with ``open_window`` +
+        the first ``window_items`` packet.
+
+        Returns the ``window_id`` of the opened container.
+
+        Raises :class:`BotBusy` if the container slot is taken,
+        :class:`asyncio.TimeoutError` if the server doesn't open a
+        container within ``timeout``.
+        """
+        from minecraft_bot.protocol.v763.packets.play.serverbound import (
+            block_place as sb_block_place,
+        )
+        async with guard(self.container_slot, wait_for_slot=wait_for_slot):
+            await self._conn.send(sb_block_place.BlockPlace(
+                hand=0,
+                location=(x, y, z),
+                direction=1,        # top face (arbitrary)
+                cursor_x=0.5, cursor_y=0.5, cursor_z=0.5,
+                inside_block=False,
+                sequence=0,
+            ))
+            opened = await self._conn.wait_for(cb_open_window.OpenWindow, timeout=timeout)
+            # Wait for the first WindowItems for this window so
+            # container_slots is populated before the caller queries.
+            await self._conn.wait_for(
+                cb_window_items.WindowItems,
+                predicate=lambda p: p.window_id == opened.window_id,
+                timeout=timeout,
+            )
+            return opened.window_id
+
+    async def open_chest(self, x: int, y: int, z: int, **kw) -> int:
+        return await self.open_block_container(x, y, z, **kw)
+
+    async def open_furnace(self, x: int, y: int, z: int, **kw) -> int:
+        return await self.open_block_container(x, y, z, **kw)
+
+    async def open_crafting_table(self, x: int, y: int, z: int, **kw) -> int:
+        return await self.open_block_container(x, y, z, **kw)
+
+    async def close_container(self) -> None:
+        """Close the currently-open container (container slot)."""
+        wid = self.inventory.container_window_id
+        if wid is None:
+            return
+        async with guard(self.container_slot):
+            await self._conn.send(sb_close_window.CloseWindow(window_id=wid))
+        # Mirror local state immediately; the server doesn't echo a close.
+        self.inventory.on_close_window(cb_close_window.CloseWindow(window_id=wid))
 
     # --- walk_to (FR-031..FR-035) -------------------------------------
 
