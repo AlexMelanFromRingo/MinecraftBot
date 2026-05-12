@@ -308,3 +308,45 @@ diff the WireLogs — should be identical modulo timestamps.
   empirically when first bench data lands.
 - aarch64 cross-build container choice (manylinux2014_aarch64 vs
   manylinux_2_28_aarch64) — pick at first wheel build.
+
+## Appendix A — Measured speedups (T082 + T085)
+
+Measurements taken on Linux x86_64 (WSL2), Python 3.12.3, Rust 1.94.0,
+`maturin develop --release` build.
+
+### Per-op codec ops (cross-FFI cost dominates)
+
+| Operation              | Python   | Accel    | Ratio    | Notes |
+|------------------------|----------|----------|----------|-------|
+| VarInt.write(300)      |  671 ns  | 2442 ns  |  0.27×   | PyO3 boundary dominates; needs batched API for SC-008 ≥5× |
+| VarInt.read("ac 02")   |  747 ns  | 2095 ns  |  0.36×   | Same — per-call FFI cost |
+
+### Heavy ops (Rust win)
+
+| Operation                                | Python   | Accel    | Ratio    | Notes |
+|------------------------------------------|----------|----------|----------|-------|
+| chunk_decode (48 KiB captured payload)   |  345 µs  |  121 µs  |  **2.84×** | SC-010 ≥10× partial — wins ≥ soft 2× gate |
+| A* on 32×32 flat-floor grid              |   ~3 ms  |   ~5 ms  |  ~0.6×   | RwLock per is_solid query dominates; DashMap or chunk-snapshot would reach SC-011 |
+| physics.tick (1 µs/call territory)       | ~1.5 µs  | ~2.5 µs  |  ~0.6×   | Per-call FFI boundary; batched tick_n needed for SC-011 ≥2× |
+
+### Live-arena CPU footprint (SC-012 / SC-013 — informational)
+
+For a 60-second arena session on Paper 1.20.1 with the bot loading
+~50 chunks and idling at spawn:
+
+- Total CPU time, Python reference: not measured (Python uses pure-
+  Python decode in hot path — the dominant cost is in `chunk_decode`
+  + `find_blocks_nearby`).
+- Total CPU time, accel: not measured.
+
+A direct measurement requires the bot's walk-and-explore arena
+script. The currently-shipped accel walk_to (path-slides directly,
+no physics) doesn't match the Python ref's motion profile, so a
+true apples-to-apples 60-second hazard-course CPU comparison
+(SC-012/SC-013) is **deferred** along with the physics-driven
+walk_to revision (see T071/T084 docstrings).
+
+The chunk_decode 2.84× wall-clock speedup is the strongest
+heavy-op signal we have. CPU drop during chunk-streaming bursts
+should track that ratio approximately.
+

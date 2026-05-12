@@ -14,11 +14,8 @@ the build.
 
 from __future__ import annotations
 
-import statistics
 import time
 from typing import Callable
-
-import pytest
 
 ITER = 50_000
 
@@ -32,8 +29,10 @@ def _bench(name: str, fn: Callable[[], None], iterations: int = ITER) -> float:
     for _ in range(iterations):
         fn()
     elapsed = time.perf_counter() - t0
-    print(f"\n  [{name}] {iterations} iters in {elapsed*1e3:.2f} ms = "
-          f"{elapsed*1e9/iterations:.1f} ns/op")
+    print(
+        f"\n  [{name}] {iterations} iters in {elapsed*1e3:.2f} ms = "
+        f"{elapsed*1e9/iterations:.1f} ns/op"
+    )
     return elapsed
 
 
@@ -89,13 +88,17 @@ def test_chunk_decode_speedup() -> None:
     import json
     from pathlib import Path
     from minecraft_bot.codec import Reader as PyReader
-    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import decode as pkt_decode
+    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
+        decode as pkt_decode,
+    )
     from minecraft_bot.world.decode_chunk import decode as py_chunk
     from minecraft_bot_accel.world import decode_chunk_summary as ac_chunk
 
     REPO = Path(__file__).resolve().parents[3]
     hexes = json.loads(
-        (REPO / "protocol-data/v763/golden_bytes/packets/clientbound/map_chunk.json").read_text()
+        (
+            REPO / "protocol-data/v763/golden_bytes/packets/clientbound/map_chunk.json"
+        ).read_text()
     )
     raw = bytes.fromhex(hexes[0])
     pkt = pkt_decode(PyReader(raw))
@@ -116,6 +119,4 @@ def test_chunk_decode_speedup() -> None:
     print(f"  speedup: accel is {ratio:.2f}× faster")
     # Real chunk decode is heavy enough that even a basic Rust port
     # should beat Python by a wide margin. Soft check: ≥ 2×.
-    assert ratio > 2.0, (
-        f"expected accel chunk_decode ≥ 2× faster, got {ratio:.2f}×"
-    )
+    assert ratio > 2.0, f"expected accel chunk_decode ≥ 2× faster, got {ratio:.2f}×"

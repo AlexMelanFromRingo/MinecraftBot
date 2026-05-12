@@ -14,13 +14,12 @@ Skipped if ``pytest-benchmark`` is not installed.
 
 from __future__ import annotations
 
-import struct
 
 import pytest
 
-
 pytestmark = pytest.mark.skipif(
-    not pytest.importorskip("pytest_benchmark", reason="needs pytest-benchmark") is not None,
+    not pytest.importorskip("pytest_benchmark", reason="needs pytest-benchmark")
+    is not None,
     reason="needs pytest-benchmark",
 )
 
@@ -30,17 +29,24 @@ def _decode_one_packet(reader_cls, varint_mod, registry, raw):
     r = reader_cls(raw)
     pid = varint_mod.read(r)
     decoder = registry.decoder(_PLAY, _CB, pid)
-    payload = raw[r.position():]
+    payload = raw[r.position() :]
     return decoder(reader_cls(payload))
 
 
 # Module-level imports kept lazy so the top-level pytestmark can decide.
-from minecraft_bot.codec import Reader as _Reader, Writer as _Writer, varint as _varint  # noqa: E402
+from minecraft_bot.codec import (
+    Reader as _Reader,
+    Writer as _Writer,
+    varint as _varint,
+)  # noqa: E402
 from minecraft_bot.protocol.v763.packets.play.clientbound import (  # noqa: E402
     entity_head_rotation as _ehr,
 )
 from minecraft_bot.protocol.v763.registry import CodecRegistry  # noqa: E402
-from minecraft_bot.protocol.v763.states import ConnectionState as _PLAY_S, Direction as _DIR  # noqa: E402
+from minecraft_bot.protocol.v763.states import (
+    ConnectionState as _PLAY_S,
+    Direction as _DIR,
+)  # noqa: E402
 
 _PLAY = _PLAY_S.PLAY
 _CB = _DIR.CLIENTBOUND
@@ -69,7 +75,9 @@ def test_decode_latency_under_budget(benchmark) -> None:
     # pytest-benchmark stats live on benchmark.stats; assert median.
     median_us = benchmark.stats.stats.median * 1_000_000
     p99_us = benchmark.stats.stats.max * 1_000_000  # max is conservative-p99
-    print(f"\n>> decode entity_head_rotation: median={median_us:.1f}us, max={p99_us:.1f}us")
-    assert benchmark.stats.stats.median < 0.005, (
-        f"median {benchmark.stats.stats.median*1000:.2f}ms exceeds 5ms budget"
+    print(
+        f"\n>> decode entity_head_rotation: median={median_us:.1f}us, max={p99_us:.1f}us"
     )
+    assert (
+        benchmark.stats.stats.median < 0.005
+    ), f"median {benchmark.stats.stats.median*1000:.2f}ms exceeds 5ms budget"

@@ -62,9 +62,7 @@ async def test_live_world_stone_lookup(live_server) -> None:
             )
             if stones:
                 any_stone_found = True
-                print(
-                    f"\n[live] near {origin}: stones[:3] = {stones[:3]}"
-                )
+                print(f"\n[live] near {origin}: stones[:3] = {stones[:3]}")
                 break
         assert any_stone_found, "no stone found in any explored region"
     finally:
@@ -103,10 +101,12 @@ async def test_live_block_predicates_match_python(live_server) -> None:
                 f"is_solid divergence at state_id={sid}: "
                 f"accel={mb.world.block_is_solid(sid)} python={py_tbl.is_solid(sid)}"
             )
-            assert mb.world.block_name(sid) == py_tbl.get_name(sid), (
-                f"name divergence at state_id={sid}"
-            )
-        print(f"\n[live] verified {len(sampled_states)} unique state IDs "
-              f"with consistent classification across backends")
+            assert mb.world.block_name(sid) == py_tbl.get_name(
+                sid
+            ), f"name divergence at state_id={sid}"
+        print(
+            f"\n[live] verified {len(sampled_states)} unique state IDs "
+            f"with consistent classification across backends"
+        )
     finally:
         await bot.disconnect()

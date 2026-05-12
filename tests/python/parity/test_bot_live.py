@@ -57,7 +57,9 @@ async def test_accel_bot_position_tracking(live_server) -> None:
             await asyncio.sleep(0.25)
         assert pos is not None, "position should arrive within 10s"
         x, y, z, yaw, pitch = pos
-        print(f"\n[live] position: ({x:.2f}, {y:.2f}, {z:.2f}) yaw={yaw:.2f} pitch={pitch:.2f}")
+        print(
+            f"\n[live] position: ({x:.2f}, {y:.2f}, {z:.2f}) yaw={yaw:.2f} pitch={pitch:.2f}"
+        )
 
         # Let chunks finish streaming.
         await asyncio.sleep(1.5)

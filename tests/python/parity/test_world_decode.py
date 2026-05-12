@@ -30,7 +30,9 @@ def captured_payloads() -> list[bytes]:
 def _decode_python(raw: bytes) -> tuple[int, int, int, int]:
     """Return (sections, block_entities, cx, cz) plus state at (0,0)."""
     from minecraft_bot.codec import Reader
-    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import decode as pkt_decode
+    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
+        decode as pkt_decode,
+    )
     from minecraft_bot.world.decode_chunk import decode as chunk_decode
 
     pkt = pkt_decode(Reader(raw))
@@ -44,8 +46,12 @@ def _decode_python(raw: bytes) -> tuple[int, int, int, int]:
 
 
 def _decode_accel(raw: bytes) -> tuple[int, int, int, int]:
-    from minecraft_bot.codec import Reader  # parsing the OUTER packet header still uses Python; accel exposes the inner decoder
-    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import decode as pkt_decode
+    from minecraft_bot.codec import (
+        Reader,
+    )  # parsing the OUTER packet header still uses Python; accel exposes the inner decoder
+    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
+        decode as pkt_decode,
+    )
     from minecraft_bot_accel.world import decode_chunk_summary
 
     pkt = pkt_decode(Reader(raw))
@@ -61,9 +67,9 @@ def test_decode_chunk_parity_all_fixtures(captured_payloads: list[bytes]) -> Non
     for i, raw in enumerate(captured_payloads):
         py_result = _decode_python(raw)
         ac_result = _decode_accel(raw)
-        assert py_result == ac_result, (
-            f"fixture {i}: python={py_result} accel={ac_result}"
-        )
+        assert (
+            py_result == ac_result
+        ), f"fixture {i}: python={py_result} accel={ac_result}"
 
 
 def test_world_apply_map_chunk_loads_chunk_with_correct_count(
@@ -71,7 +77,9 @@ def test_world_apply_map_chunk_loads_chunk_with_correct_count(
 ) -> None:
     """Loading payloads via accel `World.apply_map_chunk` populates the cache."""
     from minecraft_bot.codec import Reader
-    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import decode as pkt_decode
+    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
+        decode as pkt_decode,
+    )
     from minecraft_bot_accel.world import World
 
     w = World()
@@ -91,12 +99,15 @@ def test_block_classification_parity() -> None:
 
     # state_id 0 = air, 1 = stone, 79 = (some natural block).
     for sid in [0, 1, 2, 8, 79, 100, 1000, 22450]:
-        assert py_tbl.is_solid(sid) == block_is_solid(sid), \
-            f"is_solid divergence at state_id={sid}"
-        assert py_tbl.is_water(sid) == block_is_water(sid), \
-            f"is_water divergence at state_id={sid}"
-        assert py_tbl.get_name(sid) == block_name(sid), \
-            f"get_name divergence at state_id={sid}"
+        assert py_tbl.is_solid(sid) == block_is_solid(
+            sid
+        ), f"is_solid divergence at state_id={sid}"
+        assert py_tbl.is_water(sid) == block_is_water(
+            sid
+        ), f"is_water divergence at state_id={sid}"
+        assert py_tbl.get_name(sid) == block_name(
+            sid
+        ), f"get_name divergence at state_id={sid}"
 
 
 def test_find_blocks_nearby_parity_on_loaded_world(
@@ -105,7 +116,9 @@ def test_find_blocks_nearby_parity_on_loaded_world(
     """find_blocks_nearby on a populated world returns the same matches
     in Python and accel (after loading the same chunks into both)."""
     from minecraft_bot.codec import Reader
-    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import decode as pkt_decode
+    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
+        decode as pkt_decode,
+    )
     from minecraft_bot.world.cache import World as PyWorld
     from minecraft_bot_accel.world import World as AccelWorld
 
@@ -122,6 +135,7 @@ def test_find_blocks_nearby_parity_on_loaded_world(
                 self.payload = p.payload
                 self.chunk_x = p.chunk_x
                 self.chunk_z = p.chunk_z
+
         pyw.apply_map_chunk(_PktAdapter(pkt))
         acw.apply_map_chunk(pkt.payload, pkt.chunk_x, pkt.chunk_z)
 
@@ -132,6 +146,6 @@ def test_find_blocks_nearby_parity_on_loaded_world(
     # Look for "minecraft:stone" — common in deep underground.
     py_matches = pyw.find_blocks_nearby("minecraft:stone", origin, radius=16, limit=8)
     ac_matches = acw.find_blocks_nearby("minecraft:stone", origin, radius=16, limit=8)
-    assert py_matches == ac_matches, (
-        f"find_blocks_nearby divergence:\n  python={py_matches}\n  accel={ac_matches}"
-    )
+    assert (
+        py_matches == ac_matches
+    ), f"find_blocks_nearby divergence:\n  python={py_matches}\n  accel={ac_matches}"

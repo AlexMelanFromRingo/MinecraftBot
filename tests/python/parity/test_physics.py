@@ -10,16 +10,16 @@ from __future__ import annotations
 
 import math
 
-import pytest
-
 TOL = 1e-9
 
 
 def _build_floor_python_world():
     """Build a `CollisionWorld`-compatible Python object with stone at y=0."""
+
     class _FloorWorld:
         def is_solid(self, x: int, y: int, z: int) -> bool:
             return y == 0
+
     return _FloorWorld()
 
 
@@ -28,12 +28,16 @@ def _build_floor_accel_world():
     import json
     from pathlib import Path
     from minecraft_bot.codec import Reader
-    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import decode as pkt_decode
+    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
+        decode as pkt_decode,
+    )
     from minecraft_bot_accel.world import World
 
     REPO = Path(__file__).resolve().parents[3]
     raw_hex = json.loads(
-        (REPO / "protocol-data/v763/golden_bytes/packets/clientbound/map_chunk.json").read_text()
+        (
+            REPO / "protocol-data/v763/golden_bytes/packets/clientbound/map_chunk.json"
+        ).read_text()
     )[0]
     raw = bytes.fromhex(raw_hex)
     pkt = pkt_decode(Reader(raw))
@@ -57,8 +61,16 @@ def _build_floor_accel_world():
 
 def test_gravity_parity_empty_world() -> None:
     """Gravity behaves identically with no floor."""
-    from minecraft_bot.physics import PhysicsIntent as PyIntent, PhysicsState as PyState, tick as py_tick
-    from minecraft_bot_accel.physics import PhysicsIntent as AcIntent, PhysicsState as AcState, tick as ac_tick
+    from minecraft_bot.physics import (
+        PhysicsIntent as PyIntent,
+        PhysicsState as PyState,
+        tick as py_tick,
+    )
+    from minecraft_bot_accel.physics import (
+        PhysicsIntent as AcIntent,
+        PhysicsState as AcState,
+        tick as ac_tick,
+    )
 
     class _Empty:
         def is_solid(self, x, y, z):
@@ -71,6 +83,7 @@ def test_gravity_parity_empty_world() -> None:
 
     # Accel takes a real `World` for collision; an empty World suffices.
     from minecraft_bot_accel.world import World as AcWorld
+
     empty_w = AcWorld()
 
     for _ in range(10):
@@ -84,8 +97,16 @@ def test_gravity_parity_empty_world() -> None:
 
 def test_landing_parity() -> None:
     """Falling bot lands on the floor; both backends converge to y≈1."""
-    from minecraft_bot.physics import PhysicsIntent as PyIntent, PhysicsState as PyState, tick as py_tick
-    from minecraft_bot_accel.physics import PhysicsIntent as AcIntent, PhysicsState as AcState, tick as ac_tick
+    from minecraft_bot.physics import (
+        PhysicsIntent as PyIntent,
+        PhysicsState as PyState,
+        tick as py_tick,
+    )
+    from minecraft_bot_accel.physics import (
+        PhysicsIntent as AcIntent,
+        PhysicsState as AcState,
+        tick as ac_tick,
+    )
 
     py_world = _build_floor_python_world()
     ac_world = _build_floor_accel_world()
@@ -100,14 +121,23 @@ def test_landing_parity() -> None:
         ac_state = ac_tick(ac_state, ac_intent, ac_world)
 
     assert py_state.on_ground == ac_state.on_ground
-    assert math.isclose(py_state.y, ac_state.y, abs_tol=1e-6), \
-        f"y divergence: py={py_state.y} ac={ac_state.y}"
+    assert math.isclose(
+        py_state.y, ac_state.y, abs_tol=1e-6
+    ), f"y divergence: py={py_state.y} ac={ac_state.y}"
 
 
 def test_horizontal_walk_parity() -> None:
     """One-tick walk forward gives same x displacement."""
-    from minecraft_bot.physics import PhysicsIntent as PyIntent, PhysicsState as PyState, tick as py_tick
-    from minecraft_bot_accel.physics import PhysicsIntent as AcIntent, PhysicsState as AcState, tick as ac_tick
+    from minecraft_bot.physics import (
+        PhysicsIntent as PyIntent,
+        PhysicsState as PyState,
+        tick as py_tick,
+    )
+    from minecraft_bot_accel.physics import (
+        PhysicsIntent as AcIntent,
+        PhysicsState as AcState,
+        tick as ac_tick,
+    )
 
     py_world = _build_floor_python_world()
     ac_world = _build_floor_accel_world()
@@ -120,6 +150,7 @@ def test_horizontal_walk_parity() -> None:
     py_state = py_tick(py_state, py_intent, py_world)
     ac_state = ac_tick(ac_state, ac_intent, ac_world)
 
-    assert math.isclose(py_state.x, ac_state.x, abs_tol=1e-6), \
-        f"x divergence: py={py_state.x} ac={ac_state.x}"
+    assert math.isclose(
+        py_state.x, ac_state.x, abs_tol=1e-6
+    ), f"x divergence: py={py_state.x} ac={ac_state.x}"
     assert math.isclose(py_state.vx, ac_state.vx, abs_tol=1e-6)

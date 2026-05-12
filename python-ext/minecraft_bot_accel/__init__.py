@@ -30,7 +30,8 @@ for _name in dir(_native):
 
 # Register native submodules under their full dotted path so
 # ``from minecraft_bot_accel.codec import Reader`` works.
-for _sub in ("errors", "codec", "framer", "world", "pathfinding", "physics"):
+for _sub in ("errors", "codec", "framer", "world", "pathfinding", "physics",
+             "observation", "entities", "effects"):
     _mod = getattr(_native, _sub, None)
     if _mod is not None:
         _sys.modules[f"minecraft_bot_accel.{_sub}"] = _mod

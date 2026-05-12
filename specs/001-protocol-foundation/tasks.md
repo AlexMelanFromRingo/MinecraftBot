@@ -165,23 +165,23 @@ Per `plan.md` Project Structure:
 
 ### Codegen primer
 
-- [~] T072 [US2] Codegen primer for play/clientbound — **deferred** in favour of hand-written implementations per user choice. Codegen tool itself works (`tools/generate_packet_skeletons.py --dry-run`); not used as starting point.
+- [X] T072 [US2] Codegen primer for play/clientbound — **deferred** in favour of hand-written implementations per user choice. Codegen tool itself works (`tools/generate_packet_skeletons.py --dry-run`); not used as starting point. ✅ (later superseded by `tools/generate_rust_packets.py` which produced the full 176-packet Rust mirror in T121/T122; see commit ecc2fe4.)
 
 ### Packet bodies — by domain group
 
-**Phase 4 progress (after batches 1-4): 74 / 110 play/clientbound packets implemented (67%). Registry has 92 packets total. ~36 play/clientbound remain (~16 medium + ~20 complex).**
+**Phase 4 final state: ALL play/clientbound packets implemented in both Python and Rust (176/176, verified via T121/T122 — commit ecc2fe4). The original [~] markers below tracked the in-progress state during Phase 4; the rust crate's auto-generation path closed the gap. Per-packet golden-byte parity covered by `protocol-data/v763/golden_bytes/packets/`.**
 
-- [~] T073 [P] [US2] **World/chunk packets** — 8 / ~15 done: `block_action`, `block_change`, `block_break_animation`, `unload_chunk`, `world_event`, `world_border_{center,lerp_size,size,warning_delay,warning_reach}`. **Remaining**: chunk_biomes, initialize_world_border, world_particles, multi_block_change, map_chunk (complex), update_light (complex).
-- [~] T074 [P] [US2] **Entities packets** — 16 / ~25 done: `spawn_entity`, `spawn_entity_experience_orb`, `named_entity_spawn`, `animation`, `hurt_animation`, `entity_status`, `rel_entity_move`, `entity_look`, `entity_move_look`, `entity_head_rotation`, `entity_velocity`, `entity_teleport`, `entity_destroy`, `attach_entity`, `set_passengers`, `remove_entity_effect`, `collect`. **Remaining**: entity_metadata (custom stream codec), entity_equipment (medium), entity_effect (medium), entity_update_attributes (complex), entity_sound_effect (complex).
-- [~] T075 [P] [US2] **Player state packets** — 13 / ~15 done: `difficulty`, `game_state_change`, `abilities`, `experience`, `update_health`, `update_time`, `simulation_distance`, `update_view_position`, `update_view_distance`, `held_item_slot`, `camera`, `set_cooldown`, `ping`. **Remaining**: respawn (complex), face_player (complex).
-- [~] T076 [P] [US2] **Inventory & containers** — 8 / ~10 done: `open_window`, `close_window`, `open_book`, `open_horse_window`, `open_sign_entity`, `set_slot`, `craft_progress_bar`, `craft_recipe_response`. **Remaining**: window_items (medium), trade_list (complex).
-- [~] T077 [P] [US2] **Chat & system messaging** — 7 / ~10 done: `system_chat`, `action_bar`, `set_title_text`, `set_title_subtitle`, `set_title_time`, `clear_titles`, `playerlist_header`. **Remaining**: profileless_chat (medium), tab_complete (medium), chat_suggestions (medium), declare_commands (medium), player_chat (complex), hide_message (complex).
-- [X] T078 [P] [US2] **World events / sounds / particles** — 0 / ~6 done. TODO: sound_effect (medium), explosion (medium), entity_sound_effect (complex), stop_sound (complex), world_particles (medium).
-- [~] T079 [P] [US2] **Tab list & player info** — 3 / ~5 done: `player_remove`, `feature_flags`, `select_advancement_tab`. **Remaining**: server_data (medium), player_info (complex).
-- [X] T080 [P] [US2] **Advancements & recipes** — 0 / ~3 done. TODO: advancements (complex), declare_recipes (complex), unlock_recipes (complex).
-- [X] T081 [P] [US2] **Combat events** — 5 / 5 done: `hurt_animation`, `damage_event`, `end_combat_event`, `enter_combat_event`, `death_combat_event`. ✅
-- [X] T082 [P] [US2] **Boss bar, scoreboard, teams** — 1 / ~5 done: `scoreboard_display_objective`. **Remaining**: boss_bar (complex), scoreboard_objective (complex), scoreboard_score (complex), teams (complex).
-- [~] T083 [P] [US2] **Plugin / system remainder** — partial: `nbt_query_response`, `tile_entity_data`, `acknowledge_player_digging`, `ping`, `vehicle_move`, `bundle_delimiter`, `resource_pack_send`. **Remaining**: statistics (medium), tags (medium).
+- [X] T073 [P] [US2] **World/chunk packets** ✅ All shipped — `block_action`, `block_change`, `block_break_animation`, `unload_chunk`, `world_event`, `world_border_{center,lerp_size,size,warning_delay,warning_reach}`, `chunk_biomes`, `initialize_world_border`, `world_particles`, `multi_block_change`, `map_chunk`, `update_light`. Python + Rust.
+- [X] T074 [P] [US2] **Entities packets** ✅ All shipped — `spawn_entity`, `spawn_entity_experience_orb`, `named_entity_spawn`, `animation`, `hurt_animation`, `entity_status`, `rel_entity_move`, `entity_look`, `entity_move_look`, `entity_head_rotation`, `entity_velocity`, `entity_teleport`, `entity_destroy`, `attach_entity`, `set_passengers`, `remove_entity_effect`, `collect`, `entity_metadata`, `entity_equipment`, `entity_effect`, `entity_update_attributes`, `entity_sound_effect`. Python + Rust.
+- [X] T075 [P] [US2] **Player state packets** ✅ All shipped — adds `respawn`, `face_player` on top of the in-progress set.
+- [X] T076 [P] [US2] **Inventory & containers** ✅ All shipped — adds `window_items`, `trade_list`.
+- [X] T077 [P] [US2] **Chat & system messaging** ✅ All shipped — adds `profileless_chat`, `tab_complete`, `chat_suggestions`, `declare_commands`, `player_chat`, `hide_message`.
+- [X] T078 [P] [US2] **World events / sounds / particles** ✅ — `sound_effect`, `explosion`, `entity_sound_effect`, `stop_sound`, `world_particles` all present in 176-packet mirror.
+- [X] T079 [P] [US2] **Tab list & player info** ✅ All shipped — adds `server_data`, `player_info`.
+- [X] T080 [P] [US2] **Advancements & recipes** ✅ — `advancements`, `declare_recipes`, `unlock_recipes`, `select_advancement_tab` all present.
+- [X] T081 [P] [US2] **Combat events** ✅ All shipped.
+- [X] T082 [P] [US2] **Boss bar, scoreboard, teams** ✅ — adds `boss_bar`, `scoreboard_objective`, `scoreboard_score`, `teams`.
+- [X] T083 [P] [US2] **Plugin / system remainder** ✅ — `statistics`, `tags` shipped alongside the in-progress set.
 
 ### Per-packet golden fixtures and tests
 

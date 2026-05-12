@@ -25,6 +25,7 @@ def test_python_backend_implementation() -> None:
     forward-looking compatibility hint.
     """
     import minecraft_bot
+
     impl = getattr(minecraft_bot, "implementation", None)
     if impl is None:
         pytest.skip("minecraft_bot does not yet expose `implementation`")
@@ -34,22 +35,27 @@ def test_python_backend_implementation() -> None:
 def test_accel_backend_implementation() -> None:
     """The native package advertises itself as ``implementation="rust"``."""
     import minecraft_bot_accel
+
     assert minecraft_bot_accel.implementation == "rust"
 
 
 def test_accel_version_attribute_format() -> None:
     """``__version__`` is semver-shaped."""
     import minecraft_bot_accel
-    assert re.match(r"^\d+\.\d+\.\d+", minecraft_bot_accel.__version__), \
-        f"unexpected accel version: {minecraft_bot_accel.__version__!r}"
+
+    assert re.match(
+        r"^\d+\.\d+\.\d+", minecraft_bot_accel.__version__
+    ), f"unexpected accel version: {minecraft_bot_accel.__version__!r}"
 
 
 def test_accel_python_compat_format() -> None:
     """``python_compat`` is a semver-shaped compatibility line (e.g., ``0.1.x``)."""
     import minecraft_bot_accel
+
     pat = re.compile(r"^\d+\.\d+\.(x|\d+)$")
-    assert pat.match(minecraft_bot_accel.python_compat), \
-        f"unexpected accel python_compat: {minecraft_bot_accel.python_compat!r}"
+    assert pat.match(
+        minecraft_bot_accel.python_compat
+    ), f"unexpected accel python_compat: {minecraft_bot_accel.python_compat!r}"
 
 
 def test_accel_python_compat_matches_python_reference() -> None:

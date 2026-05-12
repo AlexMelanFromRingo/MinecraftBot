@@ -9,9 +9,6 @@ the same inputs (deterministic A* with the same tie-break rule).
 
 from __future__ import annotations
 
-import pytest
-
-
 # Synthesise a flat-plane world in the accel `World`:
 # We need to set every block at y=0 to stone; everything else stays air.
 # `apply_block_change` does single-cell sets, but `set_block` needs
@@ -51,7 +48,11 @@ def _build_floor_python(extents=(-5, 5)):
                 for lz in range(16):
                     sec.set_block(lx, 0, lz, 1)  # stone
             w.chunks[(cx, cz)] = Chunk(
-                cx=cx, cz=cz, sections=sections, min_y=-64, section_count=24,
+                cx=cx,
+                cz=cz,
+                sections=sections,
+                min_y=-64,
+                section_count=24,
             )
     return w
 
@@ -74,11 +75,16 @@ def _build_floor_accel(extents=(-5, 5)):
 
     REPO = Path(__file__).resolve().parents[3]
     raw_hex = json.loads(
-        (REPO / "protocol-data/v763/golden_bytes/packets/clientbound/map_chunk.json").read_text()
+        (
+            REPO / "protocol-data/v763/golden_bytes/packets/clientbound/map_chunk.json"
+        ).read_text()
     )[0]
     raw = bytes.fromhex(raw_hex)
     from minecraft_bot.codec import Reader
-    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import decode as pkt_decode
+    from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
+        decode as pkt_decode,
+    )
+
     pkt = pkt_decode(Reader(raw))
 
     w = AccelWorld()

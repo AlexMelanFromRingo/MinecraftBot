@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from minecraft_bot.bot import Bot
 from minecraft_bot.physics import PhysicsIntent, PhysicsState
@@ -26,7 +25,7 @@ def _bot_with_one_loaded_chunk() -> Bot:
     for _ in range(24):
         sec_w.write(struct.pack(">h", 4096))
         sec_w.write(b"\x00")
-        varint.write(1, sec_w)   # stone
+        varint.write(1, sec_w)  # stone
         varint.write(0, sec_w)
         sec_w.write(b"\x00")
         varint.write(1, sec_w)

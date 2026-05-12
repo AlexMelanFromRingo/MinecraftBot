@@ -5,12 +5,17 @@ from __future__ import annotations
 import asyncio
 
 from minecraft_bot.behaviour.nodes import (
-    Action, Condition, NodeStatus, Selector, Sequence,
+    Action,
+    Condition,
+    NodeStatus,
+    Selector,
+    Sequence,
 )
 
 
 def _build_tree():
     """10-node tree of depth 4: Selector > Sequence > Condition + Action."""
+
     async def noop(b, c):
         return NodeStatus.SUCCESS
 
@@ -32,4 +37,6 @@ def test_behaviour_tick_under_1ms(benchmark) -> None:
 
     benchmark(one_tick)
     stats = benchmark.stats.stats
-    assert stats.median < 0.001, f"BT tick median {stats.median*1000:.3f} ms exceeds 1 ms"
+    assert (
+        stats.median < 0.001
+    ), f"BT tick median {stats.median*1000:.3f} ms exceeds 1 ms"

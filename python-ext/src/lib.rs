@@ -16,6 +16,10 @@ mod world;
 mod pathfinding;
 mod physics;
 mod bot;
+mod observation;
+mod entities;
+mod effects_py;
+mod slots;
 
 #[pymodule]
 fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
@@ -36,6 +40,10 @@ fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
     world::register(py, &m)?;
     pathfinding::register(py, &m)?;
     physics::register(py, &m)?;
+    observation::register(py, &m)?;
+    entities::register(py, &m)?;
+    effects_py::register(py, &m)?;
+    slots::register(py, &m)?;
     bot::register(py, &m)?;
 
     Ok(())

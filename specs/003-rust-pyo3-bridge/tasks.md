@@ -103,14 +103,14 @@ and disconnect cleanly with field-level position parity within
 - [X] T026 [US1] Port `python/minecraft_bot/world/cache.py` → `rust/src/world/cache.rs` using `parking_lot::RwLock<HashMap<(i32,i32), Chunk>>` (or DashMap — pick by benchmark in implementation); same eviction policy as Python
 - [X] T027 [P] [US1] Port `python/minecraft_bot/world/block_table.py` → `rust/src/world/block_table.rs` (Block struct, is_solid/is_water tables from `protocol-data/v763/`)
 - [X] T028 [P] [US1] Port `python/minecraft_bot/slots.py` → `rust/src/slots.rs` (ItemStack with item_id, count, nbt)
-- [ ] T029 [P] [US1] Port `python/minecraft_bot/entities/*.py` → `rust/src/entities/` (Entity struct, EntityMetadata schema decoder)
+- [X] T029 [P] [US1] Port `python/minecraft_bot/entities/*.py` → `rust/src/entities/` (Entity struct, EntityMetadata schema decoder)
 - [X] T030 [P] [US1] Port `python/minecraft_bot/status_effects.py` → `rust/src/effects.rs`
-- [ ] T031 [US1] Port `python/minecraft_bot/observation.py` → `rust/src/observation.rs` (Observation snapshot builder from cache + connection state); fields per `data-model.md` parity table
+- [X] T031 [US1] Port `python/minecraft_bot/observation.py` → `rust/src/observation.rs` (Observation snapshot builder from cache + connection state); fields per `data-model.md` parity table
 - [X] T032 [P] [US1] Port `python/minecraft_bot/pathfinding.py` walkable-graph builder → `rust/src/pathfinding/walkable.rs`
 - [X] T033 [US1] Port `python/minecraft_bot/pathfinding.py` A* core → `rust/src/pathfinding/astar.rs`; expose `find_path(world: &WorldCache, start: Vec3, goal: Vec3, max_fall: i32, max_nodes: usize) -> Option<Path>`
 - [X] T034 [P] [US1] Port `python/minecraft_bot/physics.py` → `rust/src/physics.rs` (20 Hz tick: gravity, water/lava, slab/ledge math; deterministic per Principle VII)
 - [X] T035 [US1] Port `python/minecraft_bot/behaviour/walk_to.py` → `rust/src/behaviour/walk_to.rs`; enforce 5-block anti-cheat cap on Player Position sends (data-model.md validation rules)
-- [ ] T036 [P] [US1] Port `python/minecraft_bot/behaviour/hazards.py` → `rust/src/behaviour/hazards.rs` (slab/water/ledge/drop detection + recovery)
+- [X] T036 [P] [US1] Port `python/minecraft_bot/behaviour/hazards.py` → `rust/src/behaviour/hazards.rs` (slab/water/ledge/drop detection + recovery)
 - [X] T037 [P] [US1] Port `python/minecraft_bot/inventory_click.py` drop/pickup window-click flow → `rust/src/behaviour/window_click.rs`; wait for `confirm_transaction` per data-model.md
 - [X] T038 [US1] Extend `rust/src/connection.rs` with the full tick-loop: keep-alive, observation-side packet handlers updating WorldCache, graceful disconnect on cancel, hooks bus
 - [X] T039 [US1] Create `rust/src/bot.rs` — the top-level Bot facade — composing connection, world, walk_to, observation, hooks; mirror `python/minecraft_bot/bot.py` API one-for-one
@@ -121,28 +121,28 @@ and disconnect cleanly with field-level position parity within
 ### Tests for User Story 1 (TDD — write FIRST, expect failure pre-T044+)
 
 - [X] T043 [P] [US1] Write `tests/python/parity/test_api_surface.py` enumerating every public symbol of `minecraft_bot` and asserting matching presence + signature in `minecraft_bot_accel` per `contracts/api-surface.md`
-- [ ] T044 [P] [US1] Write `tests/python/parity/test_field_parity.py` introspecting `__dataclass_fields__` of every Python dataclass listed in `data-model.md` parity table and asserting matching `__dict__` / `get_all`-exposed attrs in accel
-- [ ] T045 [P] [US1] Write `tests/python/parity/test_us1_substitution.py` (live, mark `pytest.mark.live`) — Python and accel bots connect in sequence to Paper, walk to (10005,200,10005), drop an item, disconnect; assert position parity within 0.5 blocks per quickstart.md
+- [X] T044 [P] [US1] Write `tests/python/parity/test_field_parity.py` introspecting `__dataclass_fields__` of every Python dataclass listed in `data-model.md` parity table and asserting matching `__dict__` / `get_all`-exposed attrs in accel
+- [X] T045 [P] [US1] Write `tests/python/parity/test_us1_substitution.py` (live, mark `pytest.mark.live`) — Python and accel bots connect in sequence to Paper, walk to (10005,200,10005), drop an item, disconnect; assert position parity within 0.5 blocks per quickstart.md
 - [X] T046 [P] [US1] Write `tests/python/parity/test_observation_parity.py` asserting `bot_py.observation().to_dict() == bot_acc.observation().to_dict()` after a deterministic packet trace replay
 
 ### PyO3 façade — wrap T024–T039 into `python-ext/src/`
 
-- [ ] T047 [P] [US1] Add `python-ext/src/slots.rs` `#[pyclass] PyItemStack` with `get_all` fields per data-model.md
-- [ ] T048 [P] [US1] Add `python-ext/src/observation.rs` `#[pyclass] PyVec3`, `PyObservation`; implement `__repr__`, `__eq__`, `to_dict`/`from_dict`
-- [ ] T049 [P] [US1] Add `python-ext/src/effects.rs` `#[pyclass] PyStatusEffect`
-- [ ] T050 [P] [US1] Add `python-ext/src/entities.rs` `#[pyclass] PyEntity` with metadata-dict access
+- [X] T047 [P] [US1] Add `python-ext/src/slots.rs` `#[pyclass] PyItemStack` with `get_all` fields per data-model.md
+- [X] T048 [P] [US1] Add `python-ext/src/observation.rs` `#[pyclass] PyVec3`, `PyObservation`; implement `__repr__`, `__eq__`, `to_dict`/`from_dict`
+- [X] T049 [P] [US1] Add `python-ext/src/effects.rs` `#[pyclass] PyStatusEffect`
+- [X] T050 [P] [US1] Add `python-ext/src/entities.rs` `#[pyclass] PyEntity` with metadata-dict access
 - [X] T051 [P] [US1] Add `python-ext/src/world/mod.rs` registering `PyWorld`, `PyChunk`, `PyChunkSection`, `PyBlock` per data-model.md and api-surface.md
 - [X] T052 [P] [US1] Add `python-ext/src/pathfinding.rs` `#[pyclass] PyPath` (steps, cost, node_count) wrapping Rust path output
 - [X] T053 [US1] Add `python-ext/src/connection.rs` `#[pyclass] PyConnection`; expose `offline`, `connect`, `disconnect`, `send`, `state`, `is_connected` as async-aware methods using `pyo3_async_runtimes::tokio::future_into_py`
 - [X] T054 [US1] Add `python-ext/src/bot.rs` `#[pyclass] PyBot`; expose `offline`, `connect`, `disconnect`, `tick`, `run`, `walk_to`, `observation`, `use_item`, `drop_held_item`, `send`, `on_packet`, `pre_tick`, `post_tick`, plus the property surface (`world`, `position`, `health`, `food`, `yaw`, `pitch`, `on_ground`, `inventory`, `effects`)
-- [ ] T055 [US1] Add `python-ext/src/protocol/mod.rs` registering a submodule tree mirroring `python/minecraft_bot/protocol/v763/packets/{state}/{direction}/*` — each leaf module exposes the packet dataclass type + `encode` / `decode` per api-surface.md
-- [ ] T056 [US1] Register T047–T055 modules on the root `#[pymodule]` in `python-ext/src/lib.rs`; rebuild via `maturin develop --release`
+- [X] T055 [US1] Add `python-ext/src/protocol/mod.rs` registering a submodule tree mirroring `python/minecraft_bot/protocol/v763/packets/{state}/{direction}/*` — each leaf module exposes the packet dataclass type + `encode` / `decode` per api-surface.md
+- [X] T056 [US1] Register T047–T055 modules on the root `#[pymodule]` in `python-ext/src/lib.rs`; rebuild via `maturin develop --release`
 
 ### Integration: green parity tests under `--backend accel`
 
-- [ ] T057 [US1] Run `pytest --backend accel tests/python/parity/test_api_surface.py tests/python/parity/test_field_parity.py tests/python/parity/test_observation_parity.py` — all green
-- [ ] T058 [US1] Run `pytest --backend accel tests/python/parity/test_us1_substitution.py -m live` against Paper at 172.26.160.1:25565 — green
-- [ ] T059 [US1] Run the entire existing unit + replay suite (`pytest --backend accel tests/python/unit tests/python/replay`) — must reach the same pass count as `--backend python`
+- [X] T057 [US1] Run `pytest --backend accel tests/python/parity/test_api_surface.py tests/python/parity/test_field_parity.py tests/python/parity/test_observation_parity.py` — all green
+- [X] T058 [US1] Run `pytest --backend accel tests/python/parity/test_us1_substitution.py -m live` against Paper at 172.26.160.1:25565 — green
+- [X] T059 [US1] Run the entire existing unit + replay suite (`pytest --backend accel tests/python/unit tests/python/replay`) — must reach the same pass count as `--backend python`
 
 **Checkpoint**: User Story 1 fully functional. A user can swap imports and run their existing 002-era bot script unchanged against the live server. MVP gate met.
 
@@ -165,8 +165,8 @@ plus `test_api_surface.py`. All five green.
 - [X] T062 [P] [US2] Add a second `wheels.yml` job `smoke-test` (matrix over the 5 platforms) that downloads its artefact, `pip install`s it into a clean Python 3.11 venv, and runs `pytest tests/python/parity/test_smoke_bringup.py tests/python/parity/test_api_surface.py` against `--backend accel`
 - [X] T063 [P] [US2] Add a `smoke-test` extra row for Python 3.12 on Linux x86_64 (the only OS where we already have 3.12 in CI containers) to verify abi3 single-wheel coverage of both interpreters
 - [X] T064 [US2] Create `.github/workflows/release.yml` triggered on tag push (`v*`); depends-on `wheels.yml`; downloads all 5 artifacts and uploads them to the GitHub release using `gh release upload`
-- [ ] T065 [US2] Write `tests/python/parity/test_us2_wheel_smoke.py` — a CI-only smoke that asserts `pip show minecraft_bot_accel` returns and the wheel size is under the 5 MiB budget (R-011); fails the build if the budget is exceeded
-- [ ] T066 [US2] Run the workflow manually via `workflow_dispatch` once Phase 3 lands; capture sample wheel sizes and record them in `specs/003-rust-pyo3-bridge/quickstart.md` "wheel sizes" footnote for future regressions
+- [X] T065 [US2] Write `tests/python/parity/test_us2_wheel_smoke.py` — a CI-only smoke that asserts `pip show minecraft_bot_accel` returns and the wheel size is under the 5 MiB budget (R-011); fails the build if the budget is exceeded
+- [X] T066 [US2] Run the workflow manually via `workflow_dispatch` once Phase 3 lands; capture sample wheel sizes and record them in `specs/003-rust-pyo3-bridge/quickstart.md` "wheel sizes" footnote for future regressions
 
 **Checkpoint**: Pre-built wheels exist on the 5 platforms × Python 3.11+3.12; installs are toolchain-free and under 30 seconds on Linux x86_64 (SC-001).
 
@@ -186,14 +186,14 @@ pass count, and `python tools/cross_check.py --backend all` exits
 fixtures.
 
 - [X] T067 [P] [US3] Extend `tools/cross_check.py` to accept `--backend {python,rust,accel,all}`; when `all`, run every fixture through all three encoders and assert hash equality
-- [ ] T068 [P] [US3] Write `tests/python/parity/test_wirelog_parity.py` — capture a deterministic 30-second packet trace under each backend (mocked clock; offline mode), then diff the resulting JSONL ignoring `ts` field per data-model.md "WireLog format invariance"
-- [ ] T069 [P] [US3] Write `tests/python/parity/test_connection_state.py` — drive a 5-second canned login session under each backend and assert state transitions matched event-for-event per data-model.md Connection FSM
-- [ ] T070 [P] [US3] Write `tests/python/parity/test_packet_encode_parity.py` — for every packet in `minecraft_bot.protocol.v763.packets`, build a representative instance, encode under both backends, assert byte equality
-- [ ] T071 [P] [US3] Write `tests/python/parity/test_walk_to_packet_trace.py` — issue `bot.walk_to(...)` under each backend with a fixed pathfinding seed; capture outbound Player-Position packets via WireLog; assert byte-identical sequences (Principle IV: bots are packet sets)
+- [X] T068 [P] [US3] Write `tests/python/parity/test_wirelog_parity.py` — capture a deterministic 30-second packet trace under each backend (mocked clock; offline mode), then diff the resulting JSONL ignoring `ts` field per data-model.md "WireLog format invariance"
+- [X] T069 [P] [US3] Write `tests/python/parity/test_connection_state.py` — drive a 5-second canned login session under each backend and assert state transitions matched event-for-event per data-model.md Connection FSM
+- [X] T070 [P] [US3] Write `tests/python/parity/test_packet_encode_parity.py` — for every packet in `minecraft_bot.protocol.v763.packets`, build a representative instance, encode under both backends, assert byte equality
+- [X] T071 [P] [US3] Write `tests/python/parity/test_walk_to_packet_trace.py` — issue `bot.walk_to(...)` under each backend with a fixed pathfinding seed; capture outbound Player-Position packets via WireLog; assert byte-identical sequences (Principle IV: bots are packet sets)
 - [X] T072 [US3] Update `.github/workflows/ci.yml` to run a `parity-matrix` job: matrix `backend = [python, accel]`; runs unit + replay + parity suites; both must pass for the PR to merge
-- [ ] T073 [US3] Update `.github/workflows/ci.yml` to add a `live-parity` job (gated on `pull_request_target` to a `live-tests` label) running `pytest --backend accel -m live` against Paper 1.20.1; required for any PR touching `python-ext/`, `rust/`, or `tools/cross_check.py`
-- [ ] T074 [US3] Update `.github/workflows/ci.yml` with a `cross-check-all` job invoking `python tools/cross_check.py --backend all`; required-status for any PR touching codec/packet modules
-- [ ] T075 [US3] Verify SC-006 (zero cross-check discrepancies) by running T074 once locally; if any fixture mismatches, file a bug and fix on the accel side before merging Phase 5
+- [X] T073 [US3] Update `.github/workflows/ci.yml` to add a `live-parity` job (gated on `pull_request_target` to a `live-tests` label) running `pytest --backend accel -m live` against Paper 1.20.1; required for any PR touching `python-ext/`, `rust/`, or `tools/cross_check.py`
+- [X] T074 [US3] Update `.github/workflows/ci.yml` with a `cross-check-all` job invoking `python tools/cross_check.py --backend all`; required-status for any PR touching codec/packet modules
+- [X] T075 [US3] Verify SC-006 (zero cross-check discrepancies) by running T074 once locally; if any fixture mismatches, file a bug and fix on the accel side before merging Phase 5
 
 **Checkpoint**: Behavioural parity gate green; the accel package can be installed alongside any 002-era code path with confidence.
 
@@ -210,13 +210,13 @@ A* pathfinding.
 tests/python/perf/test_speedup.py` reports median speedups meeting
 the SC-008/009/010 thresholds (≥ 5× / 10× / 10× / 5×).
 
-- [ ] T076 [P] [US4] Add `py.allow_threads(|| { ... })` wrapper around the CPU-bound section of `python-ext/src/world/mod.rs` chunk-decode entry point, plus `python-ext/src/codec/nbt.rs` decode entry, plus `python-ext/src/pathfinding.rs::find_path` entry — per research.md R-005
-- [ ] T077 [P] [US4] Write `tests/python/perf/test_speedup_varint.py` using `pytest-benchmark`: parametrise over both backends and assert accel median ≥ 5× python median (SC-008)
-- [ ] T078 [P] [US4] Write `tests/python/perf/test_speedup_nbt.py` — same pattern; 1 KiB NBT payload; assert ≥ 10× (SC-009)
-- [ ] T079 [P] [US4] Write `tests/python/perf/test_speedup_chunk.py` — fixture set of 100 chunks from `protocol-data/v763/live_captures/`; assert median ≥ 10× (SC-010)
-- [ ] T080 [P] [US4] Write `tests/python/perf/test_speedup_pathfinder.py` — 64×64 navigable test world from 002 fixtures; assert median ≥ 5× (SC-011)
-- [ ] T081 [US4] Add `.github/workflows/ci.yml` `perf-gate` job running T077–T080 on every PR touching `python-ext/` or `rust/src/{codec,world,pathfinding}/`; soft-fail on first regression (warn), hard-fail on > 10% drop from rolling baseline
-- [ ] T082 [US4] Verify SC-012 (chunk-decode CPU drop ≥ 50% during live play) by capturing a 60-second arena session under both backends with `time` / `psutil` instrumentation; record numbers in `specs/003-rust-pyo3-bridge/research.md` under a new "measured speedups" appendix
+- [X] T076 [P] [US4] Add `py.allow_threads(|| { ... })` wrapper around the CPU-bound section of `python-ext/src/world/mod.rs` chunk-decode entry point, plus `python-ext/src/codec/nbt.rs` decode entry, plus `python-ext/src/pathfinding.rs::find_path` entry — per research.md R-005
+- [X] T077 [P] [US4] Write `tests/python/perf/test_speedup_varint.py` using `pytest-benchmark`: parametrise over both backends and assert accel median ≥ 5× python median (SC-008)
+- [X] T078 [P] [US4] Write `tests/python/perf/test_speedup_nbt.py` — same pattern; 1 KiB NBT payload; assert ≥ 10× (SC-009)
+- [X] T079 [P] [US4] Write `tests/python/perf/test_speedup_chunk.py` — fixture set of 100 chunks from `protocol-data/v763/live_captures/`; assert median ≥ 10× (SC-010)
+- [X] T080 [P] [US4] Write `tests/python/perf/test_speedup_pathfinder.py` — 64×64 navigable test world from 002 fixtures; assert median ≥ 5× (SC-011)
+- [X] T081 [US4] Add `.github/workflows/ci.yml` `perf-gate` job running T077–T080 on every PR touching `python-ext/` or `rust/src/{codec,world,pathfinding}/`; soft-fail on first regression (warn), hard-fail on > 10% drop from rolling baseline
+- [X] T082 [US4] Verify SC-012 (chunk-decode CPU drop ≥ 50% during live play) by capturing a 60-second arena session under both backends with `time` / `psutil` instrumentation; record numbers in `specs/003-rust-pyo3-bridge/research.md` under a new "measured speedups" appendix
 
 **Checkpoint**: Hot-path speedups meet the spec's success criteria; CI gates regressions on every PR.
 
@@ -232,10 +232,10 @@ with no behavioural divergence between backends (FR-019).
 accel median ≥ 2× faster; `tests/python/integration/test_hazard_arena.py`
 passes under both backends.
 
-- [ ] T083 [P] [US5] Write `tests/python/perf/test_tick_latency.py` parametrising over both backends; load the existing 002 tick golden trace; assert accel median ≥ 2× python median (SC-011)
-- [ ] T084 [P] [US5] Write `tests/python/integration/test_hazard_arena_parity.py` (live, mark `pytest.mark.live`) — run the existing hazard-arena test from 002 under both backends sequentially; assert both complete and traverse the same set of safe blocks
-- [ ] T085 [US5] Verify SC-013 (60 s normal-play CPU ≥ 25% drop) by re-running the CPU-instrumented arena session from T082 with movement enabled (which exercises the physics tick); record results
-- [ ] T086 [US5] Add `tests/python/perf/test_tick_latency.py` and `test_hazard_arena_parity.py` to the CI `perf-gate` job from T081
+- [X] T083 [P] [US5] Write `tests/python/perf/test_tick_latency.py` parametrising over both backends; load the existing 002 tick golden trace; assert accel median ≥ 2× python median (SC-011)
+- [X] T084 [P] [US5] Write `tests/python/integration/test_hazard_arena_parity.py` (live, mark `pytest.mark.live`) — run the existing hazard-arena test from 002 under both backends sequentially; assert both complete and traverse the same set of safe blocks
+- [X] T085 [US5] Verify SC-013 (60 s normal-play CPU ≥ 25% drop) by re-running the CPU-instrumented arena session from T082 with movement enabled (which exercises the physics tick); record results
+- [X] T086 [US5] Add `tests/python/perf/test_tick_latency.py` and `test_hazard_arena_parity.py` to the CI `perf-gate` job from T081
 
 **Checkpoint**: Physics-tick speedup verified; live arena hazard course confirmed safe under accel.
 
@@ -247,13 +247,13 @@ passes under both backends.
 
 - [X] T087 [P] Update repo-root `README.md` adding a "Two Implementations" section pointing to `python/` and `python-ext/`, install commands, and the import-substitution recipe from quickstart.md
 - [X] T088 [P] Add `docs/migration_to_accel.md` describing how to migrate a 002-era bot script to the accel backend (the single-import edit + benchmark hint)
-- [ ] T089 [P] Update `CLAUDE.md` after-the-fact summary noting 003 is complete (post-implementation hook will land this automatically but final wording deserves a manual review)
-- [ ] T090 [P] Run `cargo clippy --workspace --all-targets -- -D warnings`; fix any warnings introduced by the port (Rust-side hygiene)
-- [ ] T091 [P] Run `ruff check tests/python` and `black tests/python`; fix style on the new parity + perf test files
-- [ ] T092 Bump `python-ext/Cargo.toml` package version from `0.1.0` → `0.2.0` once Phase 7 lands; tag the release; trigger `release.yml`
-- [ ] T093 Validate the full `quickstart.md` acceptance checklist (the 8-bullet list at the bottom of that file) before declaring 003 done
+- [X] T089 [P] Update `CLAUDE.md` after-the-fact summary noting 003 is complete (post-implementation hook will land this automatically but final wording deserves a manual review)
+- [X] T090 [P] Run `cargo clippy --workspace --all-targets -- -D warnings`; fix any warnings introduced by the port (Rust-side hygiene)
+- [X] T091 [P] Run `ruff check tests/python` and `black tests/python`; fix style on the new parity + perf test files
+- [X] T092 Bump `python-ext/Cargo.toml` package version from `0.1.0` → `0.2.0` once Phase 7 lands; tag the release; trigger `release.yml`
+- [X] T093 Validate the full `quickstart.md` acceptance checklist (the 8-bullet list at the bottom of that file) before declaring 003 done
 - [X] T094 [P] Update memory at `.claude/projects/.../memory/project_milestone_status.md` setting "003-rust-pyo3-bridge complete"; add a memory entry for the abi3 wheel matrix gotchas (any cross-build quirks discovered in T060)
-- [ ] T095 [P] Compress the cross-check tool output of T067 into a one-line CI summary so PR conversations stay readable
+- [X] T095 [P] Compress the cross-check tool output of T067 into a one-line CI summary so PR conversations stay readable
 
 ---
 
