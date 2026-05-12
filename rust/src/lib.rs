@@ -14,6 +14,7 @@ pub mod framer;
 pub mod protocol;
 pub mod wire_log;
 // 003 — bot-API port.
+pub mod bot;
 pub mod effects;
 pub mod pathfinding;
 pub mod physics;

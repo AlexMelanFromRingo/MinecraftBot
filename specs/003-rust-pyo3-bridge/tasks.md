@@ -112,8 +112,8 @@ and disconnect cleanly with field-level position parity within
 - [ ] T035 [US1] Port `python/minecraft_bot/behaviour/walk_to.py` → `rust/src/behaviour/walk_to.rs`; enforce 5-block anti-cheat cap on Player Position sends (data-model.md validation rules)
 - [ ] T036 [P] [US1] Port `python/minecraft_bot/behaviour/hazards.py` → `rust/src/behaviour/hazards.rs` (slab/water/ledge/drop detection + recovery)
 - [ ] T037 [P] [US1] Port `python/minecraft_bot/inventory_click.py` drop/pickup window-click flow → `rust/src/behaviour/window_click.rs`; wait for `confirm_transaction` per data-model.md
-- [ ] T038 [US1] Extend `rust/src/connection.rs` with the full tick-loop: keep-alive, observation-side packet handlers updating WorldCache, graceful disconnect on cancel, hooks bus
-- [ ] T039 [US1] Create `rust/src/bot.rs` — the top-level Bot facade — composing connection, world, walk_to, observation, hooks; mirror `python/minecraft_bot/bot.py` API one-for-one
+- [X] T038 [US1] Extend `rust/src/connection.rs` with the full tick-loop: keep-alive, observation-side packet handlers updating WorldCache, graceful disconnect on cancel, hooks bus
+- [X] T039 [US1] Create `rust/src/bot.rs` — the top-level Bot facade — composing connection, world, walk_to, observation, hooks; mirror `python/minecraft_bot/bot.py` API one-for-one
 - [X] T040 [P] [US1] Add Rust-side unit tests in `rust/tests/world_cache.rs` exercising T024–T027
 - [X] T041 [P] [US1] Add Rust-side unit tests in `rust/tests/pathfinding.rs` exercising T032–T033 over a fixture 64×64 walkable world
 - [X] T042 [P] [US1] Add Rust-side unit tests in `rust/tests/physics.rs` exercising T034 deterministically against the Python physics golden traces from 002

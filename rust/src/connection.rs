@@ -96,6 +96,14 @@ pub struct Connection {
     play_state: Arc<Mutex<PlayState>>,
 
     decode_task: Option<JoinHandle<Result<(), ProtocolError>>>,
+
+    /// 003 — packet-event subscribers. Every clientbound packet in
+    /// the play loop fan-outs `(packet_id, body)` to each registered
+    /// channel before the auto-keep-alive/teleport-confirm handlers
+    /// run, letting the higher-level [`crate::bot::Bot`] route packets
+    /// (map_chunk, block_change, ...) into the World cache.
+    pkt_subscribers:
+        Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<(i32, Vec<u8>)>>>>,
 }
 
 #[derive(Default)]
@@ -120,7 +128,20 @@ impl Connection {
             writer: Arc::new(Mutex::new(None)),
             play_state: Arc::new(Mutex::new(PlayState::default())),
             decode_task: None,
+            pkt_subscribers: Arc::new(Mutex::new(Vec::new())),
         }
+    }
+
+    /// Subscribe to clientbound packets received during the play
+    /// state. Returns a receiver that yields `(packet_id, body)` for
+    /// each packet *before* keep-alive and teleport-confirm handlers
+    /// run. Dropped receivers are pruned lazily on send failure.
+    pub async fn subscribe_packets(
+        &self,
+    ) -> tokio::sync::mpsc::UnboundedReceiver<(i32, Vec<u8>)> {
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        self.pkt_subscribers.lock().await.push(tx);
+        rx
     }
 
     /// Toggle opt-in auto-reconnect (FR-007a).
@@ -219,8 +240,9 @@ impl Connection {
         let writer = self.writer.clone();
         let state = self.state.clone();
         let play_state = self.play_state.clone();
+        let subs = self.pkt_subscribers.clone();
         let task = tokio::spawn(async move {
-            Self::run_play_loop(read_half, framer, writer, state, play_state).await
+            Self::run_play_loop(read_half, framer, writer, state, play_state, subs).await
         });
         self.decode_task = Some(task);
 
@@ -361,6 +383,7 @@ impl Connection {
         writer: Arc<Mutex<Option<OwnedWriteHalf>>>,
         _state: Arc<Mutex<ConnectionState>>,
         play_state: Arc<Mutex<PlayState>>,
+        subscribers: Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<(i32, Vec<u8>)>>>>,
     ) -> Result<(), ProtocolError> {
         loop {
             // Drain the framer.
@@ -385,6 +408,16 @@ impl Connection {
             let mut br = BytesReader::new(&body);
             let id = varint::read(&mut br)?;
             let payload = &body[br.position()..];
+
+            // 003 — fan-out to any subscribers (Bot facade hooks in
+            // here). Lazily prune dead receivers on send failure.
+            {
+                let mut subs = subscribers.lock().await;
+                if !subs.is_empty() {
+                    let payload_vec = payload.to_vec();
+                    subs.retain(|tx| tx.send((id, payload_vec.clone())).is_ok());
+                }
+            }
 
             // Auto-respond to keep_alive (0x23) and synchronize_player_position (0x3C).
             // These run BEFORE any user-level dispatch (R-07). We don't yet
