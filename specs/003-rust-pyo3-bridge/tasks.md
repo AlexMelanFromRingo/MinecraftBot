@@ -133,8 +133,8 @@ and disconnect cleanly with field-level position parity within
 - [ ] T050 [P] [US1] Add `python-ext/src/entities.rs` `#[pyclass] PyEntity` with metadata-dict access
 - [X] T051 [P] [US1] Add `python-ext/src/world/mod.rs` registering `PyWorld`, `PyChunk`, `PyChunkSection`, `PyBlock` per data-model.md and api-surface.md
 - [X] T052 [P] [US1] Add `python-ext/src/pathfinding.rs` `#[pyclass] PyPath` (steps, cost, node_count) wrapping Rust path output
-- [ ] T053 [US1] Add `python-ext/src/connection.rs` `#[pyclass] PyConnection`; expose `offline`, `connect`, `disconnect`, `send`, `state`, `is_connected` as async-aware methods using `pyo3_async_runtimes::tokio::future_into_py`
-- [ ] T054 [US1] Add `python-ext/src/bot.rs` `#[pyclass] PyBot`; expose `offline`, `connect`, `disconnect`, `tick`, `run`, `walk_to`, `observation`, `use_item`, `drop_held_item`, `send`, `on_packet`, `pre_tick`, `post_tick`, plus the property surface (`world`, `position`, `health`, `food`, `yaw`, `pitch`, `on_ground`, `inventory`, `effects`)
+- [X] T053 [US1] Add `python-ext/src/connection.rs` `#[pyclass] PyConnection`; expose `offline`, `connect`, `disconnect`, `send`, `state`, `is_connected` as async-aware methods using `pyo3_async_runtimes::tokio::future_into_py`
+- [X] T054 [US1] Add `python-ext/src/bot.rs` `#[pyclass] PyBot`; expose `offline`, `connect`, `disconnect`, `tick`, `run`, `walk_to`, `observation`, `use_item`, `drop_held_item`, `send`, `on_packet`, `pre_tick`, `post_tick`, plus the property surface (`world`, `position`, `health`, `food`, `yaw`, `pitch`, `on_ground`, `inventory`, `effects`)
 - [ ] T055 [US1] Add `python-ext/src/protocol/mod.rs` registering a submodule tree mirroring `python/minecraft_bot/protocol/v763/packets/{state}/{direction}/*` — each leaf module exposes the packet dataclass type + `encode` / `decode` per api-surface.md
 - [ ] T056 [US1] Register T047–T055 modules on the root `#[pymodule]` in `python-ext/src/lib.rs`; rebuild via `maturin develop --release`
 

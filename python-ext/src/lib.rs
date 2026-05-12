@@ -15,6 +15,7 @@ mod codec;
 mod world;
 mod pathfinding;
 mod physics;
+mod bot;
 
 #[pymodule]
 fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
@@ -35,6 +36,7 @@ fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
     world::register(py, &m)?;
     pathfinding::register(py, &m)?;
     physics::register(py, &m)?;
+    bot::register(py, &m)?;
 
     Ok(())
 }

@@ -151,6 +151,11 @@ impl PyWorld {
     pub fn arc(&self) -> Arc<rw::World> {
         Arc::clone(&self.inner)
     }
+
+    /// Construct a `PyWorld` view over an existing shared `World`.
+    pub fn from_arc(world: Arc<rw::World>) -> Self {
+        Self { inner: world }
+    }
 }
 
 /// Free function: classification predicates from `block_table`.
