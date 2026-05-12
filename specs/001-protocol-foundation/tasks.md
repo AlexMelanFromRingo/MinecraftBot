@@ -285,7 +285,7 @@ Per `plan.md` Project Structure:
 - [X] T125 Implement Rust `WireLog` capture and `WireLog::replay` at `rust/src/wire_log.rs` — bit-identical JSONL to Python.
 - [X] T126 [P] Rust round-trip codec tests at `tests/rust/codec_roundtrip.rs` (consumes `protocol-data/v763/golden_bytes/primitives.json`).
 - [X] T127 [P] Rust framer tests at `tests/rust/framer.rs`.
-- [ ] T128 [P] Rust per-packet round-trip tests at `tests/rust/packets_roundtrip.rs` (consumes `protocol-data/v763/golden_bytes/packets/`).
+- [X] T128 [P] Rust per-packet round-trip tests at `tests/rust/packets_roundtrip.rs` (consumes `protocol-data/v763/golden_bytes/packets/`).
 - [X] T129 Rust live-smoke integration test at `tests/rust/live_smoke.rs` (gated `--features live-smoke`): mirror US1+US2+US3 acceptance against Paper.
 - [X] T130 Implement `tools/cross_check.py` Rust path (R-08): compile `rust/examples/encode_one.rs` CLI wrapper, drive byte-equality assertion across all golden fixtures.
 
@@ -297,15 +297,15 @@ Per `plan.md` Project Structure:
 
 **Purpose**: Verify quality bars (SC-003, SC-007, SC-008), validate cross-cutting invariants (zero deps, multi-bot readiness), wire CI, finalize docs.
 
-- [ ] T131 [P] Long-uptime live test at `tests/python/integration/test_sc003_long_uptime.py`: connect, sleep 11 minutes, assert no disconnect (SC-003). Marked `live and slow`.
-- [ ] T132 [P] Onboarding measurement at `tests/python/integration/test_sc007_onboarding.py`: timestamp Connection construction → state==PLAY transition; assert under 30 s on a warm test environment (informs SC-007).
-- [ ] T133 [P] Smoke wall-clock guard at `tests/python/integration/test_sc008_smoke_under_2min.py`: run US1+US2+US3 in sequence, assert total wall-clock < 120 s (SC-008).
-- [ ] T134 [P] Multi-bot readiness smoke test at `tests/python/integration/test_fr017a_multi_bot_smoke.py` (live): spin up 2 `Connection.offline(...)` instances in the same event loop, both connect, both stay alive 60 s, no cross-talk (validates FR-017a though multi-bot is officially out-of-scope behaviourally).
-- [ ] T135 [P] Zero-deps invariant lint at `tests/python/unit/test_zero_deps.py`: `ast.parse` every file under `python/minecraft_bot/`, assert all imports resolve to stdlib only (Constitution VI).
-- [ ] T136 [P] Packet-shape conformance lint at `tests/python/unit/test_packet_shape.py`: every file under `python/minecraft_bot/protocol/v763/packets/...` defines `PACKET_ID: int`, `decode(reader) -> P`, `encode(p, writer) -> None`, and the named dataclass.
-- [ ] T137 [P] Per-packet placeholder file presence: confirm every `(state, direction, id)` triple in `protocol-data/v763/packet_registry.json` has a corresponding file (no skeletons accidentally left empty).
-- [ ] T138 [P] CI configuration at `.github/workflows/ci.yml`: matrix on Python 3.11/3.12 and Rust stable; jobs run unit + replay tests by default; `live-smoke` job runs only on a self-hosted runner with the test server reachable.
-- [ ] T139 [P] Documentation: update `README.md` at repo root with installation, quickstart link, contributing pointer, link to `specs/001-protocol-foundation/`.
+- [X] T131 [P] Long-uptime live test at `tests/python/integration/test_sc003_long_uptime.py`: connect, sleep 11 minutes, assert no disconnect (SC-003). Marked `live and slow`.
+- [X] T132 [P] Onboarding measurement at `tests/python/integration/test_sc007_onboarding.py`: timestamp Connection construction → state==PLAY transition; assert under 30 s on a warm test environment (informs SC-007).
+- [X] T133 [P] Smoke wall-clock guard at `tests/python/integration/test_sc008_smoke_under_2min.py`: run US1+US2+US3 in sequence, assert total wall-clock < 120 s (SC-008).
+- [X] T134 [P] Multi-bot readiness smoke test at `tests/python/integration/test_fr017a_multi_bot_smoke.py` (live): spin up 2 `Connection.offline(...)` instances in the same event loop, both connect, both stay alive 60 s, no cross-talk (validates FR-017a though multi-bot is officially out-of-scope behaviourally).
+- [X] T135 [P] Zero-deps invariant lint at `tests/python/unit/test_zero_deps.py`: `ast.parse` every file under `python/minecraft_bot/`, assert all imports resolve to stdlib only (Constitution VI).
+- [X] T136 [P] Packet-shape conformance lint at `tests/python/unit/test_packet_shape.py`: every file under `python/minecraft_bot/protocol/v763/packets/...` defines `PACKET_ID: int`, `decode(reader) -> P`, `encode(p, writer) -> None`, and the named dataclass.
+- [X] T137 [P] Per-packet placeholder file presence: confirm every `(state, direction, id)` triple in `protocol-data/v763/packet_registry.json` has a corresponding file (no skeletons accidentally left empty).
+- [X] T138 [P] CI configuration at `.github/workflows/ci.yml`: matrix on Python 3.11/3.12 and Rust stable; jobs run unit + replay tests by default; `live-smoke` job runs only on a self-hosted runner with the test server reachable.
+- [X] T139 [P] Documentation: update `README.md` at repo root with installation, quickstart link, contributing pointer, link to `specs/001-protocol-foundation/`.
 - [ ] T140 [P] Run `quickstart.md` end-to-end (US1, US2, US3, US4 sections) on a clean checkout — final acceptance gate.
 - [ ] T141 [P] Run `tools/cross_check.py` on the full fixture set; assert zero discrepancies between Python and Rust — final cross-language parity gate.
 
