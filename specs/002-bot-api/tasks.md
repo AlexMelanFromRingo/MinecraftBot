@@ -242,11 +242,11 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 **Independent Test**: `python tools/quickstart_us6.py` — a 3-branch tree (eat / attack / walk-to-spawn) runs for 5 minutes and bot behaves per policy.
 
-- [ ] T074 [US6] Implement `python/minecraft_bot/behaviour/nodes.py` — `NodeStatus` enum (Success/Failure/Running), `BehaviourNode` abstract base, `Selector`, `Sequence`, `Inverter`, `RepeatUntilFail`, `AlwaysSucceed`, `Condition(predicate)`, `Action(coroutine_factory)`. Each `async tick(bot, ctx) -> NodeStatus`. `BehaviourRunner` loops on the root node.
-- [ ] T075 [US6] Implement `python/minecraft_bot/behaviour/actions.py` — built-in primitives: `WalkTo(x, y, z)`, `AttackNearest(filter)`, `EatWhenHungry(threshold)`, `FollowPlayer(name)`, `DropItem(slot)`, `Say(message)`. Each wraps the corresponding Bot method.
-- [ ] T076 [US6] Add `Bot.behaviour` attribute — a `BehaviourRunner` instance; `await bot.behaviour.run(tree, max_iterations=None)`.
-- [ ] T077 [P] [US6] Unit test BT nodes at `tests/python/unit/test_behaviour_nodes.py` — Selector returns Success on first child Success; Sequence on all-Success; Failure short-circuits; Inverter flips. Mock bot for Action.
-- [ ] T078 [US6] Integration test `tests/python/integration/test_us6_behaviour.py` (live): build a tree "eat if hungry else walk back to spawn"; run for 2 minutes; assert bot's position oscillates near spawn (it walks back when displaced).
+- [X] T074 [US6] Implement `python/minecraft_bot/behaviour/nodes.py` — `NodeStatus` enum (Success/Failure/Running), `BehaviourNode` abstract base, `Selector`, `Sequence`, `Inverter`, `RepeatUntilFail`, `AlwaysSucceed`, `Condition(predicate)`, `Action(coroutine_factory)`. Each `async tick(bot, ctx) -> NodeStatus`. `BehaviourRunner` loops on the root node.
+- [X] T075 [US6] Implement `python/minecraft_bot/behaviour/actions.py` — built-in primitives: `WalkTo(x, y, z)`, `AttackNearest(filter)`, `EatWhenHungry(threshold)`, `FollowPlayer(name)`, `DropItem(slot)`, `Say(message)`. Each wraps the corresponding Bot method.
+- [X] T076 [US6] Add `Bot.behaviour` attribute — a `BehaviourRunner` instance; `await bot.behaviour.run(tree, max_iterations=None)`.
+- [X] T077 [P] [US6] Unit test BT nodes at `tests/python/unit/test_behaviour_nodes.py` — Selector returns Success on first child Success; Sequence on all-Success; Failure short-circuits; Inverter flips. Mock bot for Action.
+- [X] T078 [US6] Integration test `tests/python/integration/test_us6_behaviour.py` (live): build a tree "eat if hungry else walk back to spawn"; run for 2 minutes; assert bot's position oscillates near spawn (it walks back when displaced).
 
 **Checkpoint**: US6 complete.
 
@@ -258,10 +258,10 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 **Independent Test**: `python tools/quickstart_us7.py` — bot says "ChatBot online"; other player types "!ping" → bot replies "pong @<name>".
 
-- [ ] T079 [US7] Implement `Bot.say(message)`, `Bot.command(slash_command)` (action slot) — wrap `chat_message` / `chat_command` serverbound packets with the framework's default timestamp / salt / empty signature / state_id.
-- [ ] T080 [US7] Wire `player_chat` / `profileless_chat` / `system_chat` clientbound packets → `ChatMessageEvent` with parsed sender + message text.
-- [ ] T081 [P] [US7] Unit test say/command at `tests/python/unit/test_chat.py` — mock Connection.send; assert say emits chat_message with given content + timestamp > 0.
-- [ ] T082 [US7] Integration test `tests/python/integration/test_us7_chat.py` (live): bot says unique message; asserts the next `system_chat`/`player_chat` event from server confirms broadcast.
+- [X] T079 [US7] Implement `Bot.say(message)`, `Bot.command(slash_command)` (action slot) — wrap `chat_message` / `chat_command` serverbound packets with the framework's default timestamp / salt / empty signature / state_id.
+- [X] T080 [US7] Wire `player_chat` / `profileless_chat` / `system_chat` clientbound packets → `ChatMessageEvent` with parsed sender + message text.
+- [X] T081 [P] [US7] Unit test say/command at `tests/python/unit/test_chat.py` — mock Connection.send; assert say emits chat_message with given content + timestamp > 0.
+- [X] T082 [US7] Integration test `tests/python/integration/test_us7_chat.py` (live): bot says unique message; asserts the next `system_chat`/`player_chat` event from server confirms broadcast.
 
 **Checkpoint**: US7 complete; all 7 user stories done.
 

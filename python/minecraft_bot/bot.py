@@ -151,6 +151,10 @@ class Bot:
         self.action_slot = Slot("action")
         self.container_slot = Slot("container")
 
+        # Behaviour-tree runner (T076).
+        from minecraft_bot.behaviour.nodes import BehaviourRunner
+        self.behaviour = BehaviourRunner()
+
         # Event hooks.
         self._hooks: list[_HookEntry] = []
         self._event_queue: Deque[Event] = deque(maxlen=4096)
