@@ -120,7 +120,7 @@ and disconnect cleanly with field-level position parity within
 
 ### Tests for User Story 1 (TDD — write FIRST, expect failure pre-T044+)
 
-- [ ] T043 [P] [US1] Write `tests/python/parity/test_api_surface.py` enumerating every public symbol of `minecraft_bot` and asserting matching presence + signature in `minecraft_bot_accel` per `contracts/api-surface.md`
+- [X] T043 [P] [US1] Write `tests/python/parity/test_api_surface.py` enumerating every public symbol of `minecraft_bot` and asserting matching presence + signature in `minecraft_bot_accel` per `contracts/api-surface.md`
 - [ ] T044 [P] [US1] Write `tests/python/parity/test_field_parity.py` introspecting `__dataclass_fields__` of every Python dataclass listed in `data-model.md` parity table and asserting matching `__dict__` / `get_all`-exposed attrs in accel
 - [ ] T045 [P] [US1] Write `tests/python/parity/test_us1_substitution.py` (live, mark `pytest.mark.live`) — Python and accel bots connect in sequence to Paper, walk to (10005,200,10005), drop an item, disconnect; assert position parity within 0.5 blocks per quickstart.md
 - [X] T046 [P] [US1] Write `tests/python/parity/test_observation_parity.py` asserting `bot_py.observation().to_dict() == bot_acc.observation().to_dict()` after a deterministic packet trace replay
