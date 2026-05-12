@@ -109,7 +109,7 @@ and disconnect cleanly with field-level position parity within
 - [X] T032 [P] [US1] Port `python/minecraft_bot/pathfinding.py` walkable-graph builder → `rust/src/pathfinding/walkable.rs`
 - [X] T033 [US1] Port `python/minecraft_bot/pathfinding.py` A* core → `rust/src/pathfinding/astar.rs`; expose `find_path(world: &WorldCache, start: Vec3, goal: Vec3, max_fall: i32, max_nodes: usize) -> Option<Path>`
 - [X] T034 [P] [US1] Port `python/minecraft_bot/physics.py` → `rust/src/physics.rs` (20 Hz tick: gravity, water/lava, slab/ledge math; deterministic per Principle VII)
-- [ ] T035 [US1] Port `python/minecraft_bot/behaviour/walk_to.py` → `rust/src/behaviour/walk_to.rs`; enforce 5-block anti-cheat cap on Player Position sends (data-model.md validation rules)
+- [X] T035 [US1] Port `python/minecraft_bot/behaviour/walk_to.py` → `rust/src/behaviour/walk_to.rs`; enforce 5-block anti-cheat cap on Player Position sends (data-model.md validation rules)
 - [ ] T036 [P] [US1] Port `python/minecraft_bot/behaviour/hazards.py` → `rust/src/behaviour/hazards.rs` (slab/water/ledge/drop detection + recovery)
 - [ ] T037 [P] [US1] Port `python/minecraft_bot/inventory_click.py` drop/pickup window-click flow → `rust/src/behaviour/window_click.rs`; wait for `confirm_transaction` per data-model.md
 - [X] T038 [US1] Extend `rust/src/connection.rs` with the full tick-loop: keep-alive, observation-side packet handlers updating WorldCache, graceful disconnect on cancel, hooks bus

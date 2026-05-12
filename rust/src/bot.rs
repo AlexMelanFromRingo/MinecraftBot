@@ -10,10 +10,13 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
+use std::time::Duration;
+
 use crate::codec::BytesReader;
 use crate::connection::Connection;
 use crate::effects::StatusEffects;
 use crate::errors::ProtocolError;
+use crate::pathfinding::{find_path, Pos};
 use crate::protocol::v763::packets::play::clientbound::{
     block_change::BlockChange,
     map_chunk::MapChunk,
@@ -22,7 +25,14 @@ use crate::protocol::v763::packets::play::clientbound::{
     unload_chunk::UnloadChunk,
     update_health::UpdateHealth,
 };
+use crate::protocol::v763::packets::play::serverbound::position::Position as SbPosition;
 use crate::world::{decode_chunk, World};
+
+/// Paper anti-cheat: `moved too quickly` trips at delta² > 100 ⇒ 10
+/// blocks/tick. We cap each Player Position send to **5 blocks** from
+/// the last server-known position (matches the Python reference's
+/// `MAX_PREDICTION_RADIUS = 5.0`).
+const MAX_PREDICTION_RADIUS: f64 = 5.0;
 
 // Clientbound packet IDs we care about in the dispatcher.
 const ID_BLOCK_CHANGE: i32 = 0x0A;
@@ -222,6 +232,126 @@ impl Bot {
             Some((s.x, s.y, s.z, s.yaw, s.pitch))
         } else {
             None
+        }
+    }
+
+    /// Plan a path to `(tx, ty, tz)` and walk there one tick at a
+    /// time, sending Player Position packets at 20 Hz.
+    ///
+    /// Each move is clamped to ≤5 blocks from the last server-known
+    /// position (Paper anti-cheat). Returns `true` on arrival within
+    /// 1.5 blocks; `false` on timeout.
+    pub async fn walk_to(
+        &self,
+        tx: f64,
+        ty: f64,
+        tz: f64,
+        timeout_secs: f64,
+    ) -> Result<bool, ProtocolError> {
+        let start_state = {
+            let s = self.state.lock().await;
+            if !s.position_known {
+                return Err(ProtocolError::DecodeError(
+                    "walk_to called before initial position arrived".into(),
+                ));
+            }
+            *s
+        };
+        let start_pos: Pos = (
+            start_state.x.floor() as i32,
+            start_state.y.floor() as i32,
+            start_state.z.floor() as i32,
+        );
+        let goal_pos: Pos = (tx.floor() as i32, ty.floor() as i32, tz.floor() as i32);
+
+        // Plan the path through the World cache.
+        let path_nodes: Vec<Pos> = match find_path(self.world.as_ref(), start_pos, goal_pos, 3, 100_000) {
+            Ok(p) => p.nodes,
+            Err(_) => {
+                return Ok(false);
+            }
+        };
+
+        let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(timeout_secs);
+        let mut waypoint_idx: usize = 0;
+        loop {
+            if tokio::time::Instant::now() > deadline {
+                return Ok(false);
+            }
+            // Where are we right now?
+            let (cur_x, cur_y, cur_z) = {
+                let s = self.state.lock().await;
+                (s.x, s.y, s.z)
+            };
+
+            // Goal-distance check.
+            let dx = tx - cur_x;
+            let dy = ty - cur_y;
+            let dz = tz - cur_z;
+            if (dx * dx + dy * dy + dz * dz).sqrt() <= 1.5 {
+                return Ok(true);
+            }
+
+            // Advance waypoint index past anything we've already
+            // reached.
+            while waypoint_idx + 1 < path_nodes.len() {
+                let (wx, wy, wz) = path_nodes[waypoint_idx];
+                let ddx = (wx as f64 + 0.5) - cur_x;
+                let ddy = (wy as f64) - cur_y;
+                let ddz = (wz as f64 + 0.5) - cur_z;
+                if (ddx * ddx + ddy * ddy + ddz * ddz).sqrt() < 1.0 {
+                    waypoint_idx += 1;
+                } else {
+                    break;
+                }
+            }
+            if waypoint_idx >= path_nodes.len() {
+                // Past last waypoint but not at target — let goal
+                // check finish the loop.
+                tokio::time::sleep(Duration::from_millis(50)).await;
+                continue;
+            }
+
+            // Slide toward the current waypoint, capped at
+            // MAX_PREDICTION_RADIUS.
+            let (wx, wy, wz) = path_nodes[waypoint_idx];
+            let target_x = wx as f64 + 0.5;
+            let target_y = wy as f64;
+            let target_z = wz as f64 + 0.5;
+            let mut step_dx = target_x - cur_x;
+            let mut step_dy = target_y - cur_y;
+            let mut step_dz = target_z - cur_z;
+            let dist = (step_dx * step_dx + step_dy * step_dy + step_dz * step_dz).sqrt();
+            if dist > MAX_PREDICTION_RADIUS {
+                let scale = MAX_PREDICTION_RADIUS / dist;
+                step_dx *= scale;
+                step_dy *= scale;
+                step_dz *= scale;
+            }
+            let send_x = cur_x + step_dx;
+            let send_y = cur_y + step_dy;
+            let send_z = cur_z + step_dz;
+
+            // Predict locally so the next tick's slide starts from
+            // here (we update upon server confirmation via
+            // sync_player_position; this is just a between-tick
+            // estimate).
+            {
+                let mut s = self.state.lock().await;
+                s.x = send_x;
+                s.y = send_y;
+                s.z = send_z;
+            }
+
+            let pkt = SbPosition {
+                x: send_x,
+                y: send_y,
+                z: send_z,
+                on_ground: true,
+            };
+            self.connection.send(&pkt).await?;
+
+            tokio::time::sleep(Duration::from_millis(50)).await;
         }
     }
 }

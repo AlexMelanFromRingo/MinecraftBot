@@ -91,6 +91,25 @@ impl PyBot {
         })
     }
 
+    /// `walk_to(x, y, z, *, timeout=30.0)` — plan a path and walk
+    /// there, sending Player Position packets at 20 Hz. Returns
+    /// `True` on arrival, `False` on timeout.
+    #[pyo3(signature = (x, y, z, *, timeout = 30.0))]
+    fn walk_to<'py>(
+        &self,
+        py: Python<'py>,
+        x: f64,
+        y: f64,
+        z: f64,
+        timeout: f64,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let inner = Arc::clone(&self.inner);
+        future_into_py(py, async move {
+            let bot = inner.lock().await;
+            bot.walk_to(x, y, z, timeout).await.into_py()
+        })
+    }
+
     /// Number of loaded chunks (synchronous; reads via RwLock).
     fn loaded_chunk_count<'py>(&self, py: Python<'py>) -> PyResult<usize> {
         let inner = self.inner.clone();
