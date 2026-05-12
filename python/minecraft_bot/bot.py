@@ -622,6 +622,18 @@ class Bot:
     def distance_to(self, eid: int) -> Optional[float]:
         return self.entities.distance_to(eid, self.position)
 
+    # --- snapshot (T088, FR-130..FR-134) -------------------------------
+
+    def snapshot(self, *, nearby_radius: float = 32.0) -> "BotSnapshot":
+        """Capture a frozen, picklable view of the bot's full state.
+
+        Useful for ML observation pipelines, replay-by-state tools, and
+        deterministic test fixtures. The snapshot does not reference
+        any live state — it's safe to compare or pickle.
+        """
+        from minecraft_bot.snapshot import make_snapshot, BotSnapshot
+        return make_snapshot(self, nearby_radius=nearby_radius)
+
     # --- inventory (FR-060..FR-073) ------------------------------------
 
     @property

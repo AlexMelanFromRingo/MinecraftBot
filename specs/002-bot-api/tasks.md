@@ -271,16 +271,16 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 **Purpose**: SC verification, lints, docs.
 
-- [ ] T083 [P] Performance test `tests/python/perf/test_tick_latency.py` — `pytest-benchmark` on `bot.tick()` median ≤ 5 ms, p99 ≤ 25 ms (SC-009).
-- [ ] T084 [P] Performance test `tests/python/perf/test_find_blocks.py` — `find_blocks_nearby("oak_log", radius=32, limit=5)` runs in < 100 ms on a synthetic World preloaded with ≥ 5 oak_log positions (SC-008).
-- [ ] T085 [P] Performance test `tests/python/perf/test_behaviour_eval.py` — 10-node tree of depth 4 evaluates in < 1 ms median (SC-010).
-- [ ] T086 [P] Lint entity subclass coverage at `tests/python/unit/test_entity_subclass_shape.py` (extends T050 if needed) — assert there's no entity-type-id from `entity_metadata.json` missing a Python class.
-- [ ] T087 [P] Zero-deps lint runs on new files (extends 001's `tests/python/unit/test_zero_deps.py`; nothing to add since the existing test walks all `.py` files under `python/minecraft_bot/`).
-- [ ] T088 [P] BotSnapshot implementation at `python/minecraft_bot/bot.py` — `Bot.snapshot() -> BotSnapshot` frozen dataclass with position, yaw, pitch, health, food, saturation, inventory tuple, nearby_entities tuple, status_effects tuple. Used for ML observation pipelines.
+- [X] T083 [P] Performance test `tests/python/perf/test_tick_latency.py` — `pytest-benchmark` on `bot.tick()` median ≤ 5 ms, p99 ≤ 25 ms (SC-009).
+- [X] T084 [P] Performance test `tests/python/perf/test_find_blocks.py` — `find_blocks_nearby("oak_log", radius=32, limit=5)` runs in < 100 ms on a synthetic World preloaded with ≥ 5 oak_log positions (SC-008).
+- [X] T085 [P] Performance test `tests/python/perf/test_behaviour_eval.py` — 10-node tree of depth 4 evaluates in < 1 ms median (SC-010).
+- [X] T086 [P] Lint entity subclass coverage at `tests/python/unit/test_entity_subclass_shape.py` (extends T050 if needed) — assert there's no entity-type-id from `entity_metadata.json` missing a Python class.
+- [X] T087 [P] Zero-deps lint runs on new files (extends 001's `tests/python/unit/test_zero_deps.py`; nothing to add since the existing test walks all `.py` files under `python/minecraft_bot/`).
+- [X] T088 [P] BotSnapshot implementation at `python/minecraft_bot/bot.py` — `Bot.snapshot() -> BotSnapshot` frozen dataclass with position, yaw, pitch, health, food, saturation, inventory tuple, nearby_entities tuple, status_effects tuple. Used for ML observation pipelines.
 - [ ] T089 [P] Update `README.md` at repo root — note the Bot API milestone, add `pip install -e python/[dev]` plus a 5-line "hello bot" example.
 - [ ] T090 Run `quickstart.md` end-to-end on a clean checkout — all 7 quickstart scripts succeed against a live server.
 - [ ] T091 [P] CI matrix update — extend `.github/workflows/ci.yml` (added in 001) to include the new test files in default + live runs.
-- [ ] T092 [P] Long-uptime live test `tests/python/integration/test_sc006_survive_10min.py` (live, slow) — bot in survival mode with auto_eat runs for 10 min idle near spawn; assert is_connected throughout and no death.
+- [X] T092 [P] Long-uptime live test `tests/python/integration/test_sc006_survive_10min.py` (live, slow) — bot in survival mode with auto_eat runs for 10 min idle near spawn; assert is_connected throughout and no death.
 
 **Checkpoint**: All 12 success criteria measured; constitution re-verified.
 
