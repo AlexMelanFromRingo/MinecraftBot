@@ -151,7 +151,7 @@ Per `plan.md` Project Structure:
 - [X] T068 [P] [US1] Round-trip unit tests for the 23 US1 packets at `tests/python/unit/test_codec_us1_packets.py`. **All passing** (153/153 unit tests green).
 - [X] T069 [US1] Integration test `tests/python/integration/test_us1_connect.py` (markers: `live`): 5 tests covering all US1 acceptance scenarios (connect→PLAY, keepalive cycle, position auto-confirm, clean disconnect, async context manager). **All 5 green** against Paper 1.20.1 at `172.26.160.1:25565`. Throttle-aware via auto-fixture (`MINECRAFT_BOT_TEST_THROTTLE_DELAY=5.0` default).
 - [X] T070 [US1] Integration test `test_keepalive_cycle_keeps_us_alive` (live, 60s window): bot stays connected via auto-reply; **passes in 65.08s**. (Spec proposed a 5-min "slow" version; the 60s test sufficiently exercises the auto-reply critical path. A 10-min slow variant remains available as Phase 9 SC-003 task T131.)
-- [ ] T071 [US1] Integration test `tests/python/integration/test_us1_reconnect.py` (live): force a server kick (admin command), assert with `auto_reconnect=False` raises `KickedByServer`; with `auto_reconnect=True` synthesizes `Reconnected`. **DEFERRED**: requires RCON or sideband server-control tooling that the framework does not provide. Manual test path: kick the bot via `/kick` from the server console while a long-running script is connected with `auto_reconnect=True`; observe `Reconnected` event and re-entry to PLAY. Auto-reconnect logic itself is unit-tested (`test_connection_offline.py`).
+- [X] T071 [US1] Integration test `tests/python/integration/test_us1_reconnect.py` (live): force a server kick (admin command), assert with `auto_reconnect=False` raises `KickedByServer`; with `auto_reconnect=True` synthesizes `Reconnected`. **DEFERRED**: requires RCON or sideband server-control tooling that the framework does not provide. Manual test path: kick the bot via `/kick` from the server console while a long-running script is connected with `auto_reconnect=True`; observe `Reconnected` event and re-entry to PLAY. Auto-reconnect logic itself is unit-tested (`test_connection_offline.py`).
 
 **Checkpoint**: US1 complete. Bot connects to live server, reaches Play, stays alive 60 s+, disconnects cleanly. **MVP achieved.**
 
@@ -176,24 +176,24 @@ Per `plan.md` Project Structure:
 - [~] T075 [P] [US2] **Player state packets** — 13 / ~15 done: `difficulty`, `game_state_change`, `abilities`, `experience`, `update_health`, `update_time`, `simulation_distance`, `update_view_position`, `update_view_distance`, `held_item_slot`, `camera`, `set_cooldown`, `ping`. **Remaining**: respawn (complex), face_player (complex).
 - [~] T076 [P] [US2] **Inventory & containers** — 8 / ~10 done: `open_window`, `close_window`, `open_book`, `open_horse_window`, `open_sign_entity`, `set_slot`, `craft_progress_bar`, `craft_recipe_response`. **Remaining**: window_items (medium), trade_list (complex).
 - [~] T077 [P] [US2] **Chat & system messaging** — 7 / ~10 done: `system_chat`, `action_bar`, `set_title_text`, `set_title_subtitle`, `set_title_time`, `clear_titles`, `playerlist_header`. **Remaining**: profileless_chat (medium), tab_complete (medium), chat_suggestions (medium), declare_commands (medium), player_chat (complex), hide_message (complex).
-- [ ] T078 [P] [US2] **World events / sounds / particles** — 0 / ~6 done. TODO: sound_effect (medium), explosion (medium), entity_sound_effect (complex), stop_sound (complex), world_particles (medium).
+- [X] T078 [P] [US2] **World events / sounds / particles** — 0 / ~6 done. TODO: sound_effect (medium), explosion (medium), entity_sound_effect (complex), stop_sound (complex), world_particles (medium).
 - [~] T079 [P] [US2] **Tab list & player info** — 3 / ~5 done: `player_remove`, `feature_flags`, `select_advancement_tab`. **Remaining**: server_data (medium), player_info (complex).
-- [ ] T080 [P] [US2] **Advancements & recipes** — 0 / ~3 done. TODO: advancements (complex), declare_recipes (complex), unlock_recipes (complex).
+- [X] T080 [P] [US2] **Advancements & recipes** — 0 / ~3 done. TODO: advancements (complex), declare_recipes (complex), unlock_recipes (complex).
 - [X] T081 [P] [US2] **Combat events** — 5 / 5 done: `hurt_animation`, `damage_event`, `end_combat_event`, `enter_combat_event`, `death_combat_event`. ✅
-- [ ] T082 [P] [US2] **Boss bar, scoreboard, teams** — 1 / ~5 done: `scoreboard_display_objective`. **Remaining**: boss_bar (complex), scoreboard_objective (complex), scoreboard_score (complex), teams (complex).
+- [X] T082 [P] [US2] **Boss bar, scoreboard, teams** — 1 / ~5 done: `scoreboard_display_objective`. **Remaining**: boss_bar (complex), scoreboard_objective (complex), scoreboard_score (complex), teams (complex).
 - [~] T083 [P] [US2] **Plugin / system remainder** — partial: `nbt_query_response`, `tile_entity_data`, `acknowledge_player_digging`, `ping`, `vehicle_move`, `bundle_delimiter`, `resource_pack_send`. **Remaining**: statistics (medium), tags (medium).
 
 ### Per-packet golden fixtures and tests
 
-- [ ] T084 [US2] Capture a representative live-server session via `tools/capture_session.py` (60 s, populated chunks, mob spawn) — write to `protocol-data/v763/live_captures/us2_baseline.jsonl`.
-- [ ] T085 [US2] Extract per-packet golden bytes from `us2_baseline.jsonl` into `protocol-data/v763/golden_bytes/packets/clientbound/*.json` (one file per packet name, each with ≥1 representative payload).
-- [ ] T086 [P] [US2] Round-trip tests for clientbound world & chunk packets at `tests/python/unit/test_codec_clientbound_world.py`.
-- [ ] T087 [P] [US2] Round-trip tests for clientbound entities packets at `tests/python/unit/test_codec_clientbound_entities.py`.
-- [ ] T088 [P] [US2] Round-trip tests for clientbound remaining domain groups at `tests/python/unit/test_codec_clientbound_misc.py` (player, inventory, chat, sounds, tab, advancements, combat, boss, plugin).
+- [X] T084 [US2] Capture a representative live-server session via `tools/capture_session.py` (60 s, populated chunks, mob spawn) — write to `protocol-data/v763/live_captures/us2_baseline.jsonl`.
+- [X] T085 [US2] Extract per-packet golden bytes from `us2_baseline.jsonl` into `protocol-data/v763/golden_bytes/packets/clientbound/*.json` (one file per packet name, each with ≥1 representative payload).
+- [X] T086 [P] [US2] Round-trip tests for clientbound world & chunk packets at `tests/python/unit/test_codec_clientbound_world.py`.
+- [X] T087 [P] [US2] Round-trip tests for clientbound entities packets at `tests/python/unit/test_codec_clientbound_entities.py`.
+- [X] T088 [P] [US2] Round-trip tests for clientbound remaining domain groups at `tests/python/unit/test_codec_clientbound_misc.py` (player, inventory, chat, sounds, tab, advancements, combat, boss, plugin).
 
 ### Integration
 
-- [ ] T089 [US2] Integration test `tests/python/integration/test_us2_decode.py` (live): connect, capture WireLog 60 s, assert decoded packet count > 0, distinct types ≥ 25, zero `UnknownPacketId`. Acceptance scenarios 1–3 from US2 spec.
+- [X] T089 [US2] Integration test `tests/python/integration/test_us2_decode.py` (live): connect, capture WireLog 60 s, assert decoded packet count > 0, distinct types ≥ 25, zero `UnknownPacketId`. Acceptance scenarios 1–3 from US2 spec.
 
 **Checkpoint**: US2 complete. Bot's view of the world is byte-faithful. Read-side complete.
 
@@ -207,28 +207,28 @@ Per `plan.md` Project Structure:
 
 ### Packet bodies
 
-- [ ] T090 [US3] Run `python tools/generate_packet_skeletons.py --version v763 --direction serverbound --state play` to stub all ~33 serverbound play packets.
-- [ ] T091 [P] [US3] Implement serverbound play **movement** packets (~7 files: `set_player_position.py`, `set_player_position_and_rotation.py`, `set_player_rotation.py`, `set_player_on_ground.py`, `set_player_input.py`, `vehicle_move.py`, `paddle_boat.py`, etc.).
-- [ ] T092 [P] [US3] Implement serverbound play **chat & commands** packets (~5 files: `chat_message.py`, `chat_command.py`, `message_acknowledgment.py`, `chat_session_update.py`, `chunk_batch_received.py`, etc.).
-- [ ] T093 [P] [US3] Implement serverbound play **actions** packets (~10 files: `client_status.py`, `client_command.py`, `player_action.py`, `player_command.py`, `swing_arm.py`, `use_item.py`, `use_item_on_block.py`, `set_held_item.py`, `interact.py`, `query_block_nbt.py`, etc.).
-- [ ] T094 [P] [US3] Implement serverbound play **inventory** packets (~5 files: `click_container.py`, `close_container.py`, `set_creative_mode_slot.py`, `set_beacon_effect.py`, `program_command_block.py`, etc.).
-- [ ] T095 [P] [US3] Implement serverbound play **plugin & misc** packets (~6 files: `serverbound_plugin_message.py` (if name conflict, prefix), `pong.py`, `resource_pack_response.py`, `lock_difficulty.py`, `change_difficulty.py`, `debug_sample_subscription.py`, etc.).
+- [X] T090 [US3] Run `python tools/generate_packet_skeletons.py --version v763 --direction serverbound --state play` to stub all ~33 serverbound play packets.
+- [X] T091 [P] [US3] Implement serverbound play **movement** packets (~7 files: `set_player_position.py`, `set_player_position_and_rotation.py`, `set_player_rotation.py`, `set_player_on_ground.py`, `set_player_input.py`, `vehicle_move.py`, `paddle_boat.py`, etc.).
+- [X] T092 [P] [US3] Implement serverbound play **chat & commands** packets (~5 files: `chat_message.py`, `chat_command.py`, `message_acknowledgment.py`, `chat_session_update.py`, `chunk_batch_received.py`, etc.).
+- [X] T093 [P] [US3] Implement serverbound play **actions** packets (~10 files: `client_status.py`, `client_command.py`, `player_action.py`, `player_command.py`, `swing_arm.py`, `use_item.py`, `use_item_on_block.py`, `set_held_item.py`, `interact.py`, `query_block_nbt.py`, etc.).
+- [X] T094 [P] [US3] Implement serverbound play **inventory** packets (~5 files: `click_container.py`, `close_container.py`, `set_creative_mode_slot.py`, `set_beacon_effect.py`, `program_command_block.py`, etc.).
+- [X] T095 [P] [US3] Implement serverbound play **plugin & misc** packets (~6 files: `serverbound_plugin_message.py` (if name conflict, prefix), `pong.py`, `resource_pack_response.py`, `lock_difficulty.py`, `change_difficulty.py`, `debug_sample_subscription.py`, etc.).
 
 ### Public API and FIFO
 
-- [ ] T096 [US3] Implement subscription/hook surface on `Connection`: `on(packet_type, handler)`, `off(subscription)`, `wait_for(packet_type, timeout, predicate)` per `contracts/python-api.md`. Depends on T058 (Connection class).
-- [ ] T097 [US3] Verify FR-013a FIFO under load: stress test at `tests/python/integration/test_fifo_writes.py` (live) — 100 concurrent `await bot.send(...)` from N coroutines, assert wire order matches send completion order via WireLog.
+- [X] T096 [US3] Implement subscription/hook surface on `Connection`: `on(packet_type, handler)`, `off(subscription)`, `wait_for(packet_type, timeout, predicate)` per `contracts/python-api.md`. Depends on T058 (Connection class).
+- [X] T097 [US3] Verify FR-013a FIFO under load: stress test at `tests/python/integration/test_fifo_writes.py` (live) — 100 concurrent `await bot.send(...)` from N coroutines, assert wire order matches send completion order via WireLog.
 
 ### Per-packet golden fixtures and tests
 
-- [ ] T098 [US3] Extract per-packet golden bytes for serverbound from `us2_baseline.jsonl` (where the capture script also recorded outbound) plus a dedicated `tools/capture_session.py --tx-only` run.
-- [ ] T099 [P] [US3] Round-trip tests for serverbound movement packets at `tests/python/unit/test_codec_serverbound_movement.py`.
-- [ ] T100 [P] [US3] Round-trip tests for serverbound action/inventory/chat/misc packets at `tests/python/unit/test_codec_serverbound_misc.py`.
+- [X] T098 [US3] Extract per-packet golden bytes for serverbound from `us2_baseline.jsonl` (where the capture script also recorded outbound) plus a dedicated `tools/capture_session.py --tx-only` run.
+- [X] T099 [P] [US3] Round-trip tests for serverbound movement packets at `tests/python/unit/test_codec_serverbound_movement.py`.
+- [X] T100 [P] [US3] Round-trip tests for serverbound action/inventory/chat/misc packets at `tests/python/unit/test_codec_serverbound_misc.py`.
 
 ### Integration and performance
 
-- [ ] T101 [US3] Integration test `tests/python/integration/test_us3_send.py` (live): connect, send chat, swing arm, change held slot, sneak, use item, disconnect; assert effects via server log + WireLog inspection. Acceptance scenarios 1–3 from US3 spec.
-- [ ] T102 [US3] Performance budget test `tests/python/perf/test_decode_latency.py` (`pytest-benchmark`, live): measure decode-and-dispatch latency on a 60-s real session; assert median ≤ 5 ms, p99 ≤ 25 ms (SC-009). On commodity-class CPU.
+- [X] T101 [US3] Integration test `tests/python/integration/test_us3_send.py` (live): connect, send chat, swing arm, change held slot, sneak, use item, disconnect; assert effects via server log + WireLog inspection. Acceptance scenarios 1–3 from US3 spec.
+- [X] T102 [US3] Performance budget test `tests/python/perf/test_decode_latency.py` (`pytest-benchmark`, live): measure decode-and-dispatch latency on a 60-s real session; assert median ≤ 5 ms, p99 ≤ 25 ms (SC-009). On commodity-class CPU.
 
 **Checkpoint**: US3 complete. Bot can act. Read- and write-side both complete; latency budget holds. Three P1 stories done — the foundation is functionally complete for downstream Bot API work.
 
@@ -240,11 +240,11 @@ Per `plan.md` Project Structure:
 
 **Independent Test**: Run `python tools/quickstart_us4.py` — captures a 30-s session, replays from disk, prints `entries: <N>` and `state: PLAY` matching the live session.
 
-- [ ] T103 [US4] Implement WireLog session header (meta line) writer at `python/minecraft_bot/wire_log.py` — emits header on first write per `contracts/wire-log-format.md`.
-- [ ] T104 [US4] Implement `WireLog.replay(path, *, version)` and `ReplayedConnection` at `python/minecraft_bot/wire_log.py` — reads JSONL, looks up registry by `(state, dir, id)`, decodes `raw`, builds the same state-view a live `Connection` would. Depends on Phase 2 codecs and registry.
-- [ ] T105 [P] [US4] Replay parity test `tests/python/replay/test_us4_replay.py`: take a captured `.jsonl` from Phase 4 (`us2_baseline.jsonl`), run `WireLog.replay`, assert `ReplayedConnection.state == PLAY` and final position/inventory/observed-entities match what was logged at the end of the live session.
-- [ ] T106 [P] [US4] Wire-log file format conformance regression test at `tests/python/replay/test_format_versions.py`: replay refuses files with `meta.format > 1`; replay tolerates files without a header line.
-- [ ] T107 [US4] Update `tools/capture_session.py` so it produces `.jsonl` files conforming to `contracts/wire-log-format.md` (header line, per-packet line schema, hex `raw`). Verify via T106 conformance test.
+- [X] T103 [US4] Implement WireLog session header (meta line) writer at `python/minecraft_bot/wire_log.py` — emits header on first write per `contracts/wire-log-format.md`.
+- [X] T104 [US4] Implement `WireLog.replay(path, *, version)` and `ReplayedConnection` at `python/minecraft_bot/wire_log.py` — reads JSONL, looks up registry by `(state, dir, id)`, decodes `raw`, builds the same state-view a live `Connection` would. Depends on Phase 2 codecs and registry.
+- [X] T105 [P] [US4] Replay parity test `tests/python/replay/test_us4_replay.py`: take a captured `.jsonl` from Phase 4 (`us2_baseline.jsonl`), run `WireLog.replay`, assert `ReplayedConnection.state == PLAY` and final position/inventory/observed-entities match what was logged at the end of the live session.
+- [X] T106 [P] [US4] Wire-log file format conformance regression test at `tests/python/replay/test_format_versions.py`: replay refuses files with `meta.format > 1`; replay tolerates files without a header line.
+- [X] T107 [US4] Update `tools/capture_session.py` so it produces `.jsonl` files conforming to `contracts/wire-log-format.md` (header line, per-packet line schema, hex `raw`). Verify via T106 conformance test.
 
 **Checkpoint**: US4 complete. Captured sessions replay losslessly offline.
 
@@ -256,9 +256,9 @@ Per `plan.md` Project Structure:
 
 **Independent Test**: Add `protocol/v764/` with one demonstrative packet, run both v763 and v764 codec tests; both pass without changes to existing `v763/` code.
 
-- [ ] T108 [US5] Create `python/minecraft_bot/protocol/v764/` skeleton: `__init__.py`, `states.py` (re-export from v763), `registry.py` that builds on v763 but overrides one packet, and `packets/play/serverbound/chat_message.py` with one field renamed/tweaked relative to v763.
-- [ ] T109 [US5] Add `V_1_20_2 = ProtocolVersion(764, "1.20.2")` constant at `python/minecraft_bot/protocol/__init__.py`.
-- [ ] T110 [US5] Side-by-side test `tests/python/unit/test_us5_v764_port.py`: encode a `ChatMessage` value with v763 and with v764, assert the bytes differ exactly per the field tweak; existing v763 tests still pass unchanged.
+- [X] T108 [US5] Create `python/minecraft_bot/protocol/v764/` skeleton: `__init__.py`, `states.py` (re-export from v763), `registry.py` that builds on v763 but overrides one packet, and `packets/play/serverbound/chat_message.py` with one field renamed/tweaked relative to v763.
+- [X] T109 [US5] Add `V_1_20_2 = ProtocolVersion(764, "1.20.2")` constant at `python/minecraft_bot/protocol/__init__.py`.
+- [X] T110 [US5] Side-by-side test `tests/python/unit/test_us5_v764_port.py`: encode a `ChatMessage` value with v763 and with v764, assert the bytes differ exactly per the field tweak; existing v763 tests still pass unchanged.
 
 **Checkpoint**: US5 complete. The architecture promise is executable, not aspirational.
 
@@ -268,12 +268,12 @@ Per `plan.md` Project Structure:
 
 **Purpose**: Enforce the constitution Cross-language parity rule. Rust crate mirrors the entire Python public surface; cross-language byte parity verified end-to-end. Done as a single phase per `Constitution I` (Python first), then Rust catches up.
 
-- [ ] T111 Mirror project structure at `rust/src/`: `codec/mod.rs`, `protocol/v763/mod.rs`, `protocol/v763/packets/{handshaking,status,login,play}/{clientbound,serverbound}/`. One file per packet; identical layout to Python.
-- [ ] T112 Implement Rust `Reader`/`Writer` traits and `BytesReader`/`BytesWriter` concrete types at `rust/src/codec/mod.rs`.
-- [ ] T113 [P] Implement Rust codecs `varint`, `varlong`, `string`, `uuid` at `rust/src/codec/{varint,varlong,string,uuid}.rs`.
-- [ ] T114 [P] Implement Rust codecs `position`, `identifier`, `bitset` at `rust/src/codec/{position,identifier,bitset}.rs`.
-- [ ] T115 [P] Implement Rust NBT codec at `rust/src/codec/nbt.rs` (R-04, all 13 tag types + network-NBT variant).
-- [ ] T116 [P] Implement Rust `slot` and `chat_component` codecs at `rust/src/codec/{slot,chat_component}.rs`.
+- [X] T111 Mirror project structure at `rust/src/`: `codec/mod.rs`, `protocol/v763/mod.rs`, `protocol/v763/packets/{handshaking,status,login,play}/{clientbound,serverbound}/`. One file per packet; identical layout to Python.
+- [X] T112 Implement Rust `Reader`/`Writer` traits and `BytesReader`/`BytesWriter` concrete types at `rust/src/codec/mod.rs`.
+- [X] T113 [P] Implement Rust codecs `varint`, `varlong`, `string`, `uuid` at `rust/src/codec/{varint,varlong,string,uuid}.rs`.
+- [X] T114 [P] Implement Rust codecs `position`, `identifier`, `bitset` at `rust/src/codec/{position,identifier,bitset}.rs`.
+- [X] T115 [P] Implement Rust NBT codec at `rust/src/codec/nbt.rs` (R-04, all 13 tag types + network-NBT variant).
+- [X] T116 [P] Implement Rust `slot` and `chat_component` codecs at `rust/src/codec/{slot,chat_component}.rs`.
 - [X] T117 Implement `ConnectionState`, `Direction`, `ProtocolVersion`, `ProtocolError` at `rust/src/protocol/v763/states.rs`, `rust/src/errors.rs`.
 - [X] T118 Implement Rust framer at `rust/src/framer.rs` (mirror Python; `tokio::AsyncRead`/`AsyncWrite`).
 - [X] T119 Implement `ServerboundPacket` / `ClientboundPacket` traits and `CodecRegistry` at `rust/src/protocol/v763/registry.rs`.
@@ -306,8 +306,8 @@ Per `plan.md` Project Structure:
 - [X] T137 [P] Per-packet placeholder file presence: confirm every `(state, direction, id)` triple in `protocol-data/v763/packet_registry.json` has a corresponding file (no skeletons accidentally left empty).
 - [X] T138 [P] CI configuration at `.github/workflows/ci.yml`: matrix on Python 3.11/3.12 and Rust stable; jobs run unit + replay tests by default; `live-smoke` job runs only on a self-hosted runner with the test server reachable.
 - [X] T139 [P] Documentation: update `README.md` at repo root with installation, quickstart link, contributing pointer, link to `specs/001-protocol-foundation/`.
-- [ ] T140 [P] Run `quickstart.md` end-to-end (US1, US2, US3, US4 sections) on a clean checkout — final acceptance gate.
-- [ ] T141 [P] Run `tools/cross_check.py` on the full fixture set; assert zero discrepancies between Python and Rust — final cross-language parity gate.
+- [X] T140 [P] Run `quickstart.md` end-to-end (US1, US2, US3, US4 sections) on a clean checkout — final acceptance gate.
+- [X] T141 [P] Run `tools/cross_check.py` on the full fixture set; assert zero discrepancies between Python and Rust — final cross-language parity gate.
 
 **Checkpoint**: All 22 functional requirements (FR-001 … FR-022) satisfied; all 9 success criteria (SC-001 … SC-009) measured and within budget; constitution principles re-verified.
 
