@@ -68,6 +68,12 @@ from minecraft_bot.world.cache import World
 PHYSICS_TICK_DT = 0.05  # seconds = 20 Hz
 WALK_TARGET_RADIUS = 1.5   # blocks; close enough to call it "arrived"
 
+# Paper anti-cheat: by default "moved too quickly" trips at delta_squared > 100,
+# i.e. 10 blocks/tick. We cap our predicted position to stay within this radius
+# of the last server-confirmed position to avoid false positives when local
+# physics + chunk-cache lag diverge from the server's view.
+MAX_PREDICTION_RADIUS = 5.0   # blocks from server's last-known position
+
 
 HandlerFn = Callable[[Event], Union[None, Awaitable[None]]]
 
@@ -105,6 +111,7 @@ class Bot:
         self._dimension: Optional[str] = None
         self._spawn_position: Optional[tuple[int, int, int]] = None
         self._has_initial_position = False
+        self._server_position: Optional[tuple[float, float, float]] = None
 
         # Slot locks (FR-027).
         self.movement_slot = Slot("movement")
@@ -276,6 +283,7 @@ class Bot:
         self._yaw = new_yaw
         self._pitch = new_pitch
         self._has_initial_position = True
+        self._server_position = (new_x, new_y, new_z)
         new_pos = (new_x, new_y, new_z)
         if old_pos != new_pos:
             self._emit(TeleportedEvent(
@@ -358,21 +366,65 @@ class Bot:
             next_t += PHYSICS_TICK_DT
 
     def tick(self) -> PhysicsState:
-        """Advance one physics tick (public for offline tests, FR-133)."""
-        in_water = self.world.is_water(int(self._physics.x), int(self._physics.y), int(self._physics.z))
-        self._physics = physics_tick(self._physics, self._intent, self.world, in_water=in_water)
+        """Advance one physics tick (public for offline tests, FR-133).
+
+        Skips simulation if (a) we haven't received an initial server
+        position yet, or (b) the chunk under the bot's feet isn't
+        loaded yet — without ground data, our collision detection would
+        let the bot fall through the world and diverge from the server.
+        """
+        if not self._has_initial_position:
+            return self._physics
+        cx, cz = int(self._physics.x) >> 4, int(self._physics.z) >> 4
+        if (cx, cz) not in self.world.chunks:
+            return self._physics
+        in_water = self.world.is_water(
+            int(self._physics.x), int(self._physics.y), int(self._physics.z)
+        )
+        new_state = physics_tick(self._physics, self._intent, self.world, in_water=in_water)
+        self._physics = new_state
         return self._physics
 
     async def _maybe_send_position(self) -> None:
+        """Send the bot's current position to the server, respecting the
+        anti-cheat per-tick speed cap.
+
+        Once a send succeeds we move the "last server-known position"
+        marker forward — the server has accepted what we said unless it
+        sends a Position packet to correct us, in which case ``_on_position``
+        will reset the marker.
+        """
         if not self._has_initial_position:
             return
-        # Send position every 50 ms regardless of movement (server tolerates and
-        # KeepAlive needs sequenced position to avoid anti-cheat timeout).
+        # Clamp the per-tick step relative to the last server-known position
+        # so we never trigger Paper's "moved too quickly" (delta^2 > 100).
+        if self._server_position is not None:
+            sx, sy, sz = self._server_position
+            dx = self._physics.x - sx
+            dy = self._physics.y - sy
+            dz = self._physics.z - sz
+            d2 = dx * dx + dy * dy + dz * dz
+            cap2 = MAX_PREDICTION_RADIUS ** 2
+            if d2 > cap2:
+                scale = (cap2 / d2) ** 0.5
+                send_x = sx + dx * scale
+                send_y = sy + dy * scale
+                send_z = sz + dz * scale
+            else:
+                send_x = self._physics.x
+                send_y = self._physics.y
+                send_z = self._physics.z
+        else:
+            send_x = self._physics.x
+            send_y = self._physics.y
+            send_z = self._physics.z
         try:
             await self._conn.send(sb_position.Position(
-                x=self._physics.x, y=self._physics.y, z=self._physics.z,
+                x=send_x, y=send_y, z=send_z,
                 on_ground=self._physics.on_ground,
             ))
+            # Trust the send: bring the server marker forward.
+            self._server_position = (send_x, send_y, send_z)
         except ConnectionClosed:
             pass
 
