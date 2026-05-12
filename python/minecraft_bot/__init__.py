@@ -22,7 +22,10 @@ import logging
 logging.getLogger("minecraft_bot.protocol").addHandler(logging.NullHandler())
 
 __version__ = "0.1.0"
-__all__ = ["__version__"]
+# Backend identifier — distinct from `minecraft_bot_accel.implementation`
+# (== "rust"). Used by parity tests to confirm which backend is active.
+implementation = "python"
+__all__ = ["__version__", "implementation"]
 
 # Real public re-exports are added by later milestones once the corresponding
 # modules land. Keeping the public surface explicit avoids accidental exports.

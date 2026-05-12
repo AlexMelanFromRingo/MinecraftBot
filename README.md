@@ -11,11 +11,13 @@ while preserving its API surface.
 |-----------|-------------|-------|
 | `001-protocol-foundation` | Codec + framer + 176-packet registry + Connection lifecycle + WireLog | Complete |
 | `002-bot-api` | High-level Bot: walk_to, A*+physics, world cache, entity tracker, inventory + containers, dig, auto-eat, follow, behaviour trees, chat, AI observation API | Complete (89/92) |
+| `003-rust-pyo3-bridge` | Rust port of 002 bot-API + PyO3 façade (`minecraft_bot_accel`): World cache, A* pathfinder, 20Hz physics, async Connection dispatcher, Bot facade with `connect`/`walk_to`/`drop_held_item`/`position`/`world`. Live-validated on Paper 1.20.1. Chunk decode 2.84× faster than pure Python. abi3 wheel matrix for 5 platforms. | In progress (54%) |
 
 See:
-- **Bot API plan**: [`specs/002-bot-api/plan.md`](./specs/002-bot-api/plan.md)
-- **Bot API quickstart**: [`specs/002-bot-api/quickstart.md`](./specs/002-bot-api/quickstart.md)
-- **Protocol foundation spec**: [`specs/001-protocol-foundation/spec.md`](./specs/001-protocol-foundation/spec.md)
+- **Two-implementation overview** (003): [`specs/003-rust-pyo3-bridge/plan.md`](./specs/003-rust-pyo3-bridge/plan.md), [`specs/003-rust-pyo3-bridge/quickstart.md`](./specs/003-rust-pyo3-bridge/quickstart.md)
+- **Bot API plan** (002): [`specs/002-bot-api/plan.md`](./specs/002-bot-api/plan.md)
+- **Bot API quickstart** (002): [`specs/002-bot-api/quickstart.md`](./specs/002-bot-api/quickstart.md)
+- **Protocol foundation spec** (001): [`specs/001-protocol-foundation/spec.md`](./specs/001-protocol-foundation/spec.md)
 - **Project constitution**: [`.specify/memory/constitution.md`](./.specify/memory/constitution.md)
 
 ## Hello, bot
@@ -44,6 +46,31 @@ tree = Selector([
 async with Bot.offline("172.26.160.1", 25565, "BTBot") as bot:
     await BehaviourRunner(tick_dt=0.5).run(tree, bot, max_ticks=200)
 ```
+
+### Native-speed alternative (003)
+
+The same script runs against the PyO3 façade with one import edit:
+
+```python
+import asyncio
+import minecraft_bot_accel as mb  # instead of `from minecraft_bot.bot import Bot`
+
+async def main() -> None:
+    bot = mb.Bot.offline("172.26.160.1", 25565, "Greeter")
+    await bot.connect()
+    try:
+        await bot.walk_to(bot.world.dimension and 10005, 200, 10005, timeout=15.0)
+        # Inspect via the native World cache (loaded by the packet
+        # dispatcher in Rust — no Python in the hot path):
+        print("loaded chunks:", bot.loaded_chunk_count())
+        print("block under feet:", bot.world.get_block_name(*[int(c) for c in (await bot.position())[:3]]))
+    finally:
+        await bot.disconnect()
+
+asyncio.run(main())
+```
+
+Build the native package from source with `maturin develop --manifest-path python-ext/Cargo.toml`. Pre-built wheels for Linux x86_64/aarch64, macOS arm64/x86_64, and Windows x86_64 land on GitHub Releases once a `v*` tag is pushed.
 
 ## Quick start
 

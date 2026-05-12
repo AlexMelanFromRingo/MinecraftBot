@@ -245,8 +245,8 @@ passes under both backends.
 
 **Purpose**: Release-readiness work that touches multiple stories.
 
-- [ ] T087 [P] Update repo-root `README.md` adding a "Two Implementations" section pointing to `python/` and `python-ext/`, install commands, and the import-substitution recipe from quickstart.md
-- [ ] T088 [P] Add `docs/migration_to_accel.md` describing how to migrate a 002-era bot script to the accel backend (the single-import edit + benchmark hint)
+- [X] T087 [P] Update repo-root `README.md` adding a "Two Implementations" section pointing to `python/` and `python-ext/`, install commands, and the import-substitution recipe from quickstart.md
+- [X] T088 [P] Add `docs/migration_to_accel.md` describing how to migrate a 002-era bot script to the accel backend (the single-import edit + benchmark hint)
 - [ ] T089 [P] Update `CLAUDE.md` after-the-fact summary noting 003 is complete (post-implementation hook will land this automatically but final wording deserves a manual review)
 - [ ] T090 [P] Run `cargo clippy --workspace --all-targets -- -D warnings`; fix any warnings introduced by the port (Rust-side hygiene)
 - [ ] T091 [P] Run `ruff check tests/python` and `black tests/python`; fix style on the new parity + perf test files
