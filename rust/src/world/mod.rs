@@ -10,6 +10,8 @@
 pub mod block_table;
 pub mod cache;
 pub mod chunk;
+pub mod decode_chunk;
 
 pub use cache::World;
 pub use chunk::{BlockEntityRecord, Chunk, ChunkSection, PalettedContainer};
+pub use decode_chunk::decode as decode_chunk;

@@ -99,7 +99,7 @@ and disconnect cleanly with field-level position parity within
 ### Rust standalone crate — port 002 bot-API into `rust/src/`
 
 - [X] T024 [P] [US1] Create `rust/src/world/mod.rs` and port `python/minecraft_bot/world/chunk.py` → `rust/src/world/chunk.rs` (Chunk + ChunkSection structs, section grid 16×16×N, `non_air_count`, biome storage)
-- [ ] T025 [P] [US1] Port `python/minecraft_bot/world/decode_chunk.py` → `rust/src/world/decode_chunk.rs` (paletted-container decode for block-states and biomes; light arrays)
+- [X] T025 [P] [US1] Port `python/minecraft_bot/world/decode_chunk.py` → `rust/src/world/decode_chunk.rs` (paletted-container decode for block-states and biomes; light arrays)
 - [X] T026 [US1] Port `python/minecraft_bot/world/cache.py` → `rust/src/world/cache.rs` using `parking_lot::RwLock<HashMap<(i32,i32), Chunk>>` (or DashMap — pick by benchmark in implementation); same eviction policy as Python
 - [X] T027 [P] [US1] Port `python/minecraft_bot/world/block_table.py` → `rust/src/world/block_table.rs` (Block struct, is_solid/is_water tables from `protocol-data/v763/`)
 - [ ] T028 [P] [US1] Port `python/minecraft_bot/slots.py` → `rust/src/slots.rs` (ItemStack with item_id, count, nbt)
@@ -114,7 +114,7 @@ and disconnect cleanly with field-level position parity within
 - [ ] T037 [P] [US1] Port `python/minecraft_bot/inventory_click.py` drop/pickup window-click flow → `rust/src/behaviour/window_click.rs`; wait for `confirm_transaction` per data-model.md
 - [ ] T038 [US1] Extend `rust/src/connection.rs` with the full tick-loop: keep-alive, observation-side packet handlers updating WorldCache, graceful disconnect on cancel, hooks bus
 - [ ] T039 [US1] Create `rust/src/bot.rs` — the top-level Bot facade — composing connection, world, walk_to, observation, hooks; mirror `python/minecraft_bot/bot.py` API one-for-one
-- [ ] T040 [P] [US1] Add Rust-side unit tests in `rust/tests/world_cache.rs` exercising T024–T027
+- [X] T040 [P] [US1] Add Rust-side unit tests in `rust/tests/world_cache.rs` exercising T024–T027
 - [ ] T041 [P] [US1] Add Rust-side unit tests in `rust/tests/pathfinding.rs` exercising T032–T033 over a fixture 64×64 walkable world
 - [ ] T042 [P] [US1] Add Rust-side unit tests in `rust/tests/physics.rs` exercising T034 deterministically against the Python physics golden traces from 002
 
