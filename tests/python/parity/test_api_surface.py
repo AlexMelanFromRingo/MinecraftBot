@@ -66,6 +66,7 @@ BOT_REQUIRED_METHODS: list[str] = [
     "walk_to",
     "walk_to_blind",
     "drop_held_item",
+    "send_raw",
     "world",
     "loaded_chunk_count",
 ]

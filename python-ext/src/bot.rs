@@ -124,6 +124,26 @@ impl PyBot {
         })
     }
 
+    /// `send_raw(payload: bytes)` — send a pre-encoded serverbound
+    /// packet. Caller must include the packet-ID varint at the start
+    /// of ``payload``. Pairs with the Python reference's typed
+    /// encoders: build a packet object via
+    /// `minecraft_bot.protocol.v763.packets.<state>.<dir>.<name>`,
+    /// run its `encode()` into a Writer, prepend `varint.write(id)`,
+    /// hand the bytes to this method.
+    fn send_raw<'py>(
+        &self,
+        py: Python<'py>,
+        payload: &Bound<'_, pyo3::types::PyBytes>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let inner = Arc::clone(&self.inner);
+        let owned: Vec<u8> = payload.as_bytes().to_vec();
+        future_into_py(py, async move {
+            let bot = inner.lock().await;
+            bot.send_raw(&owned).await.into_py()
+        })
+    }
+
     /// **Diagnostic** `walk_to_blind(x, y, z, *, timeout=30.0)` —
     /// slides toward the target at 20 Hz with NO path planning and
     /// NO collision checks. Use for testing the position-send loop

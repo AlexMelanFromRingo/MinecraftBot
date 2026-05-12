@@ -57,39 +57,60 @@ incrementally. As of 003 it exposes:
 - `await bot.position()` -> `(x, y, z, yaw, pitch)` or `None`
 - `await bot.entity_id()`, `await bot.health()`, `await bot.food()`
 - `await bot.walk_to(x, y, z, *, timeout=30.0)`
+- `await bot.walk_to_blind(x, y, z, *, timeout=30.0)` (diagnostic)
 - `await bot.drop_held_item(*, full_stack=False)`
+- `await bot.send_raw(payload: bytes)` (raw packet escape hatch)
 - `bot.loaded_chunk_count()` (sync)
 - `bot.world` -> `World` view (sync)
   - `world.get_block_id`, `get_block_name`, `is_solid`, `is_water`
   - `world.find_blocks_nearby(name, origin, *, radius, limit)`
   - `world.apply_block_change`, `apply_map_chunk`, `apply_unload_chunk`
   - `world.dimension`, `min_y`, `section_count`
-- `minecraft_bot_accel.codec.{Reader, Writer, varint, varlong}`
+- `minecraft_bot_accel.codec.{Reader, Writer}`
+- `minecraft_bot_accel.codec.varint.{read, write, encoded_size,
+   read_many, write_many}`
+- `minecraft_bot_accel.codec.varlong.{read, write}`
+- `minecraft_bot_accel.codec.nbt.{read, read_bytes, write,
+   TAG_BYTE..TAG_LONG_ARRAY}`
 - `minecraft_bot_accel.framer.Framer`
 - `minecraft_bot_accel.pathfinding.find_path(world, start, goal, ...)`
-- `minecraft_bot_accel.physics.{tick, PhysicsState, PhysicsIntent}`
-- `minecraft_bot_accel.errors.*` — full exception hierarchy
+- `minecraft_bot_accel.physics.{tick, tick_n, PhysicsState, PhysicsIntent}`
+- `minecraft_bot_accel.observation.{Vec3, Observation}`
+- `minecraft_bot_accel.entities.Entity`
+- `minecraft_bot_accel.effects.{StatusEffect, effect_name, effect_id}`
+- `minecraft_bot_accel.ItemStack`
+- `minecraft_bot_accel.errors.*` (full exception hierarchy: 23 classes)
 - `minecraft_bot_accel.WireLog`
 
 Surface still landing in later phases:
-- Inventory item tracker (`bot.inventory`)
-- Entity tracker (`bot.entities`)
-- Observation snapshot (`bot.observation()`)
+- Live `bot.inventory` tracker mirroring the Python WindowItems flow
+- Live `bot.entities` nearby-entity tracker
+- Typed on_packet hooks (raw forwarding works through send_raw today)
 - Chat / behaviour trees / dig
 
 ## Performance profile
 
+Measured 2026-05-12 on Linux x86_64 WSL2, Python 3.12.3, Rust 1.94.0,
+release build via maturin.
+
 | Operation | Python | Accel | Speedup |
 |---|---|---|---|
-| Chunk decode (48 KiB payload) | 345 µs | 121 µs | **2.84×** |
-| VarInt write (1-2 bytes) | 671 ns | 2442 ns | 0.27× (FFI dominates) |
-| VarInt read | 747 ns | 2095 ns | 0.36× (FFI dominates) |
+| End-to-end chunk burst (decode + cache + find_blocks) | 0.218 s | 0.007 s | **31.44×** |
+| Chunk decode alone (48 KiB payload) | 345 µs | 121 µs | **2.84×** |
+| VarInt batched read (N=1000 per call) | 112 ms | 4 ms | **26.82×** |
+| VarInt batched write (N=1000 per call) | 76 ms | 3 ms | **24.68×** |
+| NBT decode (638 B real heightmaps) | 13 ms | 4 ms | **3.26×** |
+| Physics tick (batched, N=50 per call) | 49 ms | 6 ms | **8.38×** |
+| A* pathfinder (30 random pairs on 32×32 grid) | 79 ms | 12 ms | **6.38×** |
+| VarInt single read (per-call) | 747 ns | 2095 ns | 0.36× (FFI dominates) |
+| VarInt single write (per-call) | 671 ns | 2442 ns | 0.27× (FFI dominates) |
 
-**Takeaway**: heavy operations (chunk decode, pathfinding, physics)
-win big. Per-op codec calls cross the FFI boundary and lose to pure
-Python on tiny ops. The accel package is most valuable when used at
-**packet / chunk / pathfinding** granularity — exactly the granularity
-the Python reference's hot loops operate at.
+Heavy operations and batched primitives win big. Per-op codec calls
+on 1-2 byte values cross the FFI boundary every call and lose to
+pure Python. Use the batched APIs (`varint.read_many`,
+`varint.write_many`, `physics.tick_n`) when you have many values to
+process at once. Bot.walk_to and Bot.dispatcher already amortise
+the boundary internally so callers do not have to think about it.
 
 ## Two implementations in one process
 
@@ -109,7 +130,7 @@ but not type-identical**:
 ```python
 isinstance(o, minecraft_bot.Observation)         # works on py-bot return
 isinstance(o, minecraft_bot_accel.Observation)   # works on ac-bot return
-# Cross-package isinstance returns False — by design (Constitution VI).
+# Cross-package isinstance returns False - by design (Constitution VI).
 ```
 
 Compare by **content** (`.to_dict()` / field-by-field) in parity
@@ -131,5 +152,5 @@ pytest tests/python/parity -m live
 ```
 
 If any test fails against accel but passes against python, the
-behaviour gap is a parity bug — please file an issue with the
+behaviour gap is a parity bug - please file an issue with the
 fixture / live capture.

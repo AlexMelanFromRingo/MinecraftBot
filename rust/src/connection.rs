@@ -306,6 +306,14 @@ impl Connection {
         self.write_framed(w.into_bytes()).await
     }
 
+    /// Send a pre-encoded serverbound payload. Caller is responsible
+    /// for prepending the packet-ID varint. Used by `Bot::send_raw`
+    /// to forward bytes built by the Python reference's typed
+    /// encoders without re-encoding through Rust.
+    pub async fn send_raw(&self, payload: &[u8]) -> Result<(), ProtocolError> {
+        self.write_framed(payload.to_vec()).await
+    }
+
     /// Current entity id (populated after Login → PLAY).
     pub async fn entity_id(&self) -> Option<i32> {
         self.play_state.lock().await.entity_id

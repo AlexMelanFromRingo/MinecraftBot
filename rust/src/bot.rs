@@ -256,6 +256,18 @@ impl Bot {
         self.connection.send(&pkt).await
     }
 
+    /// Send already-encoded packet bytes through the connection's
+    /// framer. The caller is responsible for prepending the packet-ID
+    /// varint to `payload` (matching the serverbound wire format).
+    ///
+    /// This is the "escape hatch" path that lets callers send any of
+    /// the 176 protocol packets without needing a per-packet PyO3
+    /// wrapper: encode via the Python reference's typed dataclass,
+    /// hand the resulting bytes to this method.
+    pub async fn send_raw(&self, payload: &[u8]) -> Result<(), ProtocolError> {
+        self.connection.send_raw(payload).await
+    }
+
     /// **Diagnostic / blind walk** — no path planning, no collision.
     /// Just slides the bot's position toward `(tx, ty, tz)` at 20 Hz,
     /// capped at 5 blocks per tick. Useful for testing the
