@@ -20,17 +20,16 @@ use std::time::Duration;
 
 use minecraft_bot::Connection;
 
-
 fn test_host() -> String {
     env::var("MINECRAFT_BOT_TEST_HOST").unwrap_or_else(|_| "172.26.160.1".into())
 }
 
 fn test_port() -> u16 {
-    env::var("MINECRAFT_BOT_TEST_PORT").ok()
+    env::var("MINECRAFT_BOT_TEST_PORT")
+        .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(25565)
 }
-
 
 #[tokio::test]
 async fn connect_play_idle_disconnect() {

@@ -1,6 +1,6 @@
 //! Slot codec — inventory item-stack data.
 
-use crate::codec::{Reader, Writer, nbt, varint};
+use crate::codec::{nbt, varint, Reader, Writer};
 use crate::errors::ProtocolError;
 
 /// Populated inventory slot.
@@ -23,7 +23,11 @@ pub fn read<R: Reader + ?Sized>(reader: &mut R) -> Result<Option<SlotData>, Prot
             let item_id = varint::read(reader)?;
             let count = reader.read_exact(1)?[0] as i8;
             let tag = nbt::read(reader)?;
-            Ok(Some(SlotData { item_id, count, tag }))
+            Ok(Some(SlotData {
+                item_id,
+                count,
+                tag,
+            }))
         }
         other => Err(ProtocolError::EncodeError(format!(
             "slot.present: {other} (expected 0 or 1)"

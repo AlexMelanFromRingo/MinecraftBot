@@ -38,7 +38,8 @@ pub trait ServerboundPacket: Send + Sync + std::fmt::Debug {
 pub type AnyPacket = Box<dyn std::any::Any + Send + Sync>;
 
 /// Boxed decode function pointer for a single `(state, dir, id)` slot.
-pub type DecodeFn = Arc<dyn (Fn(&mut BytesReader<'_>) -> Result<AnyPacket, ProtocolError>) + Send + Sync>;
+pub type DecodeFn =
+    Arc<dyn (Fn(&mut BytesReader<'_>) -> Result<AnyPacket, ProtocolError>) + Send + Sync>;
 
 /// `(state, direction, packet_id) → decode function` registry.
 #[derive(Clone, Default)]
@@ -56,13 +57,7 @@ impl CodecRegistry {
 
     /// Register a decode function for `(state, dir, id)`. Calling this
     /// twice for the same key replaces the prior entry.
-    pub fn register(
-        &mut self,
-        state: ConnectionState,
-        dir: Direction,
-        id: i32,
-        decode: DecodeFn,
-    ) {
+    pub fn register(&mut self, state: ConnectionState, dir: Direction, id: i32, decode: DecodeFn) {
         self.decoders.insert((state, dir, id), decode);
     }
 
@@ -76,11 +71,14 @@ impl CodecRegistry {
         reader: &mut BytesReader<'_>,
     ) -> Result<AnyPacket, ProtocolError> {
         let key = (state, dir, id);
-        let decode = self.decoders.get(&key).ok_or_else(|| ProtocolError::UnknownPacketId {
-            state: state.label().to_string(),
-            direction: dir.label().to_string(),
-            id,
-        })?;
+        let decode = self
+            .decoders
+            .get(&key)
+            .ok_or_else(|| ProtocolError::UnknownPacketId {
+                state: state.label().to_string(),
+                direction: dir.label().to_string(),
+                id,
+            })?;
         decode(reader)
     }
 
@@ -135,7 +133,12 @@ mod tests {
     fn unknown_id_returns_error() {
         let r = CodecRegistry::new();
         let mut br = BytesReader::new(&[]);
-        let result = r.decode(ConnectionState::Status, Direction::Clientbound, 0x99, &mut br);
+        let result = r.decode(
+            ConnectionState::Status,
+            Direction::Clientbound,
+            0x99,
+            &mut br,
+        );
         assert!(matches!(result, Err(ProtocolError::UnknownPacketId { .. })));
     }
 
@@ -149,7 +152,12 @@ mod tests {
             Arc::new(|_reader| Ok(Box::new(DummyClientbound) as AnyPacket)),
         );
         let mut br = BytesReader::new(&[]);
-        let result = r.decode(ConnectionState::Status, Direction::Clientbound, 0x42, &mut br);
+        let result = r.decode(
+            ConnectionState::Status,
+            Direction::Clientbound,
+            0x42,
+            &mut br,
+        );
         assert!(result.is_ok());
     }
 

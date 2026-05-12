@@ -7,8 +7,8 @@ use std::fs;
 use std::path::Path;
 
 use minecraft_bot::codec::{
-    bitset, chat_component, identifier, nbt, position, slot, string_codec, uuid_codec,
-    varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec, uuid_codec, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 
 fn fixture_path() -> std::path::PathBuf {
@@ -204,7 +204,9 @@ mod serde_json_lite {
                 break;
             }
         }
-        s.parse::<f64>().map(Value::Number).map_err(|e| e.to_string())
+        s.parse::<f64>()
+            .map(Value::Number)
+            .map_err(|e| e.to_string())
     }
 
     fn parse_bool(chars: &mut Peekable<Chars>) -> Result<Value, String> {
@@ -300,7 +302,10 @@ fn uuid_golden() {
 #[test]
 fn position_golden() {
     let fixtures = load_fixtures();
-    for fx in fixtures.as_object().unwrap()["position"].as_array().unwrap() {
+    for fx in fixtures.as_object().unwrap()["position"]
+        .as_array()
+        .unwrap()
+    {
         let obj = fx.as_object().unwrap();
         let arr = obj["value"].as_array().unwrap();
         let pos = (
@@ -327,7 +332,12 @@ fn identifier_golden() {
         let expected = obj["hex"].as_str().unwrap();
         let mut w = BytesWriter::new();
         identifier::write(value, &mut w).unwrap();
-        assert_eq!(bytes_to_hex(w.as_slice()), expected, "identifier {:?}", value);
+        assert_eq!(
+            bytes_to_hex(w.as_slice()),
+            expected,
+            "identifier {:?}",
+            value
+        );
     }
 }
 

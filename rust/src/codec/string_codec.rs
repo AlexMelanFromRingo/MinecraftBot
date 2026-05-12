@@ -1,6 +1,6 @@
 //! VarInt-prefixed UTF-8 string codec.
 
-use crate::codec::{Reader, Writer, varint};
+use crate::codec::{varint, Reader, Writer};
 use crate::errors::ProtocolError;
 
 /// Default maximum length (in bytes/chars) for the protocol-wide cap.
@@ -36,10 +36,7 @@ pub fn read_with_max<R: Reader + ?Sized>(
 }
 
 /// Encode a string as VarInt-prefixed UTF-8.
-pub fn write<W: Writer + ?Sized>(
-    value: &str,
-    writer: &mut W,
-) -> Result<(), ProtocolError> {
+pub fn write<W: Writer + ?Sized>(value: &str, writer: &mut W) -> Result<(), ProtocolError> {
     write_with_max(value, writer, MAX_LENGTH)
 }
 

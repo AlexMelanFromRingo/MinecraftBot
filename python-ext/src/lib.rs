@@ -5,21 +5,21 @@
 
 use pyo3::prelude::*;
 
-mod errors;
-mod error_map;
-mod runtime;
-mod version;
-mod wire_log;
-mod framer;
+mod bot;
 mod codec;
-mod world;
+mod effects_py;
+mod entities;
+mod error_map;
+mod errors;
+mod framer;
+mod observation;
 mod pathfinding;
 mod physics;
-mod bot;
-mod observation;
-mod entities;
-mod effects_py;
+mod runtime;
 mod slots;
+mod version;
+mod wire_log;
+mod world;
 
 #[pymodule]
 fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {

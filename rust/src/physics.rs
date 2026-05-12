@@ -56,8 +56,12 @@ pub struct PhysicsState {
 impl Default for PhysicsState {
     fn default() -> Self {
         Self {
-            x: 0.0, y: 0.0, z: 0.0,
-            vx: 0.0, vy: 0.0, vz: 0.0,
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            vx: 0.0,
+            vy: 0.0,
+            vz: 0.0,
             on_ground: false,
         }
     }
@@ -117,8 +121,12 @@ fn resolve_axis<W: CollisionWorld + ?Sized>(
     let target_y = y + dy;
     let target_z = z + dz;
     if !intersects_solid(world, target_x, target_y, target_z) {
-        if dx != 0.0 { return (target_x, false); }
-        if dy != 0.0 { return (target_y, false); }
+        if dx != 0.0 {
+            return (target_x, false);
+        }
+        if dy != 0.0 {
+            return (target_y, false);
+        }
         return (target_z, false);
     }
 
@@ -137,16 +145,25 @@ fn resolve_axis<W: CollisionWorld + ?Sized>(
             lo = mid;
         }
     }
-    if dx != 0.0 { return (x + dx * safe, true); }
-    if dy != 0.0 { return (y + dy * safe, true); }
+    if dx != 0.0 {
+        return (x + dx * safe, true);
+    }
+    if dy != 0.0 {
+        return (y + dy * safe, true);
+    }
     (z + dz * safe, true)
 }
 
 fn speed_cap(intent: &PhysicsIntent, in_fluid: bool) -> f64 {
-    if in_fluid { WALK_CAP * 0.5 }
-    else if intent.sneak { SNEAK_CAP }
-    else if intent.sprint { SPRINT_CAP }
-    else { WALK_CAP }
+    if in_fluid {
+        WALK_CAP * 0.5
+    } else if intent.sneak {
+        SNEAK_CAP
+    } else if intent.sprint {
+        SPRINT_CAP
+    } else {
+        WALK_CAP
+    }
 }
 
 /// Advance the bot one tick (50 ms) and return the new state.
@@ -218,15 +235,8 @@ pub fn tick<W: CollisionWorld + ?Sized>(
     }
     let (mut new_z, hit_z) = resolve_axis(world, new_x, working_y, state.z, 0.0, 0.0, vz);
     if hit_z {
-        let (stepped_z, blocked_after) = resolve_axis(
-            world,
-            new_x,
-            working_y + STEP_HEIGHT,
-            state.z,
-            0.0,
-            0.0,
-            vz,
-        );
+        let (stepped_z, blocked_after) =
+            resolve_axis(world, new_x, working_y + STEP_HEIGHT, state.z, 0.0, 0.0, vz);
         if !blocked_after && stepped_z != state.z {
             new_z = stepped_z;
             working_y += STEP_HEIGHT;
@@ -282,7 +292,10 @@ mod tests {
 
     #[test]
     fn gravity_pulls_down_in_empty_world() {
-        let s = PhysicsState { y: 10.0, ..Default::default() };
+        let s = PhysicsState {
+            y: 10.0,
+            ..Default::default()
+        };
         let after = tick(&s, &PhysicsIntent::default(), &Empty, false, false);
         assert!(after.y < s.y, "expected fall, got y={}", after.y);
         assert!(after.vy < 0.0);
@@ -290,7 +303,10 @@ mod tests {
 
     #[test]
     fn terminal_velocity_caps_fall_speed() {
-        let mut s = PhysicsState { y: 10000.0, ..Default::default() };
+        let mut s = PhysicsState {
+            y: 10000.0,
+            ..Default::default()
+        };
         for _ in 0..200 {
             s = tick(&s, &PhysicsIntent::default(), &Empty, false, false);
         }
@@ -300,7 +316,10 @@ mod tests {
 
     #[test]
     fn bot_lands_on_floor_and_stays() {
-        let s = PhysicsState { y: 5.0, ..Default::default() };
+        let s = PhysicsState {
+            y: 5.0,
+            ..Default::default()
+        };
         let mut cur = s;
         for _ in 0..50 {
             cur = tick(&cur, &PhysicsIntent::default(), &FloorWorld, false, false);
@@ -314,8 +333,15 @@ mod tests {
 
     #[test]
     fn jump_lifts_off_ground() {
-        let s = PhysicsState { y: 1.0, on_ground: true, ..Default::default() };
-        let intent = PhysicsIntent { jump: true, ..Default::default() };
+        let s = PhysicsState {
+            y: 1.0,
+            on_ground: true,
+            ..Default::default()
+        };
+        let intent = PhysicsIntent {
+            jump: true,
+            ..Default::default()
+        };
         let after = tick(&s, &intent, &FloorWorld, false, false);
         // After one tick the bot has lifted off.
         assert!(after.y > 1.0, "expected lift, got y={}", after.y);
@@ -324,8 +350,15 @@ mod tests {
 
     #[test]
     fn horizontal_intent_moves_along_x() {
-        let s = PhysicsState { y: 1.0, on_ground: true, ..Default::default() };
-        let intent = PhysicsIntent { dx: 1.0, ..Default::default() };
+        let s = PhysicsState {
+            y: 1.0,
+            on_ground: true,
+            ..Default::default()
+        };
+        let intent = PhysicsIntent {
+            dx: 1.0,
+            ..Default::default()
+        };
         let after = tick(&s, &intent, &FloorWorld, false, false);
         assert!(after.x > 0.0);
         assert!(after.x < WALK_CAP);

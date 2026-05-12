@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -39,25 +39,42 @@ impl EntityUpdateAttributes {
         for _ in 0..n {
             let key = identifier::read(reader)?;
             let vb = reader.read_exact(8)?;
-            let value = f64::from_be_bytes([vb[0],vb[1],vb[2],vb[3],vb[4],vb[5],vb[6],vb[7]]);
+            let value =
+                f64::from_be_bytes([vb[0], vb[1], vb[2], vb[3], vb[4], vb[5], vb[6], vb[7]]);
             let m = varint::read(reader)? as usize;
             let mut modifiers = Vec::with_capacity(m);
             for _ in 0..m {
                 let uuid = uuid_c::read(reader)?;
                 let ab = reader.read_exact(8)?;
-                let amount = f64::from_be_bytes([ab[0],ab[1],ab[2],ab[3],ab[4],ab[5],ab[6],ab[7]]);
+                let amount =
+                    f64::from_be_bytes([ab[0], ab[1], ab[2], ab[3], ab[4], ab[5], ab[6], ab[7]]);
                 let operation = reader.read_exact(1)?[0] as i8;
-                modifiers.push(Modifier { uuid, amount, operation });
+                modifiers.push(Modifier {
+                    uuid,
+                    amount,
+                    operation,
+                });
             }
-            attributes.push(Attribute { key, value, modifiers });
+            attributes.push(Attribute {
+                key,
+                value,
+                modifiers,
+            });
         }
-        Ok(Self { entity_id, attributes })
+        Ok(Self {
+            entity_id,
+            attributes,
+        })
     }
 }
 
 impl ClientboundPacket for EntityUpdateAttributes {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.entity_id, writer)?;
         varint::write(self.attributes.len() as i32, writer)?;

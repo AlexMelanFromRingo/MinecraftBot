@@ -69,8 +69,7 @@ fn read_nbt_string<R: Reader + ?Sized>(reader: &mut R) -> Result<String, Protoco
     let lb = reader.read_exact(2)?;
     let n = u16::from_be_bytes([lb[0], lb[1]]) as usize;
     let raw = reader.read_exact(n)?.to_vec();
-    String::from_utf8(raw)
-        .map_err(|e| ProtocolError::MalformedNbt(format!("non-utf-8: {e}")))
+    String::from_utf8(raw).map_err(|e| ProtocolError::MalformedNbt(format!("non-utf-8: {e}")))
 }
 
 fn write_nbt_string<W: Writer + ?Sized>(s: &str, writer: &mut W) -> Result<(), ProtocolError> {
@@ -144,10 +143,15 @@ fn read_payload<R: Reader + ?Sized>(tag_type: u8, reader: &mut R) -> Result<NbtT
             let elem = reader.read_exact(1)?[0];
             let n = i32::from_be_bytes(reader.read_exact(4)?.try_into().unwrap());
             if n < 0 {
-                return Err(ProtocolError::MalformedNbt(format!("negative list count: {n}")));
+                return Err(ProtocolError::MalformedNbt(format!(
+                    "negative list count: {n}"
+                )));
             }
             if n == 0 && elem == TAG_END {
-                NbtTag::List { element_type: TAG_END, items: vec![] }
+                NbtTag::List {
+                    element_type: TAG_END,
+                    items: vec![],
+                }
             } else if elem == TAG_END {
                 return Err(ProtocolError::MalformedNbt(
                     "non-empty list with TAG_End element type".into(),
@@ -157,7 +161,10 @@ fn read_payload<R: Reader + ?Sized>(tag_type: u8, reader: &mut R) -> Result<NbtT
                 for _ in 0..n {
                     items.push(read_payload(elem, reader)?);
                 }
-                NbtTag::List { element_type: elem, items }
+                NbtTag::List {
+                    element_type: elem,
+                    items,
+                }
             }
         }
         TAG_COMPOUND => {
@@ -224,8 +231,15 @@ fn write_payload<W: Writer + ?Sized>(tag: &NbtTag, writer: &mut W) -> Result<(),
             writer.write_all(&raw)
         }
         NbtTag::String(s) => write_nbt_string(s, writer),
-        NbtTag::List { element_type, items } => {
-            let elem = if items.is_empty() { TAG_END } else { *element_type };
+        NbtTag::List {
+            element_type,
+            items,
+        } => {
+            let elem = if items.is_empty() {
+                TAG_END
+            } else {
+                *element_type
+            };
             writer.write_all(&[elem])?;
             writer.write_all(&(items.len() as i32).to_be_bytes())?;
             for it in items {

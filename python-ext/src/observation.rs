@@ -16,11 +16,22 @@ pub struct PyVec3 {
 impl PyVec3 {
     #[new]
     fn new(x: f64, y: f64, z: f64) -> Self {
-        Self { inner: ro::Vec3::new(x, y, z) }
+        Self {
+            inner: ro::Vec3::new(x, y, z),
+        }
     }
-    #[getter] fn x(&self) -> f64 { self.inner.x }
-    #[getter] fn y(&self) -> f64 { self.inner.y }
-    #[getter] fn z(&self) -> f64 { self.inner.z }
+    #[getter]
+    fn x(&self) -> f64 {
+        self.inner.x
+    }
+    #[getter]
+    fn y(&self) -> f64 {
+        self.inner.y
+    }
+    #[getter]
+    fn z(&self) -> f64 {
+        self.inner.z
+    }
 
     fn __repr__(&self) -> String {
         format!("Vec3({}, {}, {})", self.inner.x, self.inner.y, self.inner.z)
@@ -59,26 +70,67 @@ impl PyObservation {
         health = 20.0, food = 20, saturation = 5.0,
     ))]
     fn new(
-        x: f64, y: f64, z: f64,
-        yaw: f32, pitch: f32, on_ground: bool,
-        health: f32, food: i32, saturation: f32,
+        x: f64,
+        y: f64,
+        z: f64,
+        yaw: f32,
+        pitch: f32,
+        on_ground: bool,
+        health: f32,
+        food: i32,
+        saturation: f32,
     ) -> Self {
         Self {
             inner: ro::Observation {
-                x, y, z, yaw, pitch, on_ground, health, food, saturation,
+                x,
+                y,
+                z,
+                yaw,
+                pitch,
+                on_ground,
+                health,
+                food,
+                saturation,
             },
         }
     }
 
-    #[getter] fn x(&self) -> f64 { self.inner.x }
-    #[getter] fn y(&self) -> f64 { self.inner.y }
-    #[getter] fn z(&self) -> f64 { self.inner.z }
-    #[getter] fn yaw(&self) -> f32 { self.inner.yaw }
-    #[getter] fn pitch(&self) -> f32 { self.inner.pitch }
-    #[getter] fn on_ground(&self) -> bool { self.inner.on_ground }
-    #[getter] fn health(&self) -> f32 { self.inner.health }
-    #[getter] fn food(&self) -> i32 { self.inner.food }
-    #[getter] fn saturation(&self) -> f32 { self.inner.saturation }
+    #[getter]
+    fn x(&self) -> f64 {
+        self.inner.x
+    }
+    #[getter]
+    fn y(&self) -> f64 {
+        self.inner.y
+    }
+    #[getter]
+    fn z(&self) -> f64 {
+        self.inner.z
+    }
+    #[getter]
+    fn yaw(&self) -> f32 {
+        self.inner.yaw
+    }
+    #[getter]
+    fn pitch(&self) -> f32 {
+        self.inner.pitch
+    }
+    #[getter]
+    fn on_ground(&self) -> bool {
+        self.inner.on_ground
+    }
+    #[getter]
+    fn health(&self) -> f32 {
+        self.inner.health
+    }
+    #[getter]
+    fn food(&self) -> i32 {
+        self.inner.food
+    }
+    #[getter]
+    fn saturation(&self) -> f32 {
+        self.inner.saturation
+    }
 
     fn __eq__(&self, other: &Self) -> bool {
         self.inner == other.inner
@@ -88,9 +140,15 @@ impl PyObservation {
         format!(
             "Observation(x={:.2}, y={:.2}, z={:.2}, yaw={:.1}, pitch={:.1}, \
              on_ground={}, health={:.1}, food={}, saturation={:.1})",
-            self.inner.x, self.inner.y, self.inner.z,
-            self.inner.yaw, self.inner.pitch, self.inner.on_ground,
-            self.inner.health, self.inner.food, self.inner.saturation,
+            self.inner.x,
+            self.inner.y,
+            self.inner.z,
+            self.inner.yaw,
+            self.inner.pitch,
+            self.inner.on_ground,
+            self.inner.health,
+            self.inner.food,
+            self.inner.saturation,
         )
     }
 

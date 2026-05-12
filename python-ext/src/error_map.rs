@@ -21,24 +21,25 @@ pub fn to_pyerr(err: RustErr) -> PyErr {
         RustErr::Disconnected(msg) => pyerr::Disconnected::new_err(msg),
         RustErr::KickedByServer(reason) => pyerr::KickedByServer::new_err(reason),
         RustErr::ConnectionDropped(msg) => pyerr::ConnectionDropped::new_err(msg),
-        RustErr::KeepAliveTimeout => {
-            pyerr::KeepAliveTimeout::new_err("keep-alive timeout")
-        }
+        RustErr::KeepAliveTimeout => pyerr::KeepAliveTimeout::new_err("keep-alive timeout"),
         RustErr::PeerReset => pyerr::PeerReset::new_err("peer reset"),
         RustErr::DecodeError(msg) => pyerr::DecodeError::new_err(msg),
-        RustErr::UnknownPacketId { state, direction, id } => {
-            pyerr::UnknownPacketId::new_err(format!(
-                "unknown packet id: state={state} dir={direction} id={id}"
-            ))
-        }
+        RustErr::UnknownPacketId {
+            state,
+            direction,
+            id,
+        } => pyerr::UnknownPacketId::new_err(format!(
+            "unknown packet id: state={state} dir={direction} id={id}"
+        )),
         RustErr::OversizedVarInt { byte_count } => {
             pyerr::OversizedVarInt::new_err(format!("oversized varint ({byte_count} bytes)"))
         }
-        RustErr::IncompleteRead { requested, available } => {
-            pyerr::IncompleteRead::new_err(format!(
-                "incomplete read: requested {requested}, available {available}"
-            ))
-        }
+        RustErr::IncompleteRead {
+            requested,
+            available,
+        } => pyerr::IncompleteRead::new_err(format!(
+            "incomplete read: requested {requested}, available {available}"
+        )),
         RustErr::MalformedNbt(detail) => {
             pyerr::MalformedNbt::new_err(format!("malformed NBT: {detail}"))
         }

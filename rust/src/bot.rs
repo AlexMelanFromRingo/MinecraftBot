@@ -19,17 +19,13 @@ use crate::effects::StatusEffects;
 use crate::errors::ProtocolError;
 use crate::pathfinding::{find_path, Pos};
 use crate::physics::{self as rphys, PhysicsIntent, PhysicsState};
-use crate::world::block_table;
 use crate::protocol::v763::packets::play::clientbound::{
-    block_change::BlockChange,
-    map_chunk::MapChunk,
-    multi_block_change::MultiBlockChange,
-    position::Position as CbPosition,
-    unload_chunk::UnloadChunk,
-    update_health::UpdateHealth,
+    block_change::BlockChange, map_chunk::MapChunk, multi_block_change::MultiBlockChange,
+    position::Position as CbPosition, unload_chunk::UnloadChunk, update_health::UpdateHealth,
 };
 use crate::protocol::v763::packets::play::serverbound::block_dig::BlockDig;
 use crate::protocol::v763::packets::play::serverbound::position::Position as SbPosition;
+use crate::world::block_table;
 use crate::world::{decode_chunk, World};
 
 // BlockDig "status" code values (1.20.1, Player Action enum).
@@ -152,31 +148,27 @@ impl Bot {
                 }
                 let mut br = BytesReader::new(&body);
                 let result: Result<(), ProtocolError> = match id {
-                    ID_MAP_CHUNK => {
-                        match MapChunk::decode(&mut br) {
-                            Ok(pkt) => {
-                                let min_y = world.min_y();
-                                let sc = world.section_count();
-                                match decode_chunk(&pkt.payload, pkt.chunk_x, pkt.chunk_z, min_y, sc) {
-                                    Ok(chunk) => {
-                                        world.insert_chunk(chunk);
-                                        Ok(())
-                                    }
-                                    Err(e) => Err(e),
+                    ID_MAP_CHUNK => match MapChunk::decode(&mut br) {
+                        Ok(pkt) => {
+                            let min_y = world.min_y();
+                            let sc = world.section_count();
+                            match decode_chunk(&pkt.payload, pkt.chunk_x, pkt.chunk_z, min_y, sc) {
+                                Ok(chunk) => {
+                                    world.insert_chunk(chunk);
+                                    Ok(())
                                 }
+                                Err(e) => Err(e),
                             }
-                            Err(e) => Err(e),
                         }
-                    }
-                    ID_UNLOAD_CHUNK => {
-                        match UnloadChunk::decode(&mut br) {
-                            Ok(pkt) => {
-                                world.unload_chunk(pkt.chunk_x, pkt.chunk_z);
-                                Ok(())
-                            }
-                            Err(e) => Err(e),
+                        Err(e) => Err(e),
+                    },
+                    ID_UNLOAD_CHUNK => match UnloadChunk::decode(&mut br) {
+                        Ok(pkt) => {
+                            world.unload_chunk(pkt.chunk_x, pkt.chunk_z);
+                            Ok(())
                         }
-                    }
+                        Err(e) => Err(e),
+                    },
                     ID_BLOCK_CHANGE => {
                         if let Ok(pkt) = BlockChange::decode(&mut br) {
                             let (x, y, z) = pkt.location;
@@ -223,11 +215,31 @@ impl Bot {
                             let mut s = state.lock().await;
                             let rel = pkt.flags as i32;
                             let prior_known = s.position_known;
-                            s.x = if prior_known && (rel & 0x01) != 0 { s.x + pkt.x } else { pkt.x };
-                            s.y = if prior_known && (rel & 0x02) != 0 { s.y + pkt.y } else { pkt.y };
-                            s.z = if prior_known && (rel & 0x04) != 0 { s.z + pkt.z } else { pkt.z };
-                            s.yaw = if prior_known && (rel & 0x08) != 0 { s.yaw + pkt.yaw } else { pkt.yaw };
-                            s.pitch = if prior_known && (rel & 0x10) != 0 { s.pitch + pkt.pitch } else { pkt.pitch };
+                            s.x = if prior_known && (rel & 0x01) != 0 {
+                                s.x + pkt.x
+                            } else {
+                                pkt.x
+                            };
+                            s.y = if prior_known && (rel & 0x02) != 0 {
+                                s.y + pkt.y
+                            } else {
+                                pkt.y
+                            };
+                            s.z = if prior_known && (rel & 0x04) != 0 {
+                                s.z + pkt.z
+                            } else {
+                                pkt.z
+                            };
+                            s.yaw = if prior_known && (rel & 0x08) != 0 {
+                                s.yaw + pkt.yaw
+                            } else {
+                                pkt.yaw
+                            };
+                            s.pitch = if prior_known && (rel & 0x10) != 0 {
+                                s.pitch + pkt.pitch
+                            } else {
+                                pkt.pitch
+                            };
                             s.position_known = true;
                         }
                         Ok(())
@@ -287,7 +299,11 @@ impl Bot {
     /// When `full_stack` is true the entire stack is dropped (vanilla
     /// shift-Q behaviour); otherwise a single item is dropped (Q).
     pub async fn drop_held_item(&self, full_stack: bool) -> Result<(), ProtocolError> {
-        let status = if full_stack { ACTION_DROP_STACK } else { ACTION_DROP_ITEM };
+        let status = if full_stack {
+            ACTION_DROP_STACK
+        } else {
+            ACTION_DROP_ITEM
+        };
         let pkt = BlockDig {
             status,
             location: (0, 0, 0),
@@ -433,12 +449,13 @@ impl Bot {
         };
 
         // Plan the path through the World cache.
-        let path_nodes: Vec<Pos> = match find_path(self.world.as_ref(), start_pos, goal_pos, 3, 100_000) {
-            Ok(p) => p.nodes,
-            Err(_) => {
-                return Ok(false);
-            }
-        };
+        let path_nodes: Vec<Pos> =
+            match find_path(self.world.as_ref(), start_pos, goal_pos, 3, 100_000) {
+                Ok(p) => p.nodes,
+                Err(_) => {
+                    return Ok(false);
+                }
+            };
 
         // Drive motion through the 20 Hz physics tick — same code
         // path the Python reference uses. Each tick we set
@@ -539,9 +556,11 @@ impl Bot {
             // Auto-jump: if the next waypoint sits above the current
             // feet level and we're on the ground (or in water), pulse
             // jump so physics can clear the half-block / full-block step.
-            let in_water_now = self
-                .world
-                .is_water(phys.x.floor() as i32, phys.y.floor() as i32, phys.z.floor() as i32);
+            let in_water_now = self.world.is_water(
+                phys.x.floor() as i32,
+                phys.y.floor() as i32,
+                phys.z.floor() as i32,
+            );
             let need_jump = (wy as f64) > phys.y.floor() && (phys.on_ground || in_water_now);
 
             let intent = PhysicsIntent {

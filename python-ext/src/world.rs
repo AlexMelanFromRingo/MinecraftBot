@@ -106,9 +106,8 @@ impl PyWorld {
     ) -> PyResult<Bound<'py, PyList>> {
         let owned_name = name.to_string();
         let world = self.arc();
-        let results = py.allow_threads(move || {
-            world.find_blocks_nearby(&owned_name, origin, radius, limit)
-        });
+        let results =
+            py.allow_threads(move || world.find_blocks_nearby(&owned_name, origin, radius, limit));
         let list = PyList::empty_bound(py);
         for (x, y, z) in results {
             list.append(PyTuple::new_bound(py, [x, y, z]))?;
@@ -189,11 +188,14 @@ fn decode_chunk_summary(
     section_count: i32,
 ) -> PyResult<(usize, usize, i32)> {
     let bytes: Vec<u8> = payload.as_bytes().to_vec();
-    let chunk = py.allow_threads(move || {
-        rw::decode_chunk(&bytes, cx, cz, min_y, section_count)
-    })
-    .into_py()?;
-    let first_cell = chunk.sections.first().map(|s| s.block_states.get(0)).unwrap_or(0);
+    let chunk = py
+        .allow_threads(move || rw::decode_chunk(&bytes, cx, cz, min_y, section_count))
+        .into_py()?;
+    let first_cell = chunk
+        .sections
+        .first()
+        .map(|s| s.block_states.get(0))
+        .unwrap_or(0);
     Ok((chunk.sections.len(), chunk.block_entities.len(), first_cell))
 }
 

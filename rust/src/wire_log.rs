@@ -61,8 +61,8 @@ impl JsonlFile {
             std::fs::create_dir_all(parent)
                 .map_err(|e| ProtocolError::DecodeError(format!("mkdirs: {}", e)))?;
         }
-        let f = File::create(&path)
-            .map_err(|e| ProtocolError::DecodeError(format!("open: {}", e)))?;
+        let f =
+            File::create(&path).map_err(|e| ProtocolError::DecodeError(format!("open: {}", e)))?;
         Ok(Self {
             path,
             writer: Mutex::new(BufWriter::new(f)),
@@ -71,7 +71,9 @@ impl JsonlFile {
     }
 
     /// File path being written to.
-    pub fn path(&self) -> &Path { &self.path }
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
 
     /// Seconds elapsed since this sink was created (used by the
     /// connection to fill `ts` on each entry).
@@ -97,7 +99,8 @@ impl JsonlFile {
             .map_err(|e| ProtocolError::DecodeError(format!("header: {}", e)))?;
         w.write_all(b"\n")
             .map_err(|e| ProtocolError::DecodeError(format!("header newline: {}", e)))?;
-        w.flush().map_err(|e| ProtocolError::DecodeError(format!("flush: {}", e)))?;
+        w.flush()
+            .map_err(|e| ProtocolError::DecodeError(format!("flush: {}", e)))?;
         Ok(())
     }
 
@@ -125,13 +128,13 @@ impl JsonlFile {
             .map_err(|e| ProtocolError::DecodeError(format!("entry: {}", e)))?;
         w.write_all(b"\n")
             .map_err(|e| ProtocolError::DecodeError(format!("entry newline: {}", e)))?;
-        w.flush().map_err(|e| ProtocolError::DecodeError(format!("flush: {}", e)))?;
+        w.flush()
+            .map_err(|e| ProtocolError::DecodeError(format!("flush: {}", e)))?;
         Ok(())
     }
 }
 
 // --- helpers -------------------------------------------------------------
-
 
 fn push_json_string(out: &mut String, s: &str) {
     out.push('"');
@@ -151,7 +154,6 @@ fn push_json_string(out: &mut String, s: &str) {
     out.push('"');
 }
 
-
 fn bytes_hex(b: &[u8]) -> String {
     let mut s = String::with_capacity(b.len() * 2);
     for byte in b {
@@ -162,9 +164,8 @@ fn bytes_hex(b: &[u8]) -> String {
 }
 
 const HEX: [char; 16] = [
-    '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 ];
-
 
 fn format_float(v: f64) -> String {
     // Match Python's `json.dumps(round(v, 6))` for non-integer floats:
@@ -177,10 +178,13 @@ fn format_float(v: f64) -> String {
     let s = format!("{:.6}", v);
     // Drop trailing zeros (but keep at least one digit after the dot).
     let s = s.trim_end_matches('0');
-    let s = if s.ends_with('.') { format!("{}0", s) } else { s.to_string() };
+    let s = if s.ends_with('.') {
+        format!("{}0", s)
+    } else {
+        s.to_string()
+    };
     s
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -211,7 +215,10 @@ mod tests {
         drop(log);
 
         let mut s = String::new();
-        std::fs::File::open(&tmp).unwrap().read_to_string(&mut s).unwrap();
+        std::fs::File::open(&tmp)
+            .unwrap()
+            .read_to_string(&mut s)
+            .unwrap();
         let lines: Vec<&str> = s.lines().collect();
         assert_eq!(lines.len(), 2);
         assert!(lines[0].starts_with("{\"meta\":"));

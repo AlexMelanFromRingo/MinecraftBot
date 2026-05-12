@@ -72,8 +72,15 @@ jobs:
           pip install maturin pytest pytest-asyncio pytest-benchmark
       - name: Install python reference (editable)
         run: pip install -e python/
-      - name: Build + install minecraft_bot_accel
-        run: maturin develop --release --manifest-path python-ext/Cargo.toml
+      - name: Build minecraft_bot_accel wheel
+        # `maturin develop` needs an active virtualenv; CI runs in
+        # the system Python, so build a wheel and pip-install it.
+        run: |
+          maturin build --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+      - name: Install minecraft_bot_accel wheel
+        run: |
+          # Cargo workspace puts target/ at the repo root.
+          pip install target/wheels/*.whl
       - name: Run parity tests (non-live)
         run: pytest -q -m "not live" tests/python/parity
       - name: Run heavy-op perf benchmark
@@ -98,7 +105,9 @@ jobs:
           pip install maturin pytest
           pip install -e python/
       - name: Build accel wheel
-        run: maturin develop --release --manifest-path python-ext/Cargo.toml
+        run: |
+          maturin build --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+          pip install target/wheels/*.whl
       - name: Build rust encode_one example
         working-directory: rust
         run: cargo build --release --example encode_one
@@ -127,7 +136,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install maturin pytest pytest-benchmark pytest-asyncio
           pip install -e python/
-          maturin develop --release --manifest-path python-ext/Cargo.toml
+          maturin build --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+          pip install target/wheels/*.whl
       - name: Perf — heavy ops (informational + gated)
         run: pytest -q -s tests/python/perf -m "not live"
 
@@ -148,7 +158,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install maturin pytest pytest-asyncio
           pip install -e python/
-          maturin develop --release --manifest-path python-ext/Cargo.toml
+          maturin build --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+          pip install target/wheels/*.whl
       - name: pytest --backend accel -m live
         run: pytest -q -m live tests/python/parity
 

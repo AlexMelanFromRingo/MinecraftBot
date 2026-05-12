@@ -34,7 +34,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-linux-x86_64
-          path: python-ext/target/wheels/*.whl
+          path: target/wheels/*.whl
           if-no-files-found: error
 
   linux-aarch64:
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-linux-aarch64
-          path: python-ext/target/wheels/*.whl
+          path: target/wheels/*.whl
           if-no-files-found: error
 
   macos-arm64:
@@ -71,7 +71,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-macos-arm64
-          path: python-ext/target/wheels/*.whl
+          path: target/wheels/*.whl
           if-no-files-found: error
 
   macos-x86_64:
@@ -89,7 +89,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-macos-x86_64
-          path: python-ext/target/wheels/*.whl
+          path: target/wheels/*.whl
           if-no-files-found: error
 
   windows-x86_64:
@@ -107,7 +107,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-windows-x86_64
-          path: python-ext/target/wheels/*.whl
+          path: target/wheels/*.whl
           if-no-files-found: error
 
   # T062 — smoke-install: confirm every wheel can be installed and

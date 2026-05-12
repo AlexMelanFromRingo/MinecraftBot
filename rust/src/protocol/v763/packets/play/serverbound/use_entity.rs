@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -30,20 +30,36 @@ impl UseEntity {
         let mut hand = None;
         if mouse == 2 {
             let b = reader.read_exact(12)?;
-            x = Some(f32::from_be_bytes([b[0],b[1],b[2],b[3]]));
-            y = Some(f32::from_be_bytes([b[4],b[5],b[6],b[7]]));
-            z = Some(f32::from_be_bytes([b[8],b[9],b[10],b[11]]));
+            x = Some(f32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+            y = Some(f32::from_be_bytes([b[4], b[5], b[6], b[7]]));
+            z = Some(f32::from_be_bytes([b[8], b[9], b[10], b[11]]));
         }
-        if mouse == 0 || mouse == 2 { hand = Some(varint::read(reader)?); }
+        if mouse == 0 || mouse == 2 {
+            hand = Some(varint::read(reader)?);
+        }
         let bn = reader.read_exact(1)?[0];
-        if bn > 1 { return Err(ProtocolError::DecodeError(format!("sneaking: {}", bn))); }
-        Ok(Self { target, mouse, x, y, z, hand, sneaking: bn != 0 })
+        if bn > 1 {
+            return Err(ProtocolError::DecodeError(format!("sneaking: {}", bn)));
+        }
+        Ok(Self {
+            target,
+            mouse,
+            x,
+            y,
+            z,
+            hand,
+            sneaking: bn != 0,
+        })
     }
 }
 
 impl ServerboundPacket for UseEntity {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.target, writer)?;
         varint::write(self.mouse, writer)?;
@@ -52,7 +68,9 @@ impl ServerboundPacket for UseEntity {
             writer.write_all(&y.to_be_bytes())?;
             writer.write_all(&z.to_be_bytes())?;
         }
-        if let Some(h) = self.hand { varint::write(h, writer)?; }
+        if let Some(h) = self.hand {
+            varint::write(h, writer)?;
+        }
         writer.write_all(&[if self.sneaking { 1 } else { 0 }])?;
         Ok(())
     }

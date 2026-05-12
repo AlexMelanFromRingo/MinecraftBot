@@ -45,7 +45,9 @@ pub struct EntityTracker {
 impl EntityTracker {
     /// New empty tracker.
     pub fn new() -> Self {
-        Self { by_id: RwLock::new(HashMap::new()) }
+        Self {
+            by_id: RwLock::new(HashMap::new()),
+        }
     }
 
     /// Insert / replace an entity record.

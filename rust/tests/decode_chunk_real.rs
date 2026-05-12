@@ -57,14 +57,8 @@ fn first_real_chunk_decodes_24_sections() {
     let mut reader = BytesReader::new(raw);
     let pkt = MapChunk::decode(&mut reader).expect("packet decode");
 
-    let chunk = decode_chunk(
-        &pkt.payload,
-        pkt.chunk_x,
-        pkt.chunk_z,
-        -64,
-        24,
-    )
-    .expect("world decode_chunk");
+    let chunk =
+        decode_chunk(&pkt.payload, pkt.chunk_x, pkt.chunk_z, -64, 24).expect("world decode_chunk");
 
     assert_eq!(chunk.cx, pkt.chunk_x);
     assert_eq!(chunk.cz, pkt.chunk_z);

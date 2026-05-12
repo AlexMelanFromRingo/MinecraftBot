@@ -1,6 +1,6 @@
 //! ChatComponent codec — VarInt-prefixed JSON string.
 
-use crate::codec::{Reader, Writer, string_codec};
+use crate::codec::{string_codec, Reader, Writer};
 use crate::errors::ProtocolError;
 
 /// Maximum chat-component byte length.

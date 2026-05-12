@@ -38,13 +38,7 @@ impl PyWireLog {
 
     /// Write the session header line. Idempotent.
     #[pyo3(signature = (*, version, host, port, username))]
-    fn start_session(
-        &self,
-        version: i32,
-        host: &str,
-        port: u16,
-        username: &str,
-    ) -> PyResult<()> {
+    fn start_session(&self, version: i32, host: &str, port: u16, username: &str) -> PyResult<()> {
         let mut guard = self.started_header.lock().expect("poisoned mutex");
         if *guard {
             return Ok(());
@@ -91,7 +85,10 @@ impl PyWireLog {
     }
 
     fn __repr__(&self) -> String {
-        format!("WireLog(path={:?})", self.inner.path().display().to_string())
+        format!(
+            "WireLog(path={:?})",
+            self.inner.path().display().to_string()
+        )
     }
 }
 

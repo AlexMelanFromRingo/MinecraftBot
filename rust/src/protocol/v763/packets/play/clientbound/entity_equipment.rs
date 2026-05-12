@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -31,24 +31,40 @@ impl EntityEquipment {
             let raw_slot = reader.read_exact(1)?[0];
             let more = raw_slot & 0x80 != 0;
             let mut s = (raw_slot & 0x7F) as i32;
-            if s & 0x40 != 0 { s -= 0x80; }
+            if s & 0x40 != 0 {
+                s -= 0x80;
+            }
             let item = slot::read(reader)?;
-            equipments.push(EquipmentEntry { slot: s as i8, item });
-            if !more { break; }
+            equipments.push(EquipmentEntry {
+                slot: s as i8,
+                item,
+            });
+            if !more {
+                break;
+            }
         }
-        Ok(Self { entity_id, equipments })
+        Ok(Self {
+            entity_id,
+            equipments,
+        })
     }
 }
 
 impl ClientboundPacket for EntityEquipment {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.entity_id, writer)?;
         for (i, e) in self.equipments.iter().enumerate() {
             let more = i + 1 < self.equipments.len();
             let mut raw = (e.slot as u8) & 0x7F;
-            if more { raw |= 0x80; }
+            if more {
+                raw |= 0x80;
+            }
             writer.write_all(&[raw])?;
             slot::write(e.item.as_ref(), writer)?;
         }

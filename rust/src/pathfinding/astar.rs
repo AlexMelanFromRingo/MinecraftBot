@@ -31,8 +31,14 @@ pub struct NoPathFoundError {
 const DIAG: f64 = std::f64::consts::SQRT_2;
 
 const HORIZ: &[(i32, i32, bool)] = &[
-    (1, 0, false), (-1, 0, false), (0, 1, false), (0, -1, false),
-    (1, 1, true), (1, -1, true), (-1, 1, true), (-1, -1, true),
+    (1, 0, false),
+    (-1, 0, false),
+    (0, 1, false),
+    (0, -1, false),
+    (1, 1, true),
+    (1, -1, true),
+    (-1, 1, true),
+    (-1, -1, true),
 ];
 
 #[derive(Copy, Clone, Debug)]
@@ -97,11 +103,7 @@ fn vertical_resolve<W: NavWorld + ?Sized>(
     None
 }
 
-fn neighbors<W: NavWorld + ?Sized>(
-    world: &W,
-    cur: Pos,
-    max_fall: i32,
-) -> Vec<(Pos, f64)> {
+fn neighbors<W: NavWorld + ?Sized>(world: &W, cur: Pos, max_fall: i32) -> Vec<(Pos, f64)> {
     let (x, y, z) = cur;
     let in_water = world.is_water(x, y, z);
     let water_mult: f64 = if in_water { 1.6 } else { 1.0 };
@@ -122,9 +124,7 @@ fn neighbors<W: NavWorld + ?Sized>(
         };
         let base: f64 = if is_diag { DIAG } else { 1.0 };
         let mut cost = base * water_mult + vcost;
-        if world.is_navigable_obstacle(nx, ny, nz)
-            || world.is_navigable_obstacle(nx, ny + 1, nz)
-        {
+        if world.is_navigable_obstacle(nx, ny, nz) || world.is_navigable_obstacle(nx, ny + 1, nz) {
             cost += 2.0;
         }
         out.push(((nx, ny, nz), cost));
@@ -144,7 +144,10 @@ pub fn find_path<W: NavWorld + ?Sized>(
     max_nodes: usize,
 ) -> Result<Path, NoPathFoundError> {
     if start == goal {
-        return Ok(Path { nodes: vec![start], cost: 0.0 });
+        return Ok(Path {
+            nodes: vec![start],
+            cost: 0.0,
+        });
     }
 
     let mut open: BinaryHeap<OpenEntry> = BinaryHeap::new();
@@ -154,7 +157,11 @@ pub fn find_path<W: NavWorld + ?Sized>(
 
     let mut seq: u64 = 0;
     g_score.insert(start, 0.0);
-    open.push(OpenEntry { f: heuristic(start, goal), seq, pos: start });
+    open.push(OpenEntry {
+        f: heuristic(start, goal),
+        seq,
+        pos: start,
+    });
 
     let mut expansions: usize = 0;
     while let Some(OpenEntry { pos: cur, .. }) = open.pop() {
@@ -171,7 +178,10 @@ pub fn find_path<W: NavWorld + ?Sized>(
             }
             nodes_rev.reverse();
             let final_cost = g_score.get(&goal).copied().unwrap_or(0.0);
-            return Ok(Path { nodes: nodes_rev, cost: final_cost });
+            return Ok(Path {
+                nodes: nodes_rev,
+                cost: final_cost,
+            });
         }
         closed.insert(cur);
         expansions += 1;

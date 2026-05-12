@@ -5,7 +5,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::codec::{Reader, Writer, varint};
+use crate::codec::{varint, Reader, Writer};
 use crate::errors::ProtocolError;
 
 /// Sparse bitset: set of bit indices that are 1.

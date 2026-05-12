@@ -28,9 +28,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("connecting as {} to {}:{}...", user, host, port);
     let mut conn = Connection::offline(host, port, user);
     conn.connect().await?;
-    println!("PLAY reached. entity_id={:?}, world={:?}",
+    println!(
+        "PLAY reached. entity_id={:?}, world={:?}",
         conn.entity_id().await,
-        conn.world_name().await);
+        conn.world_name().await
+    );
 
     println!("idling 20 seconds (keep-alive should auto-reply)...");
     for _ in 0..20 {

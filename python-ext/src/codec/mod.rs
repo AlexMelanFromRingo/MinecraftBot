@@ -6,9 +6,7 @@
 
 use std::cell::RefCell;
 
-use minecraft_bot::codec::{
-    BytesReader, BytesWriter, Reader as RustReader, Writer as RustWriter,
-};
+use minecraft_bot::codec::{BytesReader, BytesWriter, Reader as RustReader, Writer as RustWriter};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyType};
 
@@ -137,10 +135,7 @@ impl PyWriter {
 
     /// Append raw bytes.
     fn write(&self, b: &Bound<'_, PyBytes>) -> PyResult<()> {
-        self.buf
-            .borrow_mut()
-            .write_all(b.as_bytes())
-            .into_py()
+        self.buf.borrow_mut().write_all(b.as_bytes()).into_py()
     }
 
     /// Final byte string.

@@ -35,9 +35,8 @@ pub fn parse_str(s: &str) -> Result<Uuid, ProtocolError> {
     let mut out = [0u8; 16];
     for (i, byte) in out.iter_mut().enumerate() {
         let s = &hex[2 * i..2 * i + 2];
-        *byte = u8::from_str_radix(s, 16).map_err(|e| {
-            ProtocolError::EncodeError(format!("uuid parse: {e}"))
-        })?;
+        *byte = u8::from_str_radix(s, 16)
+            .map_err(|e| ProtocolError::EncodeError(format!("uuid parse: {e}")))?;
     }
     Ok(out)
 }

@@ -25,7 +25,7 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 use crate::codec::uuid_codec::Uuid;
-use crate::codec::{BytesReader, BytesWriter, Reader, Writer, varint};
+use crate::codec::{varint, BytesReader, BytesWriter, Reader, Writer};
 use crate::errors::ProtocolError;
 use crate::framer::Framer;
 use crate::protocol::v763::packets::handshaking::serverbound::set_protocol::SetProtocol;
@@ -102,8 +102,7 @@ pub struct Connection {
     /// channel before the auto-keep-alive/teleport-confirm handlers
     /// run, letting the higher-level [`crate::bot::Bot`] route packets
     /// (map_chunk, block_change, ...) into the World cache.
-    pkt_subscribers:
-        Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<(i32, Vec<u8>)>>>>,
+    pkt_subscribers: Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<(i32, Vec<u8>)>>>>,
 }
 
 #[derive(Default)]
@@ -136,9 +135,7 @@ impl Connection {
     /// state. Returns a receiver that yields `(packet_id, body)` for
     /// each packet *before* keep-alive and teleport-confirm handlers
     /// run. Dropped receivers are pruned lazily on send failure.
-    pub async fn subscribe_packets(
-        &self,
-    ) -> tokio::sync::mpsc::UnboundedReceiver<(i32, Vec<u8>)> {
+    pub async fn subscribe_packets(&self) -> tokio::sync::mpsc::UnboundedReceiver<(i32, Vec<u8>)> {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         self.pkt_subscribers.lock().await.push(tx);
         rx
@@ -167,7 +164,8 @@ impl Connection {
     }
 
     async fn connect_once(&mut self) -> Result<(), ProtocolError> {
-        let stream = TcpStream::connect((self.host.as_str(), self.port)).await
+        let stream = TcpStream::connect((self.host.as_str(), self.port))
+            .await
             .map_err(|e| ProtocolError::ConnectionDropped(format!("TCP connect: {}", e)))?;
         let (read_half, write_half) = stream.into_split();
         *self.writer.lock().await = Some(write_half);
@@ -229,7 +227,8 @@ impl Connection {
                 }
                 other => {
                     return Err(ProtocolError::DecodeError(format!(
-                        "unexpected packet during login: id=0x{:02x}", other
+                        "unexpected packet during login: id=0x{:02x}",
+                        other
                     )));
                 }
             }
@@ -351,9 +350,9 @@ impl Connection {
     async fn write_framed(&self, body: Vec<u8>) -> Result<(), ProtocolError> {
         let framed = self.framer.lock().await.encode(&body)?;
         let mut guard = self.writer.lock().await;
-        let writer = guard.as_mut().ok_or_else(|| {
-            ProtocolError::ConnectionDropped("write to closed socket".into())
-        })?;
+        let writer = guard
+            .as_mut()
+            .ok_or_else(|| ProtocolError::ConnectionDropped("write to closed socket".into()))?;
         writer
             .write_all(&framed)
             .await
@@ -361,10 +360,7 @@ impl Connection {
         Ok(())
     }
 
-    async fn next_body(
-        &self,
-        reader: &mut OwnedReadHalf,
-    ) -> Result<Vec<u8>, ProtocolError> {
+    async fn next_body(&self, reader: &mut OwnedReadHalf) -> Result<Vec<u8>, ProtocolError> {
         loop {
             {
                 let mut framer = self.framer.lock().await;
@@ -434,7 +430,9 @@ impl Connection {
                 0x23 => {
                     let mut r = BytesReader::new(payload);
                     let pkt = cb_keep_alive::KeepAlive::decode(&mut r)?;
-                    let reply = sb_keep_alive::KeepAlive { keep_alive_id: pkt.keep_alive_id };
+                    let reply = sb_keep_alive::KeepAlive {
+                        keep_alive_id: pkt.keep_alive_id,
+                    };
                     Self::write_packet(&framer, &writer, &reply).await?;
                 }
                 // Synchronize Player Position — auto-confirm teleport so server
@@ -455,7 +453,11 @@ impl Connection {
                 // Login (Play) — populate play_state.
                 0x28 => {
                     let mut r = BytesReader::new(payload);
-                    if let Ok(pkt) = crate::protocol::v763::packets::play::clientbound::login::Login::decode(&mut r) {
+                    if let Ok(pkt) =
+                        crate::protocol::v763::packets::play::clientbound::login::Login::decode(
+                            &mut r,
+                        )
+                    {
                         let mut ps = play_state.lock().await;
                         ps.entity_id = Some(pkt.entity_id);
                         ps.world_name = Some(pkt.world_name.clone());
@@ -485,9 +487,9 @@ impl Connection {
         packet.encode(&mut w)?;
         let framed = framer.lock().await.encode(&w.into_bytes())?;
         let mut guard = writer.lock().await;
-        let writer = guard.as_mut().ok_or_else(|| {
-            ProtocolError::ConnectionDropped("write to closed socket".into())
-        })?;
+        let writer = guard
+            .as_mut()
+            .ok_or_else(|| ProtocolError::ConnectionDropped("write to closed socket".into()))?;
         writer
             .write_all(&framed)
             .await
@@ -543,27 +545,31 @@ impl Md5 {
         let mut d: u32 = 0x10325476;
 
         const K: [u32; 64] = [
-            0xd76aa478,0xe8c7b756,0x242070db,0xc1bdceee,0xf57c0faf,0x4787c62a,0xa8304613,0xfd469501,
-            0x698098d8,0x8b44f7af,0xffff5bb1,0x895cd7be,0x6b901122,0xfd987193,0xa679438e,0x49b40821,
-            0xf61e2562,0xc040b340,0x265e5a51,0xe9b6c7aa,0xd62f105d,0x02441453,0xd8a1e681,0xe7d3fbc8,
-            0x21e1cde6,0xc33707d6,0xf4d50d87,0x455a14ed,0xa9e3e905,0xfcefa3f8,0x676f02d9,0x8d2a4c8a,
-            0xfffa3942,0x8771f681,0x6d9d6122,0xfde5380c,0xa4beea44,0x4bdecfa9,0xf6bb4b60,0xbebfbc70,
-            0x289b7ec6,0xeaa127fa,0xd4ef3085,0x04881d05,0xd9d4d039,0xe6db99e5,0x1fa27cf8,0xc4ac5665,
-            0xf4292244,0x432aff97,0xab9423a7,0xfc93a039,0x655b59c3,0x8f0ccc92,0xffeff47d,0x85845dd1,
-            0x6fa87e4f,0xfe2ce6e0,0xa3014314,0x4e0811a1,0xf7537e82,0xbd3af235,0x2ad7d2bb,0xeb86d391,
+            0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613,
+            0xfd469501, 0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193,
+            0xa679438e, 0x49b40821, 0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa, 0xd62f105d,
+            0x02441453, 0xd8a1e681, 0xe7d3fbc8, 0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
+            0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a, 0xfffa3942, 0x8771f681, 0x6d9d6122,
+            0xfde5380c, 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70, 0x289b7ec6, 0xeaa127fa,
+            0xd4ef3085, 0x04881d05, 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665, 0xf4292244,
+            0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
+            0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb,
+            0xeb86d391,
         ];
         const S: [u32; 64] = [
-            7,12,17,22, 7,12,17,22, 7,12,17,22, 7,12,17,22,
-            5, 9,14,20, 5, 9,14,20, 5, 9,14,20, 5, 9,14,20,
-            4,11,16,23, 4,11,16,23, 4,11,16,23, 4,11,16,23,
-            6,10,15,21, 6,10,15,21, 6,10,15,21, 6,10,15,21,
+            7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20,
+            5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+            6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
         ];
 
         for chunk in buf.chunks_exact(64) {
             let mut m = [0u32; 16];
             for j in 0..16 {
                 m[j] = u32::from_le_bytes([
-                    chunk[j*4], chunk[j*4+1], chunk[j*4+2], chunk[j*4+3],
+                    chunk[j * 4],
+                    chunk[j * 4 + 1],
+                    chunk[j * 4 + 2],
+                    chunk[j * 4 + 3],
                 ]);
             }
             let (mut aa, mut bb, mut cc, mut dd) = (a, b, c, d);
@@ -578,7 +584,10 @@ impl Md5 {
                     (cc ^ (bb | !dd), (7 * i) % 16)
                 };
                 let new_bb = bb.wrapping_add(
-                    aa.wrapping_add(f).wrapping_add(K[i]).wrapping_add(m[g]).rotate_left(S[i]),
+                    aa.wrapping_add(f)
+                        .wrapping_add(K[i])
+                        .wrapping_add(m[g])
+                        .rotate_left(S[i]),
                 );
                 aa = dd;
                 dd = cc;

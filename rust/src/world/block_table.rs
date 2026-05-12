@@ -45,15 +45,16 @@ struct Loaded {
     block_table: HashMap<String, BlockInfo>,
 }
 
-const RAW_JSON: &str = include_str!(
-    concat!(env!("CARGO_MANIFEST_DIR"), "/../protocol-data/v763/block_states.json")
-);
+const RAW_JSON: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../protocol-data/v763/block_states.json"
+));
 
 fn loaded() -> &'static Loaded {
     static CACHED: OnceLock<Loaded> = OnceLock::new();
     CACHED.get_or_init(|| {
-        let parsed: RawTable = serde_json::from_str(RAW_JSON)
-            .expect("failed to parse block_states.json");
+        let parsed: RawTable =
+            serde_json::from_str(RAW_JSON).expect("failed to parse block_states.json");
         let state_to_block: HashMap<i32, String> = parsed
             .state_to_block
             .into_iter()
@@ -88,25 +89,56 @@ fn passthrough_names() -> &'static HashSet<&'static str> {
     static CACHED: OnceLock<HashSet<&'static str>> = OnceLock::new();
     CACHED.get_or_init(|| {
         [
-            "minecraft:air", "minecraft:cave_air", "minecraft:void_air",
-            "minecraft:water", "minecraft:lava", "minecraft:bubble_column",
-            "minecraft:grass", "minecraft:tall_grass", "minecraft:fern",
-            "minecraft:large_fern", "minecraft:dead_bush", "minecraft:seagrass",
-            "minecraft:tall_seagrass", "minecraft:kelp", "minecraft:kelp_plant",
-            "minecraft:dandelion", "minecraft:poppy", "minecraft:blue_orchid",
-            "minecraft:allium", "minecraft:azure_bluet", "minecraft:red_tulip",
-            "minecraft:orange_tulip", "minecraft:white_tulip", "minecraft:pink_tulip",
-            "minecraft:oxeye_daisy", "minecraft:cornflower", "minecraft:lily_of_the_valley",
-            "minecraft:wither_rose", "minecraft:sunflower", "minecraft:lilac",
-            "minecraft:rose_bush", "minecraft:peony", "minecraft:torchflower",
+            "minecraft:air",
+            "minecraft:cave_air",
+            "minecraft:void_air",
+            "minecraft:water",
+            "minecraft:lava",
+            "minecraft:bubble_column",
+            "minecraft:grass",
+            "minecraft:tall_grass",
+            "minecraft:fern",
+            "minecraft:large_fern",
+            "minecraft:dead_bush",
+            "minecraft:seagrass",
+            "minecraft:tall_seagrass",
+            "minecraft:kelp",
+            "minecraft:kelp_plant",
+            "minecraft:dandelion",
+            "minecraft:poppy",
+            "minecraft:blue_orchid",
+            "minecraft:allium",
+            "minecraft:azure_bluet",
+            "minecraft:red_tulip",
+            "minecraft:orange_tulip",
+            "minecraft:white_tulip",
+            "minecraft:pink_tulip",
+            "minecraft:oxeye_daisy",
+            "minecraft:cornflower",
+            "minecraft:lily_of_the_valley",
+            "minecraft:wither_rose",
+            "minecraft:sunflower",
+            "minecraft:lilac",
+            "minecraft:rose_bush",
+            "minecraft:peony",
+            "minecraft:torchflower",
             "minecraft:pitcher_plant",
-            "minecraft:torch", "minecraft:wall_torch", "minecraft:soul_torch",
-            "minecraft:soul_wall_torch", "minecraft:redstone_torch",
+            "minecraft:torch",
+            "minecraft:wall_torch",
+            "minecraft:soul_torch",
+            "minecraft:soul_wall_torch",
+            "minecraft:redstone_torch",
             "minecraft:redstone_wall_torch",
-            "minecraft:ladder", "minecraft:vine", "minecraft:rail",
-            "minecraft:powered_rail", "minecraft:detector_rail",
-            "minecraft:activator_rail", "minecraft:cobweb",
-            "minecraft:lever", "minecraft:tripwire", "minecraft:tripwire_hook",
+            "minecraft:ladder",
+            "minecraft:vine",
+            "minecraft:rail",
+            "minecraft:powered_rail",
+            "minecraft:detector_rail",
+            "minecraft:activator_rail",
+            "minecraft:cobweb",
+            "minecraft:lever",
+            "minecraft:tripwire",
+            "minecraft:tripwire_hook",
             "minecraft:scaffolding",
             // 1-2 layer snow heuristic — see Python comment.
             "minecraft:snow",
@@ -117,22 +149,41 @@ fn passthrough_names() -> &'static HashSet<&'static str> {
 }
 
 const OBSTACLE_PREFIXES: &[&str] = &[
-    "minecraft:oak_door", "minecraft:spruce_door", "minecraft:birch_door",
-    "minecraft:jungle_door", "minecraft:acacia_door", "minecraft:dark_oak_door",
-    "minecraft:mangrove_door", "minecraft:cherry_door", "minecraft:bamboo_door",
-    "minecraft:crimson_door", "minecraft:warped_door", "minecraft:iron_door",
-    "minecraft:oak_fence_gate", "minecraft:spruce_fence_gate",
-    "minecraft:birch_fence_gate", "minecraft:jungle_fence_gate",
-    "minecraft:acacia_fence_gate", "minecraft:dark_oak_fence_gate",
-    "minecraft:mangrove_fence_gate", "minecraft:cherry_fence_gate",
-    "minecraft:bamboo_fence_gate", "minecraft:crimson_fence_gate",
+    "minecraft:oak_door",
+    "minecraft:spruce_door",
+    "minecraft:birch_door",
+    "minecraft:jungle_door",
+    "minecraft:acacia_door",
+    "minecraft:dark_oak_door",
+    "minecraft:mangrove_door",
+    "minecraft:cherry_door",
+    "minecraft:bamboo_door",
+    "minecraft:crimson_door",
+    "minecraft:warped_door",
+    "minecraft:iron_door",
+    "minecraft:oak_fence_gate",
+    "minecraft:spruce_fence_gate",
+    "minecraft:birch_fence_gate",
+    "minecraft:jungle_fence_gate",
+    "minecraft:acacia_fence_gate",
+    "minecraft:dark_oak_fence_gate",
+    "minecraft:mangrove_fence_gate",
+    "minecraft:cherry_fence_gate",
+    "minecraft:bamboo_fence_gate",
+    "minecraft:crimson_fence_gate",
     "minecraft:warped_fence_gate",
-    "minecraft:oak_trapdoor", "minecraft:spruce_trapdoor",
-    "minecraft:birch_trapdoor", "minecraft:jungle_trapdoor",
-    "minecraft:acacia_trapdoor", "minecraft:dark_oak_trapdoor",
-    "minecraft:mangrove_trapdoor", "minecraft:cherry_trapdoor",
-    "minecraft:bamboo_trapdoor", "minecraft:crimson_trapdoor",
-    "minecraft:warped_trapdoor", "minecraft:iron_trapdoor",
+    "minecraft:oak_trapdoor",
+    "minecraft:spruce_trapdoor",
+    "minecraft:birch_trapdoor",
+    "minecraft:jungle_trapdoor",
+    "minecraft:acacia_trapdoor",
+    "minecraft:dark_oak_trapdoor",
+    "minecraft:mangrove_trapdoor",
+    "minecraft:cherry_trapdoor",
+    "minecraft:bamboo_trapdoor",
+    "minecraft:crimson_trapdoor",
+    "minecraft:warped_trapdoor",
+    "minecraft:iron_trapdoor",
 ];
 
 fn starts_with_obstacle_prefix(name: &str) -> bool {
@@ -141,14 +192,18 @@ fn starts_with_obstacle_prefix(name: &str) -> bool {
 
 /// Full-cube solid (pathfinder cannot pass through).
 pub fn is_solid(state_id: i32) -> bool {
-    let Some(name) = get_name(state_id) else { return false; };
+    let Some(name) = get_name(state_id) else {
+        return false;
+    };
     if passthrough_names().contains(name) {
         return false;
     }
     if starts_with_obstacle_prefix(name) {
         return false;
     }
-    let Some(info) = block_info_by_name(name) else { return false; };
+    let Some(info) = block_info_by_name(name) else {
+        return false;
+    };
     if info.transparent {
         // Glass, leaves, ice are transparent-but-solid.
         return name.contains("leaves") || name.contains("glass") || name.contains("ice");
@@ -192,7 +247,9 @@ pub fn step_height(state_id: i32) -> f64 {
     if !is_solid(state_id) {
         return 0.0;
     }
-    let Some(name) = get_name(state_id) else { return 0.0 };
+    let Some(name) = get_name(state_id) else {
+        return 0.0;
+    };
     if name.ends_with("_slab") {
         return 0.5;
     }

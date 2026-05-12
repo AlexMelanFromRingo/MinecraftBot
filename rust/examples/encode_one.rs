@@ -42,16 +42,32 @@ mod json {
 
     impl Value {
         pub fn as_str(&self) -> Option<&str> {
-            if let Value::String(s) = self { Some(s) } else { None }
+            if let Value::String(s) = self {
+                Some(s)
+            } else {
+                None
+            }
         }
         pub fn as_i64(&self) -> Option<i64> {
-            if let Value::Number(n) = self { Some(*n as i64) } else { None }
+            if let Value::Number(n) = self {
+                Some(*n as i64)
+            } else {
+                None
+            }
         }
         pub fn as_array(&self) -> Option<&Vec<Value>> {
-            if let Value::Array(a) = self { Some(a) } else { None }
+            if let Value::Array(a) = self {
+                Some(a)
+            } else {
+                None
+            }
         }
         pub fn as_object(&self) -> Option<&BTreeMap<String, Value>> {
-            if let Value::Object(o) = self { Some(o) } else { None }
+            if let Value::Object(o) = self {
+                Some(o)
+            } else {
+                None
+            }
         }
     }
 
@@ -63,7 +79,11 @@ mod json {
 
     fn skip_ws(chars: &mut Peekable<Chars>) {
         while let Some(&c) = chars.peek() {
-            if c.is_whitespace() { chars.next(); } else { break; }
+            if c.is_whitespace() {
+                chars.next();
+            } else {
+                break;
+            }
         }
     }
 
@@ -84,12 +104,17 @@ mod json {
         chars.next();
         let mut map = BTreeMap::new();
         skip_ws(chars);
-        if chars.peek() == Some(&'}') { chars.next(); return Ok(Value::Object(map)); }
+        if chars.peek() == Some(&'}') {
+            chars.next();
+            return Ok(Value::Object(map));
+        }
         loop {
             skip_ws(chars);
             let key = parse_string(chars)?;
             skip_ws(chars);
-            if chars.next() != Some(':') { return Err("expected ':'".into()); }
+            if chars.next() != Some(':') {
+                return Err("expected ':'".into());
+            }
             let v = parse_value(chars)?;
             map.insert(key, v);
             skip_ws(chars);
@@ -106,7 +131,10 @@ mod json {
         chars.next();
         let mut out = Vec::new();
         skip_ws(chars);
-        if chars.peek() == Some(&']') { chars.next(); return Ok(Value::Array(out)); }
+        if chars.peek() == Some(&']') {
+            chars.next();
+            return Ok(Value::Array(out));
+        }
         loop {
             out.push(parse_value(chars)?);
             skip_ws(chars);
@@ -120,7 +148,9 @@ mod json {
     }
 
     fn parse_string(chars: &mut Peekable<Chars>) -> Result<String, String> {
-        if chars.next() != Some('"') { return Err("expected string".into()); }
+        if chars.next() != Some('"') {
+            return Err("expected string".into());
+        }
         let mut s = String::new();
         loop {
             match chars.next() {
@@ -134,7 +164,9 @@ mod json {
                     Some('/') => s.push('/'),
                     Some('u') => {
                         let mut hex = String::new();
-                        for _ in 0..4 { hex.push(chars.next().ok_or("bad escape")?); }
+                        for _ in 0..4 {
+                            hex.push(chars.next().ok_or("bad escape")?);
+                        }
                         let cp = u32::from_str_radix(&hex, 16).map_err(|e| e.to_string())?;
                         // Surrogate pair handling for supplementary-plane code points.
                         if (0xD800..=0xDBFF).contains(&cp) {
@@ -143,14 +175,19 @@ mod json {
                                 return Err("orphan high surrogate".into());
                             }
                             let mut lo_hex = String::new();
-                            for _ in 0..4 { lo_hex.push(chars.next().ok_or("bad escape")?); }
+                            for _ in 0..4 {
+                                lo_hex.push(chars.next().ok_or("bad escape")?);
+                            }
                             let lo = u32::from_str_radix(&lo_hex, 16).map_err(|e| e.to_string())?;
                             if !(0xDC00..=0xDFFF).contains(&lo) {
                                 return Err(format!("bad low surrogate: {}", lo_hex));
                             }
                             let combined = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
-                            if let Some(c) = char::from_u32(combined) { s.push(c); }
-                            else { return Err(format!("bad surrogate pair: {} {}", hex, lo_hex)); }
+                            if let Some(c) = char::from_u32(combined) {
+                                s.push(c);
+                            } else {
+                                return Err(format!("bad surrogate pair: {} {}", hex, lo_hex));
+                            }
                         } else if let Some(c) = char::from_u32(cp) {
                             s.push(c);
                         } else {
@@ -169,22 +206,35 @@ mod json {
         let mut s = String::new();
         while let Some(&c) = chars.peek() {
             if c.is_ascii_digit() || c == '-' || c == '+' || c == '.' || c == 'e' || c == 'E' {
-                s.push(c); chars.next();
-            } else { break; }
+                s.push(c);
+                chars.next();
+            } else {
+                break;
+            }
         }
-        s.parse::<f64>().map(Value::Number).map_err(|e| e.to_string())
+        s.parse::<f64>()
+            .map(Value::Number)
+            .map_err(|e| e.to_string())
     }
 
     fn parse_bool(chars: &mut Peekable<Chars>) -> Result<Value, String> {
         let s: String = chars.take(4).collect();
-        if s == "true" { Ok(Value::Bool(true)) }
-        else if s == "fals" && chars.next() == Some('e') { Ok(Value::Bool(false)) }
-        else { Err(format!("bad bool: {}", s)) }
+        if s == "true" {
+            Ok(Value::Bool(true))
+        } else if s == "fals" && chars.next() == Some('e') {
+            Ok(Value::Bool(false))
+        } else {
+            Err(format!("bad bool: {}", s))
+        }
     }
 
     fn parse_null(chars: &mut Peekable<Chars>) -> Result<Value, String> {
         let s: String = chars.take(4).collect();
-        if s == "null" { Ok(Value::Null) } else { Err(format!("bad null: {}", s)) }
+        if s == "null" {
+            Ok(Value::Null)
+        } else {
+            Err(format!("bad null: {}", s))
+        }
     }
 }
 
@@ -203,7 +253,10 @@ fn run() -> Result<String, String> {
     let arg = env::args().nth(1).ok_or("usage: encode_one <json>")?;
     let req = json::from_str(&arg)?;
     let obj = req.as_object().ok_or("expected JSON object")?;
-    let codec = obj.get("codec").and_then(|v| v.as_str()).ok_or("missing 'codec'")?;
+    let codec = obj
+        .get("codec")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'codec'")?;
     let mut w = BytesWriter::new();
 
     match codec {
@@ -240,11 +293,15 @@ fn run() -> Result<String, String> {
         "bitset" => {
             let arr = obj["value"].as_array().ok_or("bitset.value not array")?;
             let mut bs = BTreeSet::new();
-            for v in arr { bs.insert(v.as_i64().unwrap() as u32); }
+            for v in arr {
+                bs.insert(v.as_i64().unwrap() as u32);
+            }
             bitset::write(&bs, &mut w).map_err(|e| e.to_string())?;
         }
         "chat_component" => {
-            let s = obj["value"].as_str().ok_or("chat_component.value not str")?;
+            let s = obj["value"]
+                .as_str()
+                .ok_or("chat_component.value not str")?;
             chat_component::write(s, &mut w).map_err(|e| e.to_string())?;
         }
         "nbt" => {
@@ -269,7 +326,13 @@ fn run() -> Result<String, String> {
 
 fn main() -> ExitCode {
     match run() {
-        Ok(hex) => { println!("{}", hex); ExitCode::SUCCESS }
-        Err(e) => { eprintln!("encode_one error: {}", e); ExitCode::FAILURE }
+        Ok(hex) => {
+            println!("{}", hex);
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("encode_one error: {}", e);
+            ExitCode::FAILURE
+        }
     }
 }

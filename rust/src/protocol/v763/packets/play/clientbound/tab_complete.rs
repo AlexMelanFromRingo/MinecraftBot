@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -40,15 +40,27 @@ impl TabComplete {
                 1 => Some(string::read(reader)?),
                 other => return Err(ProtocolError::DecodeError(format!("tooltip: {}", other))),
             };
-            matches.push(TabCompleteMatch { r#match: m, tooltip });
+            matches.push(TabCompleteMatch {
+                r#match: m,
+                tooltip,
+            });
         }
-        Ok(Self { transaction_id, start, length, matches })
+        Ok(Self {
+            transaction_id,
+            start,
+            length,
+            matches,
+        })
     }
 }
 
 impl ClientboundPacket for TabComplete {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.transaction_id, writer)?;
         varint::write(self.start, writer)?;
@@ -58,7 +70,10 @@ impl ClientboundPacket for TabComplete {
             string::write(&m.r#match, writer)?;
             match &m.tooltip {
                 None => writer.write_all(&[0])?,
-                Some(t) => { writer.write_all(&[1])?; string::write(t, writer)?; }
+                Some(t) => {
+                    writer.write_all(&[1])?;
+                    string::write(t, writer)?;
+                }
             }
         }
         Ok(())

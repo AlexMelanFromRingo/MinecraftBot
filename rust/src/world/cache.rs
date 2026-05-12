@@ -75,7 +75,9 @@ impl World {
     /// holds the guard for the search duration (~milliseconds) so
     /// the contention window stays small.
     pub fn query_guard(&self) -> WorldQueryGuard<'_> {
-        WorldQueryGuard { chunks: self.chunks.read() }
+        WorldQueryGuard {
+            chunks: self.chunks.read(),
+        }
     }
 }
 
@@ -211,14 +213,15 @@ impl World {
         let cr = (radius + 15) >> 4;
         let cfg = self.config.read();
         let y_lo = ((oy - radius as f64) as i32).max(cfg.min_y);
-        let y_hi = (((oy + radius as f64) as i32) + 1)
-            .min(cfg.min_y + cfg.section_count * 16);
+        let y_hi = (((oy + radius as f64) as i32) + 1).min(cfg.min_y + cfg.section_count * 16);
         drop(cfg);
         let chunks = self.chunks.read();
         let mut matches: Vec<(f64, (i32, i32, i32))> = Vec::new();
         for dcx in -cr..=cr {
             for dcz in -cr..=cr {
-                let Some(chunk) = chunks.get(&(cx0 + dcx, cz0 + dcz)) else { continue; };
+                let Some(chunk) = chunks.get(&(cx0 + dcx, cz0 + dcz)) else {
+                    continue;
+                };
                 let base_x = (cx0 + dcx) * 16;
                 let base_z = (cz0 + dcz) * 16;
                 for lx in 0..16 {

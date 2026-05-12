@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -42,16 +42,31 @@ impl WindowClick {
             let sb = reader.read_exact(2)?;
             let s = i16::from_be_bytes([sb[0], sb[1]]);
             let item = slot::read(reader)?;
-            changed_slots.push(ChangedSlot { slot_index: s, item });
+            changed_slots.push(ChangedSlot {
+                slot_index: s,
+                item,
+            });
         }
         let carried_item = slot::read(reader)?;
-        Ok(Self { window_id, state_id, slot_index, mouse_button, mode, changed_slots, carried_item })
+        Ok(Self {
+            window_id,
+            state_id,
+            slot_index,
+            mouse_button,
+            mode,
+            changed_slots,
+            carried_item,
+        })
     }
 }
 
 impl ServerboundPacket for WindowClick {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         writer.write_all(&[self.window_id])?;
         varint::write(self.state_id, writer)?;

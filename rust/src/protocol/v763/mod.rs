@@ -5,6 +5,6 @@ pub mod registry;
 pub mod states;
 
 pub use registry::{
-    encode_clientbound, encode_serverbound, AnyPacket, ClientboundPacket, CodecRegistry,
-    DecodeFn, ServerboundPacket,
+    encode_clientbound, encode_serverbound, AnyPacket, ClientboundPacket, CodecRegistry, DecodeFn,
+    ServerboundPacket,
 };

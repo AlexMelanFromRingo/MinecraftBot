@@ -58,12 +58,22 @@ impl PalettedContainer {
 
     /// Construct an indexed container.
     pub fn indexed(bits_per_entry: u8, palette: Vec<i32>, data: Vec<i64>) -> Self {
-        Self { bits_per_entry, palette, data, single_value: None }
+        Self {
+            bits_per_entry,
+            palette,
+            data,
+            single_value: None,
+        }
     }
 
     /// Construct a direct-mode container.
     pub fn direct(bits_per_entry: u8, data: Vec<i64>) -> Self {
-        Self { bits_per_entry, palette: Vec::new(), data, single_value: None }
+        Self {
+            bits_per_entry,
+            palette: Vec::new(),
+            data,
+            single_value: None,
+        }
     }
 
     /// Read the value at flat `index`. Out-of-range palette indices
@@ -253,7 +263,9 @@ impl Chunk {
     /// Construct an empty chunk for `(cx, cz)`. All sections default
     /// to single-value air (`state_id = 0`).
     pub fn empty(cx: i32, cz: i32, min_y: i32, section_count: i32) -> Self {
-        let sections = (0..section_count).map(|_| ChunkSection::default()).collect();
+        let sections = (0..section_count)
+            .map(|_| ChunkSection::default())
+            .collect();
         Self {
             cx,
             cz,

@@ -27,8 +27,14 @@ impl PyItemStack {
         }
     }
 
-    #[getter] fn item_id(&self) -> i32 { self.item_id }
-    #[getter] fn count(&self) -> i8 { self.count }
+    #[getter]
+    fn item_id(&self) -> i32 {
+        self.item_id
+    }
+    #[getter]
+    fn count(&self) -> i8 {
+        self.count
+    }
 
     /// Raw NBT bytes (opaque; parse separately if needed).
     #[getter]
@@ -37,15 +43,15 @@ impl PyItemStack {
     }
 
     fn __eq__(&self, other: &Self) -> bool {
-        self.item_id == other.item_id
-            && self.count == other.count
-            && self.nbt_raw == other.nbt_raw
+        self.item_id == other.item_id && self.count == other.count && self.nbt_raw == other.nbt_raw
     }
 
     fn __repr__(&self) -> String {
         format!(
             "ItemStack(item_id={}, count={}, nbt={} bytes)",
-            self.item_id, self.count, self.nbt_raw.len(),
+            self.item_id,
+            self.count,
+            self.nbt_raw.len(),
         )
     }
 }

@@ -1,7 +1,9 @@
 //! Packet `success` (login/clientbound, id 0x02). Hand-written.
 
 use crate::codec::uuid_codec::Uuid;
-use crate::codec::{string_codec as string, uuid_codec as uuid_c, varint, BytesReader, BytesWriter, Reader, Writer};
+use crate::codec::{
+    string_codec as string, uuid_codec as uuid_c, varint, BytesReader, BytesWriter, Reader, Writer,
+};
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
 use crate::protocol::v763::ClientboundPacket;
@@ -52,15 +54,27 @@ impl Success {
                     )))
                 }
             };
-            properties.push(Property { name, value, signature });
+            properties.push(Property {
+                name,
+                value,
+                signature,
+            });
         }
-        Ok(Self { uuid, username, properties })
+        Ok(Self {
+            uuid,
+            username,
+            properties,
+        })
     }
 }
 
 impl ClientboundPacket for Success {
-    fn state(&self) -> ConnectionState { ConnectionState::Login }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Login
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         uuid_c::write(&self.uuid, writer)?;
         string::write(&self.username, writer)?;

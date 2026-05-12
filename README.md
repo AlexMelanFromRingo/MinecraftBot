@@ -169,6 +169,8 @@ Full text in `.specify/memory/constitution.md`.
 - [`docs/migration_to_accel.md`](./docs/migration_to_accel.md). One-line
   import switch and full accel API surface.
 - [`docs/examples.md`](./docs/examples.md). Common bot recipes.
+- [`docs/protocol_versions.md`](./docs/protocol_versions.md). How to
+  add a new Minecraft protocol number (worked example: 1.20.4).
 - [`specs/003-rust-pyo3-bridge/quickstart.md`](./specs/003-rust-pyo3-bridge/quickstart.md). Day-to-day dev workflows.
 - [`specs/003-rust-pyo3-bridge/research.md`](./specs/003-rust-pyo3-bridge/research.md). Technical decisions, measured speedups.
 

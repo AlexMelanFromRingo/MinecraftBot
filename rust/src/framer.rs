@@ -232,7 +232,10 @@ mod tests {
         g.feed(&framed);
         let extracted = g.try_extract().unwrap().expect("frame ready");
         assert_eq!(&extracted, body);
-        assert!(g.try_extract().unwrap().is_none(), "buffer should be drained");
+        assert!(
+            g.try_extract().unwrap().is_none(),
+            "buffer should be drained"
+        );
     }
 
     #[test]

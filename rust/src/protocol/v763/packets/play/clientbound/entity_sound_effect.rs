@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -18,7 +18,9 @@ pub struct EntitySoundEffect {
     pub custom_range: Option<f32>,
     pub sound_category: i32,
     pub entity_id: i32,
-    pub volume: f32, pub pitch: f32, pub seed: i64,
+    pub volume: f32,
+    pub pitch: f32,
+    pub seed: i64,
 }
 impl EntitySoundEffect {
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
@@ -28,31 +30,52 @@ impl EntitySoundEffect {
             let p = reader.read_exact(1)?[0];
             let cr = match p {
                 0 => None,
-                1 => { let b = reader.read_exact(4)?; Some(f32::from_be_bytes([b[0],b[1],b[2],b[3]])) }
+                1 => {
+                    let b = reader.read_exact(4)?;
+                    Some(f32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+                }
                 o => return Err(ProtocolError::DecodeError(format!("range: {}", o))),
             };
             (cs, cr)
-        } else { (None, None) };
+        } else {
+            (None, None)
+        };
         let sound_category = varint::read(reader)?;
         let entity_id = varint::read(reader)?;
         let vb = reader.read_exact(8)?;
-        let volume = f32::from_be_bytes([vb[0],vb[1],vb[2],vb[3]]);
-        let pitch = f32::from_be_bytes([vb[4],vb[5],vb[6],vb[7]]);
+        let volume = f32::from_be_bytes([vb[0], vb[1], vb[2], vb[3]]);
+        let pitch = f32::from_be_bytes([vb[4], vb[5], vb[6], vb[7]]);
         let sb = reader.read_exact(8)?;
-        let seed = i64::from_be_bytes([sb[0],sb[1],sb[2],sb[3],sb[4],sb[5],sb[6],sb[7]]);
-        Ok(Self { sound_id, custom_sound, custom_range, sound_category, entity_id, volume, pitch, seed })
+        let seed = i64::from_be_bytes([sb[0], sb[1], sb[2], sb[3], sb[4], sb[5], sb[6], sb[7]]);
+        Ok(Self {
+            sound_id,
+            custom_sound,
+            custom_range,
+            sound_category,
+            entity_id,
+            volume,
+            pitch,
+            seed,
+        })
     }
 }
 impl ClientboundPacket for EntitySoundEffect {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.sound_id, writer)?;
         if self.sound_id == 0 {
             identifier::write(self.custom_sound.as_deref().unwrap_or(""), writer)?;
             match self.custom_range {
                 None => writer.write_all(&[0])?,
-                Some(r) => { writer.write_all(&[1])?; writer.write_all(&r.to_be_bytes())?; }
+                Some(r) => {
+                    writer.write_all(&[1])?;
+                    writer.write_all(&r.to_be_bytes())?;
+                }
             }
         }
         varint::write(self.sound_category, writer)?;

@@ -141,7 +141,10 @@ fn py_to_tag(v: &Bound<'_, PyAny>) -> PyResult<rnbt::NbtTag> {
     if let Ok(l) = v.downcast::<PyList>() {
         // Empty list → List with TAG_END element type (NBT convention).
         if l.is_empty() {
-            return Ok(rnbt::NbtTag::List { element_type: rnbt::TAG_END, items: vec![] });
+            return Ok(rnbt::NbtTag::List {
+                element_type: rnbt::TAG_END,
+                items: vec![],
+            });
         }
         let first = l.get_item(0)?;
         if first.is_instance_of::<pyo3::types::PyInt>() {
@@ -159,7 +162,10 @@ fn py_to_tag(v: &Bound<'_, PyAny>) -> PyResult<rnbt::NbtTag> {
         }
         // Use the first item's type byte.
         let element_type = type_of(&items[0]);
-        return Ok(rnbt::NbtTag::List { element_type, items });
+        return Ok(rnbt::NbtTag::List {
+            element_type,
+            items,
+        });
     }
     if let Ok(s) = v.extract::<String>() {
         return Ok(rnbt::NbtTag::String(s));

@@ -22,23 +22,56 @@ impl PyPhysicsState {
     ))]
     fn new(x: f64, y: f64, z: f64, vx: f64, vy: f64, vz: f64, on_ground: bool) -> Self {
         Self {
-            inner: rphys::PhysicsState { x, y, z, vx, vy, vz, on_ground },
+            inner: rphys::PhysicsState {
+                x,
+                y,
+                z,
+                vx,
+                vy,
+                vz,
+                on_ground,
+            },
         }
     }
 
-    #[getter] fn x(&self) -> f64 { self.inner.x }
-    #[getter] fn y(&self) -> f64 { self.inner.y }
-    #[getter] fn z(&self) -> f64 { self.inner.z }
-    #[getter] fn vx(&self) -> f64 { self.inner.vx }
-    #[getter] fn vy(&self) -> f64 { self.inner.vy }
-    #[getter] fn vz(&self) -> f64 { self.inner.vz }
-    #[getter] fn on_ground(&self) -> bool { self.inner.on_ground }
+    #[getter]
+    fn x(&self) -> f64 {
+        self.inner.x
+    }
+    #[getter]
+    fn y(&self) -> f64 {
+        self.inner.y
+    }
+    #[getter]
+    fn z(&self) -> f64 {
+        self.inner.z
+    }
+    #[getter]
+    fn vx(&self) -> f64 {
+        self.inner.vx
+    }
+    #[getter]
+    fn vy(&self) -> f64 {
+        self.inner.vy
+    }
+    #[getter]
+    fn vz(&self) -> f64 {
+        self.inner.vz
+    }
+    #[getter]
+    fn on_ground(&self) -> bool {
+        self.inner.on_ground
+    }
 
     fn __repr__(&self) -> String {
         format!(
             "PhysicsState(x={:.4}, y={:.4}, z={:.4}, vx={:.4}, vy={:.4}, vz={:.4}, on_ground={})",
-            self.inner.x, self.inner.y, self.inner.z,
-            self.inner.vx, self.inner.vy, self.inner.vz,
+            self.inner.x,
+            self.inner.y,
+            self.inner.z,
+            self.inner.vx,
+            self.inner.vy,
+            self.inner.vz,
             self.inner.on_ground,
         )
     }
@@ -59,15 +92,36 @@ impl PyPhysicsIntent {
     ))]
     fn new(dx: f64, dz: f64, jump: bool, sprint: bool, sneak: bool) -> Self {
         Self {
-            inner: rphys::PhysicsIntent { dx, dz, jump, sprint, sneak },
+            inner: rphys::PhysicsIntent {
+                dx,
+                dz,
+                jump,
+                sprint,
+                sneak,
+            },
         }
     }
 
-    #[getter] fn dx(&self) -> f64 { self.inner.dx }
-    #[getter] fn dz(&self) -> f64 { self.inner.dz }
-    #[getter] fn jump(&self) -> bool { self.inner.jump }
-    #[getter] fn sprint(&self) -> bool { self.inner.sprint }
-    #[getter] fn sneak(&self) -> bool { self.inner.sneak }
+    #[getter]
+    fn dx(&self) -> f64 {
+        self.inner.dx
+    }
+    #[getter]
+    fn dz(&self) -> f64 {
+        self.inner.dz
+    }
+    #[getter]
+    fn jump(&self) -> bool {
+        self.inner.jump
+    }
+    #[getter]
+    fn sprint(&self) -> bool {
+        self.inner.sprint
+    }
+    #[getter]
+    fn sneak(&self) -> bool {
+        self.inner.sneak
+    }
 }
 
 /// Advance one physics tick (pure).

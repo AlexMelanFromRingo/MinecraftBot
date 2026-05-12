@@ -23,18 +23,40 @@ impl PyEffectEntry {
     ) -> Self {
         Self {
             inner: re::EffectEntry {
-                id, amplifier, duration_ticks,
-                is_ambient, show_particles, show_icon,
+                id,
+                amplifier,
+                duration_ticks,
+                is_ambient,
+                show_particles,
+                show_icon,
             },
         }
     }
 
-    #[getter] fn id(&self) -> i32 { self.inner.id }
-    #[getter] fn amplifier(&self) -> i32 { self.inner.amplifier }
-    #[getter] fn duration_ticks(&self) -> i32 { self.inner.duration_ticks }
-    #[getter] fn is_ambient(&self) -> bool { self.inner.is_ambient }
-    #[getter] fn show_particles(&self) -> bool { self.inner.show_particles }
-    #[getter] fn show_icon(&self) -> bool { self.inner.show_icon }
+    #[getter]
+    fn id(&self) -> i32 {
+        self.inner.id
+    }
+    #[getter]
+    fn amplifier(&self) -> i32 {
+        self.inner.amplifier
+    }
+    #[getter]
+    fn duration_ticks(&self) -> i32 {
+        self.inner.duration_ticks
+    }
+    #[getter]
+    fn is_ambient(&self) -> bool {
+        self.inner.is_ambient
+    }
+    #[getter]
+    fn show_particles(&self) -> bool {
+        self.inner.show_particles
+    }
+    #[getter]
+    fn show_icon(&self) -> bool {
+        self.inner.show_icon
+    }
 
     /// Canonical name (`"speed"`) or `"effect_{id}"` for unknown ids.
     #[getter]
@@ -55,7 +77,9 @@ impl PyEffectEntry {
     fn __repr__(&self) -> String {
         format!(
             "StatusEffect(name={:?}, level={}, duration_ticks={})",
-            self.inner.name(), self.inner.level(), self.inner.duration_ticks,
+            self.inner.name(),
+            self.inner.level(),
+            self.inner.duration_ticks,
         )
     }
 }

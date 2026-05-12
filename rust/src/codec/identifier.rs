@@ -1,6 +1,6 @@
 //! Identifier codec — namespaced resource location.
 
-use crate::codec::{Reader, Writer, string_codec};
+use crate::codec::{string_codec, Reader, Writer};
 use crate::errors::ProtocolError;
 
 /// Default namespace inserted on decode when the wire string has no colon.

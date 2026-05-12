@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -29,19 +29,27 @@ impl ChunkBiomes {
         let mut entries = Vec::with_capacity(n);
         for _ in 0..n {
             let b = reader.read_exact(8)?;
-            let chunk_x = i32::from_be_bytes([b[0],b[1],b[2],b[3]]);
-            let chunk_z = i32::from_be_bytes([b[4],b[5],b[6],b[7]]);
+            let chunk_x = i32::from_be_bytes([b[0], b[1], b[2], b[3]]);
+            let chunk_z = i32::from_be_bytes([b[4], b[5], b[6], b[7]]);
             let data_len = varint::read(reader)? as usize;
             let data = reader.read_exact(data_len)?.to_vec();
-            entries.push(ChunkBiomeEntry { chunk_x, chunk_z, data });
+            entries.push(ChunkBiomeEntry {
+                chunk_x,
+                chunk_z,
+                data,
+            });
         }
         Ok(Self { entries })
     }
 }
 
 impl ClientboundPacket for ChunkBiomes {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         varint::write(self.entries.len() as i32, writer)?;
         for e in &self.entries {

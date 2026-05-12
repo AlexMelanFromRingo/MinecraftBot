@@ -2,8 +2,8 @@
 
 use crate::codec::uuid_codec::{self as uuid_c, Uuid};
 use crate::codec::{
-    bitset, chat_component, identifier, nbt, position, slot,
-    string_codec as string, varint, varlong, BytesReader, BytesWriter, Reader, Writer,
+    bitset, chat_component, identifier, nbt, position, slot, string_codec as string, varint,
+    varlong, BytesReader, BytesWriter, Reader, Writer,
 };
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
@@ -12,7 +12,10 @@ use crate::protocol::v763::ClientboundPacket;
 pub const PACKET_ID: i32 = 0x41;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct DeathLocation { pub dimension_name: String, pub location: (i32, i32, i32) }
+pub struct DeathLocation {
+    pub dimension_name: String,
+    pub location: (i32, i32, i32),
+}
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Respawn {
@@ -30,7 +33,9 @@ pub struct Respawn {
 
 fn read_bool(reader: &mut BytesReader<'_>) -> Result<bool, ProtocolError> {
     let b = reader.read_exact(1)?[0];
-    if b > 1 { return Err(ProtocolError::DecodeError(format!("bool: {}", b))); }
+    if b > 1 {
+        return Err(ProtocolError::DecodeError(format!("bool: {}", b)));
+    }
     Ok(b != 0)
 }
 
@@ -39,7 +44,8 @@ impl Respawn {
         let dimension = identifier::read(reader)?;
         let world_name = identifier::read(reader)?;
         let hb = reader.read_exact(8)?;
-        let hashed_seed = i64::from_be_bytes([hb[0],hb[1],hb[2],hb[3],hb[4],hb[5],hb[6],hb[7]]);
+        let hashed_seed =
+            i64::from_be_bytes([hb[0], hb[1], hb[2], hb[3], hb[4], hb[5], hb[6], hb[7]]);
         let game_mode = reader.read_exact(1)?[0];
         let previous_game_mode = reader.read_exact(1)?[0] as i8;
         let is_debug = read_bool(reader)?;
@@ -51,16 +57,32 @@ impl Respawn {
                 dimension_name: identifier::read(reader)?,
                 location: position::read(reader)?,
             })
-        } else { None };
+        } else {
+            None
+        };
         let portal_cooldown = varint::read(reader)?;
-        Ok(Self { dimension, world_name, hashed_seed, game_mode, previous_game_mode,
-                  is_debug, is_flat, copy_metadata, death_location, portal_cooldown })
+        Ok(Self {
+            dimension,
+            world_name,
+            hashed_seed,
+            game_mode,
+            previous_game_mode,
+            is_debug,
+            is_flat,
+            copy_metadata,
+            death_location,
+            portal_cooldown,
+        })
     }
 }
 
 impl ClientboundPacket for Respawn {
-    fn state(&self) -> ConnectionState { ConnectionState::Play }
-    fn packet_id(&self) -> i32 { PACKET_ID }
+    fn state(&self) -> ConnectionState {
+        ConnectionState::Play
+    }
+    fn packet_id(&self) -> i32 {
+        PACKET_ID
+    }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         identifier::write(&self.dimension, writer)?;
         identifier::write(&self.world_name, writer)?;

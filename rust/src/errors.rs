@@ -85,7 +85,10 @@ pub enum ProtocolError {
 impl ProtocolError {
     /// Convenience constructor for `IncompleteRead`.
     pub fn incomplete(requested: usize, available: usize) -> Self {
-        Self::IncompleteRead { requested, available }
+        Self::IncompleteRead {
+            requested,
+            available,
+        }
     }
 
     /// Convenience constructor for `OversizedVarInt`.

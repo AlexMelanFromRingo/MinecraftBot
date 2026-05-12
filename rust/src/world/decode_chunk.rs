@@ -1,7 +1,7 @@
 //! Structured decoder for the `map_chunk` packet payload — Rust port
 //! of `python/minecraft_bot/world/decode_chunk.py`.
 
-use crate::codec::{BytesReader, Reader as RustReader, nbt, varint};
+use crate::codec::{nbt, varint, BytesReader, Reader as RustReader};
 use crate::errors::ProtocolError;
 use crate::world::chunk::{BlockEntityRecord, Chunk, ChunkSection, PalettedContainer};
 
@@ -43,9 +43,17 @@ fn read_paletted<R: RustReader + ?Sized>(
     }
 
     let (max_indexed, min_bits, direct_bits) = if is_block {
-        (BLOCK_MAX_INDEXED_BITS, BLOCK_MIN_INDEXED_BITS, BLOCK_DIRECT_BITS)
+        (
+            BLOCK_MAX_INDEXED_BITS,
+            BLOCK_MIN_INDEXED_BITS,
+            BLOCK_DIRECT_BITS,
+        )
     } else {
-        (BIOME_MAX_INDEXED_BITS, BIOME_MIN_INDEXED_BITS, BIOME_DIRECT_BITS)
+        (
+            BIOME_MAX_INDEXED_BITS,
+            BIOME_MIN_INDEXED_BITS,
+            BIOME_DIRECT_BITS,
+        )
     };
 
     if bits <= max_indexed {
