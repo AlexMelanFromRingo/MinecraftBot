@@ -29,10 +29,12 @@ use crate::protocol::v763::packets::play::serverbound::position::Position as SbP
 use crate::world::{decode_chunk, World};
 
 /// Paper anti-cheat: `moved too quickly` trips at delta² > 100 ⇒ 10
-/// blocks/tick. We cap each Player Position send to **5 blocks** from
-/// the last server-known position (matches the Python reference's
-/// `MAX_PREDICTION_RADIUS = 5.0`).
-const MAX_PREDICTION_RADIUS: f64 = 5.0;
+/// blocks/tick. We cap each Player Position send to **2 blocks** from
+/// the last server-known position — half the Python reference's
+/// `MAX_PREDICTION_RADIUS = 5.0`. The conservative value avoids
+/// kicks when the path interpolates through air over uneven terrain
+/// (each tick the server checks both speed *and* on_ground state).
+const MAX_PREDICTION_RADIUS: f64 = 2.0;
 
 // Clientbound packet IDs we care about in the dispatcher.
 const ID_BLOCK_CHANGE: i32 = 0x0A;
@@ -235,6 +237,74 @@ impl Bot {
         }
     }
 
+    /// **Diagnostic / blind walk** — no path planning, no collision.
+    /// Just slides the bot's position toward `(tx, ty, tz)` at 20 Hz,
+    /// capped at 5 blocks per tick. Useful for testing the
+    /// position-send loop in isolation from the pathfinder.
+    pub async fn walk_to_blind(
+        &self,
+        tx: f64,
+        ty: f64,
+        tz: f64,
+        timeout_secs: f64,
+    ) -> Result<bool, ProtocolError> {
+        // Wait for initial position from the server.
+        let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(timeout_secs);
+        for _ in 0..40 {
+            if self.state.lock().await.position_known {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        if !self.state.lock().await.position_known {
+            return Err(ProtocolError::DecodeError(
+                "walk_to_blind: no position arrived within 4s".into(),
+            ));
+        }
+        loop {
+            if tokio::time::Instant::now() > deadline {
+                return Ok(false);
+            }
+            let (cur_x, cur_y, cur_z) = {
+                let s = self.state.lock().await;
+                (s.x, s.y, s.z)
+            };
+            let dx = tx - cur_x;
+            let dy = ty - cur_y;
+            let dz = tz - cur_z;
+            let dist = (dx * dx + dy * dy + dz * dz).sqrt();
+            if dist <= 1.5 {
+                return Ok(true);
+            }
+            let mut step_dx = dx;
+            let mut step_dy = dy;
+            let mut step_dz = dz;
+            if dist > MAX_PREDICTION_RADIUS {
+                let scale = MAX_PREDICTION_RADIUS / dist;
+                step_dx *= scale;
+                step_dy *= scale;
+                step_dz *= scale;
+            }
+            let send_x = cur_x + step_dx;
+            let send_y = cur_y + step_dy;
+            let send_z = cur_z + step_dz;
+            {
+                let mut s = self.state.lock().await;
+                s.x = send_x;
+                s.y = send_y;
+                s.z = send_z;
+            }
+            let pkt = SbPosition {
+                x: send_x,
+                y: send_y,
+                z: send_z,
+                on_ground: true,
+            };
+            self.connection.send(&pkt).await?;
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    }
+
     /// Plan a path to `(tx, ty, tz)` and walk there one tick at a
     /// time, sending Player Position packets at 20 Hz.
     ///
@@ -262,7 +332,27 @@ impl Bot {
             start_state.y.floor() as i32,
             start_state.z.floor() as i32,
         );
-        let goal_pos: Pos = (tx.floor() as i32, ty.floor() as i32, tz.floor() as i32);
+        let goal_x = tx.floor() as i32;
+        let goal_z = tz.floor() as i32;
+        let goal_y_hint = ty.floor() as i32;
+        // Resolve a real stand-floor y near the requested goal —
+        // spawn-area / cliff terrain frequently has the literal goal
+        // cell hanging in air, in which case the literal pathfind
+        // never reaches it. Probe a small window: the hint, then
+        // +1/-1/+2/-2/+3/-3 (max_fall=3 allows up to -3).
+        let goal_pos: Pos = {
+            use crate::pathfinding::walkable::stand_floor;
+            let candidates = [0, 1, -1, 2, -2, 3, -3];
+            let mut chosen = (goal_x, goal_y_hint, goal_z);
+            for dy in candidates {
+                let cand_y = goal_y_hint + dy;
+                if stand_floor(self.world.as_ref(), goal_x, cand_y, goal_z) {
+                    chosen = (goal_x, cand_y, goal_z);
+                    break;
+                }
+            }
+            chosen
+        };
 
         // Plan the path through the World cache.
         let path_nodes: Vec<Pos> = match find_path(self.world.as_ref(), start_pos, goal_pos, 3, 100_000) {

@@ -110,6 +110,26 @@ impl PyBot {
         })
     }
 
+    /// **Diagnostic** `walk_to_blind(x, y, z, *, timeout=30.0)` —
+    /// slides toward the target at 20 Hz with NO path planning and
+    /// NO collision checks. Use for testing the position-send loop
+    /// in isolation from the pathfinder.
+    #[pyo3(signature = (x, y, z, *, timeout = 30.0))]
+    fn walk_to_blind<'py>(
+        &self,
+        py: Python<'py>,
+        x: f64,
+        y: f64,
+        z: f64,
+        timeout: f64,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let inner = Arc::clone(&self.inner);
+        future_into_py(py, async move {
+            let bot = inner.lock().await;
+            bot.walk_to_blind(x, y, z, timeout).await.into_py()
+        })
+    }
+
     /// Number of loaded chunks (synchronous; reads via RwLock).
     fn loaded_chunk_count<'py>(&self, py: Python<'py>) -> PyResult<usize> {
         let inner = self.inner.clone();
