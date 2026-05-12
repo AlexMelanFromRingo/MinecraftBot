@@ -98,13 +98,13 @@ and disconnect cleanly with field-level position parity within
 
 ### Rust standalone crate — port 002 bot-API into `rust/src/`
 
-- [ ] T024 [P] [US1] Create `rust/src/world/mod.rs` and port `python/minecraft_bot/world/chunk.py` → `rust/src/world/chunk.rs` (Chunk + ChunkSection structs, section grid 16×16×N, `non_air_count`, biome storage)
+- [X] T024 [P] [US1] Create `rust/src/world/mod.rs` and port `python/minecraft_bot/world/chunk.py` → `rust/src/world/chunk.rs` (Chunk + ChunkSection structs, section grid 16×16×N, `non_air_count`, biome storage)
 - [ ] T025 [P] [US1] Port `python/minecraft_bot/world/decode_chunk.py` → `rust/src/world/decode_chunk.rs` (paletted-container decode for block-states and biomes; light arrays)
-- [ ] T026 [US1] Port `python/minecraft_bot/world/cache.py` → `rust/src/world/cache.rs` using `parking_lot::RwLock<HashMap<(i32,i32), Chunk>>` (or DashMap — pick by benchmark in implementation); same eviction policy as Python
-- [ ] T027 [P] [US1] Port `python/minecraft_bot/world/block_table.py` → `rust/src/world/block_table.rs` (Block struct, is_solid/is_water tables from `protocol-data/v763/`)
+- [X] T026 [US1] Port `python/minecraft_bot/world/cache.py` → `rust/src/world/cache.rs` using `parking_lot::RwLock<HashMap<(i32,i32), Chunk>>` (or DashMap — pick by benchmark in implementation); same eviction policy as Python
+- [X] T027 [P] [US1] Port `python/minecraft_bot/world/block_table.py` → `rust/src/world/block_table.rs` (Block struct, is_solid/is_water tables from `protocol-data/v763/`)
 - [ ] T028 [P] [US1] Port `python/minecraft_bot/slots.py` → `rust/src/slots.rs` (ItemStack with item_id, count, nbt)
 - [ ] T029 [P] [US1] Port `python/minecraft_bot/entities/*.py` → `rust/src/entities/` (Entity struct, EntityMetadata schema decoder)
-- [ ] T030 [P] [US1] Port `python/minecraft_bot/status_effects.py` → `rust/src/effects.rs`
+- [X] T030 [P] [US1] Port `python/minecraft_bot/status_effects.py` → `rust/src/effects.rs`
 - [ ] T031 [US1] Port `python/minecraft_bot/observation.py` → `rust/src/observation.rs` (Observation snapshot builder from cache + connection state); fields per `data-model.md` parity table
 - [ ] T032 [P] [US1] Port `python/minecraft_bot/pathfinding.py` walkable-graph builder → `rust/src/pathfinding/walkable.rs`
 - [ ] T033 [US1] Port `python/minecraft_bot/pathfinding.py` A* core → `rust/src/pathfinding/astar.rs`; expose `find_path(world: &WorldCache, start: Vec3, goal: Vec3, max_fall: i32, max_nodes: usize) -> Option<Path>`

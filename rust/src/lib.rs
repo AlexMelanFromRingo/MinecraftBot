@@ -13,9 +13,13 @@ pub mod errors;
 pub mod framer;
 pub mod protocol;
 pub mod wire_log;
+// 003 — bot-API port.
+pub mod effects;
+pub mod world;
 
 pub use crate::connection::{offline_uuid, Connection, Reconnected, ReconnectPolicy};
 pub use crate::errors::ProtocolError;
 pub use crate::framer::{Framer, MAX_PACKET_SIZE};
 pub use crate::protocol::{ProtocolVersion, V_1_20_1, V_1_20_2};
 pub use crate::protocol::v763::states::{ConnectionState, Direction};
+pub use crate::world::{Chunk, ChunkSection, PalettedContainer, World};
