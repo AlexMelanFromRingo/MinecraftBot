@@ -278,8 +278,8 @@ Per `plan.md` Project Structure:
 - [X] T118 Implement Rust framer at `rust/src/framer.rs` (mirror Python; `tokio::AsyncRead`/`AsyncWrite`).
 - [X] T119 Implement `ServerboundPacket` / `ClientboundPacket` traits and `CodecRegistry` at `rust/src/protocol/v763/registry.rs`.
 - [X] T120 [P] Implement Rust handshake/status/login packet files at `rust/src/protocol/v763/packets/{handshaking,status,login}/...` (mirror US1 set, ~11 files).
-- [ ] T121 [P] Implement Rust clientbound play packets — mirror Python US2 set across all domain groups (~111 files).
-- [ ] T122 [P] Implement Rust serverbound play packets — mirror Python US3 set (~33 files).
+- [X] T121 [P] Implement Rust clientbound play packets — mirror Python US2 set across all domain groups (~111 files).
+- [X] T122 [P] Implement Rust serverbound play packets — mirror Python US3 set (~33 files).
 - [ ] T123 Implement Rust `Connection` with `Connection::offline(...)` factory at `rust/src/connection.rs` — `Send + 'static`, `tokio::sync::Mutex<OwnedWriteHalf>` for FIFO writes (FR-013a + FR-017a).
 - [ ] T124 Implement Rust auto-reconnect path with `ReconnectPolicy` at `rust/src/connection.rs` — opt-in, exponential backoff, state discard.
 - [ ] T125 Implement Rust `WireLog` capture and `WireLog::replay` at `rust/src/wire_log.rs` — bit-identical JSONL to Python.

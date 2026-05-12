@@ -21,8 +21,7 @@ pub struct Ping {
 impl Ping {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let __buf = reader.read_exact(8)?;
-        let time = i64::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3],__buf[4],__buf[5],__buf[6],__buf[7]]);
+        let time = i64::from_be_bytes({ let _b = reader.read_exact(8)?; [_b[0],_b[1],_b[2],_b[3],_b[4],_b[5],_b[6],_b[7]] });
         Ok(Self { time })
     }
 }

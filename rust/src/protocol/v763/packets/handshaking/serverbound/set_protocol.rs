@@ -29,8 +29,7 @@ impl SetProtocol {
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let protocol_version = varint::read(reader)?;
         let server_host = string::read(reader)?;
-        let __buf = reader.read_exact(2)?;
-        let server_port = u16::from_be_bytes([__buf[0],__buf[1]]);
+        let server_port = u16::from_be_bytes({ let _b = reader.read_exact(2)?; [_b[0],_b[1]] });
         let next_state = varint::read(reader)?;
         Ok(Self { protocol_version, server_host, server_port, next_state })
     }

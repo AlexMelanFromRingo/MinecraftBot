@@ -237,8 +237,15 @@ def _emit_reader_read_n(state: EmitState, field_name: str, n_node: ast.expr) -> 
         state.decode_lines.append(f"{field_name}.copy_from_slice(__buf);")
         state.encode_lines.append(f"writer.write_all(&self.{field_name})?;")
         return True
-    if isinstance(n_node, ast.Attribute) and n_node.attr == "remaining":
-        # reader.read(reader.remaining()) — slurp rest into Vec<u8>
+    # reader.read(reader.remaining()) — slurp rest into Vec<u8>
+    is_remaining = (
+        (isinstance(n_node, ast.Attribute) and n_node.attr == "remaining")
+        or (isinstance(n_node, ast.Call) and isinstance(n_node.func, ast.Attribute)
+            and n_node.func.attr == "remaining"
+            and isinstance(n_node.func.value, ast.Name)
+            and n_node.func.value.id == "reader")
+    )
+    if is_remaining:
         _add_field(state, field_name, "Vec<u8>")
         state.decode_lines.append(f"let {field_name} = reader.read_exact(reader.remaining())?.to_vec();")
         state.encode_lines.append(f"writer.write_all(&self.{field_name})?;")
@@ -272,6 +279,15 @@ def _process_assign(state: EmitState, stmt: ast.Assign) -> bool:
                 and isinstance(call.func.value, ast.Name)
                 and call.func.value.id in _CODECS):
             _emit_simple_codec_assign(state, target.id, call.func.value.id)
+            return True
+        # uuid_codec.read(reader) — alias used by some Python files
+        if (isinstance(call.func, ast.Attribute) and call.func.attr == "read"
+                and isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "uuid_codec"):
+            _track_imports(state, "uuid")
+            _add_field(state, target.id, "Uuid")
+            state.decode_lines.append(f"let {target.id} = uuid_c::read(reader)?;")
+            state.encode_lines.append(f"uuid_c::write(&self.{target.id}, writer)?;")
             return True
         # reader.read(N) — raw bytes
         if (isinstance(call.func, ast.Attribute) and call.func.attr == "read"
@@ -309,7 +325,7 @@ def _process_assign(state: EmitState, stmt: ast.Assign) -> bool:
 def _expr_to_decode(state: EmitState, v: ast.expr) -> Optional[tuple[str, str]]:
     """Try to render a Python expression as (rust_expr, rust_type).
     Returns None if unsupported. Side-effect: updates state.imports."""
-    # codec.read(reader)
+    # codec.read(reader) — possibly with keyword args like max_length=N
     if (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
             and v.func.attr == "read"
             and isinstance(v.func.value, ast.Name)
@@ -318,6 +334,51 @@ def _expr_to_decode(state: EmitState, v: ast.expr) -> Optional[tuple[str, str]]:
         _track_imports(state, codec)
         read_tpl, _, rust_ty = _CODECS[codec]
         return (read_tpl, rust_ty)
+    # `uuid_codec.read(reader)` — alias used in some Python files
+    if (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
+            and v.func.attr == "read"
+            and isinstance(v.func.value, ast.Name)
+            and v.func.value.id == "uuid_codec"):
+        _track_imports(state, "uuid")
+        return ("uuid_c::read(reader)?", "Uuid")
+    # `_read_bool(reader)` / `_bool(reader, "...")` helper — reads a byte,
+    # validates 0/1, returns Python bool.
+    if (isinstance(v, ast.Call) and isinstance(v.func, ast.Name)
+            and v.func.id in ("_read_bool", "_bool")):
+        return (
+            "{ let __b = reader.read_exact(1)?[0]; if __b > 1 { return Err(ProtocolError::DecodeError(format!(\"bool: {}\", __b))); } __b != 0 }",
+            "bool",
+        )
+    # `_opt_varint(reader, "...")` helper — Optional<i32> with present byte.
+    if (isinstance(v, ast.Call) and isinstance(v.func, ast.Name)
+            and v.func.id == "_opt_varint"):
+        return (
+            "{ let __p = reader.read_exact(1)?[0]; match __p { 0 => None, 1 => Some(varint::read(reader)?), _ => return Err(ProtocolError::DecodeError(format!(\"opt_varint: {}\", __p))) } }",
+            "Option<i32>",
+        )
+    # tuple(codec.read(reader) for _ in range(n)) — generator-based array
+    if (isinstance(v, ast.Call) and isinstance(v.func, ast.Name)
+            and v.func.id == "tuple"
+            and len(v.args) == 1 and isinstance(v.args[0], ast.GeneratorExp)):
+        gen = v.args[0]
+        elt_decoded = _expr_to_decode(state, gen.elt)
+        # generator: `for _ in range(n)`
+        if (elt_decoded is not None
+                and len(gen.generators) == 1
+                and isinstance(gen.generators[0].iter, ast.Call)
+                and isinstance(gen.generators[0].iter.func, ast.Name)
+                and gen.generators[0].iter.func.id == "range"
+                and len(gen.generators[0].iter.args) == 1
+                and isinstance(gen.generators[0].iter.args[0], ast.Name)):
+            n_var = gen.generators[0].iter.args[0].id
+            elt_expr, elt_ty = elt_decoded
+            # Emit inline-built Vec<T>.
+            block = (
+                "{ let mut __v: Vec<" + elt_ty + "> = Vec::with_capacity("
+                + n_var + " as usize); for _ in 0.." + n_var + " { __v.push("
+                + elt_expr + "); } __v }"
+            )
+            return (block, f"Vec<{elt_ty}>")
     # struct.unpack(">X", reader.read(N))[0]
     if (isinstance(v, ast.Subscript)
             and isinstance(v.value, ast.Call)
@@ -333,9 +394,9 @@ def _expr_to_decode(state: EmitState, v: ast.expr) -> Optional[tuple[str, str]]:
                 return (f"(reader.read_exact(1)?[0] as i8)", "i8")
             if sz == 1:
                 return (f"reader.read_exact(1)?[0]", "u8")
+            arr = "[" + ",".join(f"_b[{i}]" for i in range(sz)) + "]"
             return (
-                f"{rust_ty}::from_be_bytes({{ let _b = reader.read_exact({sz})?; "
-                + "[" + ",".join(f"_b[{i}]" for i in range(sz)) + "] }})",
+                f"{rust_ty}::from_be_bytes({{ let _b = reader.read_exact({sz})?; {arr} }})",
                 rust_ty,
             )
     # reader.read(1)[0]
@@ -349,6 +410,29 @@ def _expr_to_decode(state: EmitState, v: ast.expr) -> Optional[tuple[str, str]]:
             and isinstance(v.value.args[0], ast.Constant)
             and v.value.args[0].value == 1):
         return ("reader.read_exact(1)?[0]", "u8")
+    # reader.read(N) where N is a constant — fixed-size byte array
+    if (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
+            and v.func.attr == "read"
+            and isinstance(v.func.value, ast.Name) and v.func.value.id == "reader"
+            and len(v.args) == 1 and isinstance(v.args[0], ast.Constant)
+            and isinstance(v.args[0].value, int)):
+        n = v.args[0].value
+        return (f"reader.read_exact({n})?.to_vec()", "Vec<u8>")
+    # reader.read(reader.remaining()) — slurp rest into Vec<u8>
+    if (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
+            and v.func.attr == "read"
+            and isinstance(v.func.value, ast.Name) and v.func.value.id == "reader"
+            and len(v.args) == 1
+            and isinstance(v.args[0], ast.Call)
+            and isinstance(v.args[0].func, ast.Attribute)
+            and v.args[0].func.attr == "remaining"):
+        return ("reader.read_exact(reader.remaining())?.to_vec()", "Vec<u8>")
+    # reader.read(N) where N is a variable name — variable-length Vec<u8>
+    if (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
+            and v.func.attr == "read"
+            and isinstance(v.func.value, ast.Name) and v.func.value.id == "reader"
+            and len(v.args) == 1 and isinstance(v.args[0], ast.Name)):
+        return (f"reader.read_exact({v.args[0].id} as usize)?.to_vec()", "Vec<u8>")
     return None
 
 
@@ -438,36 +522,59 @@ def _process_if_optional(state: EmitState, stmt: ast.If) -> Optional[str]:
         return None
     present_var = stmt.test.left.id
     # `if` body: single Assign(name, codec.read(reader))
-    if not (len(stmt.body) == 1 and isinstance(stmt.body[0], ast.Assign)
-            and len(stmt.body[0].targets) == 1
-            and isinstance(stmt.body[0].targets[0], ast.Name)):
+    body0 = stmt.body[0] if stmt.body else None
+    # Accept both Assign(`x = expr`) and AnnAssign(`x: Optional[T] = expr`).
+    if isinstance(body0, ast.Assign) and len(body0.targets) == 1 and isinstance(body0.targets[0], ast.Name):
+        field = body0.targets[0].id
+        value_expr = body0.value
+    elif isinstance(body0, ast.AnnAssign) and isinstance(body0.target, ast.Name) and body0.value is not None:
+        field = body0.target.id
+        value_expr = body0.value
+    else:
         return None
-    field = stmt.body[0].targets[0].id
-    inner = _expr_to_decode(state, stmt.body[0].value)
+    inner = _expr_to_decode(state, value_expr)
     if inner is None:
         return None
     rust_expr, rust_ty = inner
+    # If the inner codec already returns an Option<...>, don't double-wrap.
+    # nbt and slot already produce Option<T>; the present-byte gate in
+    # the Python source is for explicit absence and we still match on it
+    # but the field type stays Option<T>.
+    already_optional = rust_ty.startswith("Option<")
+    optional_inner_ty = rust_ty[len("Option<"):-1] if already_optional else rust_ty
     # `elif present == 0: x = None`
     if not stmt.orelse or not isinstance(stmt.orelse[0], ast.If):
         return None
     elif_stmt = stmt.orelse[0]
     # Could be just plain elif without the raise — we tolerate both shapes.
-    state.decode_lines.append(f"let {field} = match {present_var} {{")
-    state.decode_lines.append(f"    0 => None,")
-    state.decode_lines.append(f"    1 => Some({rust_expr}),")
-    state.decode_lines.append(
-        f"    other => return Err(ProtocolError::DecodeError("
-        f"format!(\"{field}.present: {{}}\", other))),"
-    )
-    state.decode_lines.append("};")
-    state.fields = [(n, t) for n, t in state.fields if n != field]
-    _add_field(state, field, f"Option<{rust_ty}>")
-    # Encode is harder — we'll emit a stub for caller to potentially fix.
+    if already_optional:
+        # rust_expr already returns Option<T>; only emit when present byte == 1.
+        state.decode_lines.append(f"let {field} = match {present_var} {{")
+        state.decode_lines.append(f"    0 => None,")
+        state.decode_lines.append(f"    1 => {rust_expr},")
+        state.decode_lines.append(
+            f"    other => return Err(ProtocolError::DecodeError("
+            f"format!(\"{field}.present: {{}}\", other))),"
+        )
+        state.decode_lines.append("};")
+        state.fields = [(n, t) for n, t in state.fields if n != field]
+        _add_field(state, field, rust_ty)
+    else:
+        state.decode_lines.append(f"let {field} = match {present_var} {{")
+        state.decode_lines.append(f"    0 => None,")
+        state.decode_lines.append(f"    1 => Some({rust_expr}),")
+        state.decode_lines.append(
+            f"    other => return Err(ProtocolError::DecodeError("
+            f"format!(\"{field}.present: {{}}\", other))),"
+        )
+        state.decode_lines.append("};")
+        state.fields = [(n, t) for n, t in state.fields if n != field]
+        _add_field(state, field, f"Option<{rust_ty}>")
+    # Encode.
     state.encode_lines.append(f"match &self.{field} {{")
     state.encode_lines.append(f"    None => writer.write_all(&[0])?,")
     state.encode_lines.append(f"    Some(v) => {{")
     state.encode_lines.append(f"        writer.write_all(&[1])?;")
-    # Inline the same codec write idiom.
     _encode_inline = _inline_encode_for(rust_expr)
     if _encode_inline:
         state.encode_lines.append(f"        {_encode_inline}")
@@ -476,11 +583,45 @@ def _process_if_optional(state: EmitState, stmt: ast.If) -> Optional[str]:
     return field
 
 
+def _encode_from_read_expr(read_expr: str, field_name: str, rust_ty: str) -> Optional[str]:
+    """Build an encode line for a field whose decode used ``read_expr``.
+
+    Uses the original $field template (un-substituted) and replaces
+    $field with self.{field_name}, preserving the type-correct `&` and
+    value forms.
+    """
+    for codec, (read_tpl, write_tpl, _ty) in _CODECS.items():
+        if read_tpl == read_expr:
+            return write_tpl.replace("$field", field_name)
+    # struct.unpack(...)[0] short-cut — emit a be_bytes write.
+    if rust_ty in ("u8", "i8"):
+        return (
+            f"writer.write_all(&[self.{field_name}])?;"
+            if rust_ty == "u8"
+            else f"writer.write_all(&[self.{field_name} as u8])?;"
+        )
+    if rust_ty in ("u16", "i16", "u32", "i32", "u64", "i64", "f32", "f64"):
+        return f"writer.write_all(&self.{field_name}.to_be_bytes())?;"
+    if rust_ty == "bool":
+        return f"writer.write_all(&[if self.{field_name} {{ 1 }} else {{ 0 }}])?;"
+    if rust_ty == "Vec<u8>":
+        # Length-prefixed bytes are usually written separately; this is a
+        # raw payload write.
+        return f"writer.write_all(&self.{field_name})?;"
+    return None
+
+
 def _inline_encode_for(read_expr: str) -> Optional[str]:
     """Mirror of _guess_write_for keyed by a v identifier."""
     for codec, (read_tpl, write_tpl, _ty) in _CODECS.items():
         if read_tpl == read_expr:
-            return write_tpl.replace("self.$field", "*v") if codec in ("varint", "varlong") else write_tpl.replace("&self.$field", "v")
+            line = write_tpl
+            if codec in ("varint", "varlong"):
+                line = line.replace("self.$field", "*v")
+            line = line.replace("&self.$field", "v")
+            line = line.replace("self.$field.as_ref()", "Some(v)")
+            line = line.replace("self.$field", "v")
+            return line
     return None
 
 
@@ -494,6 +635,18 @@ def _process_return_kwargs(state: EmitState, ret: ast.Return) -> bool:
             return False
         name = kw.arg
         v = kw.value
+        # Generic codec / helper via _expr_to_decode
+        inner = _expr_to_decode(state, v)
+        if inner is not None:
+            rust_expr, rust_ty = inner
+            _add_field(state, name, rust_ty)
+            state.decode_lines.append(f"let {name} = {rust_expr};")
+            # Build encode line directly from the matching codec template
+            # so we preserve the right `&` / value form for each type.
+            enc = _encode_from_read_expr(rust_expr, name, rust_ty)
+            if enc:
+                state.encode_lines.append(enc)
+            continue
         # codec.read(reader)
         if (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
                 and v.func.attr == "read"
@@ -538,6 +691,128 @@ def _process_return_kwargs(state: EmitState, ret: ast.Return) -> bool:
     return True
 
 
+_ANN_TO_RUST = {
+    "int": "i32",
+    "str": "String",
+    "bool": "bool",
+    "float": "f64",
+    "bytes": "Vec<u8>",
+}
+
+
+def _rust_type_from_ann(ann: ast.expr) -> Optional[str]:
+    """Best-effort: turn a Python type annotation AST into a Rust type."""
+    if isinstance(ann, ast.Name):
+        return _ANN_TO_RUST.get(ann.id, ann.id)
+    if isinstance(ann, ast.Subscript):
+        # Optional[T] = Subscript(Name("Optional"), T)
+        if isinstance(ann.value, ast.Name) and ann.value.id == "Optional":
+            inner = _rust_type_from_ann(ann.slice)
+            return f"Option<{inner}>" if inner else None
+        # tuple[a, b] etc — fall through best-effort
+        if isinstance(ann.value, ast.Name) and ann.value.id == "tuple":
+            return None
+    return None
+
+
+def _process_if_conditional_fill(state: EmitState, stmt: ast.If) -> bool:
+    """Handle `if <name> == <const>: x = codec.read(reader)` and similar
+    against a previously-declared Optional. The `if` body may contain
+    multiple Assign/AnnAssign statements; each fills one Optional via
+    Some(...). When the body's AnnAssign also declares the type
+    (``x: Optional[T] = codec.read(reader)``), we promote the field at
+    the same time."""
+    # The test must be a simple `<name> == <const>` (or `in (a, b)`)
+    if not isinstance(stmt.test, ast.Compare) or len(stmt.test.ops) != 1:
+        return False
+    if not isinstance(stmt.test.left, ast.Name):
+        return False
+    cmp_op = stmt.test.ops[0]
+    rhs_var = stmt.test.left.id
+    # Build a Rust condition expression.
+    if isinstance(cmp_op, ast.Eq) and isinstance(stmt.test.comparators[0], ast.Constant):
+        cond_rust = f"{rhs_var} == {stmt.test.comparators[0].value}"
+    elif isinstance(cmp_op, ast.In) and isinstance(stmt.test.comparators[0], ast.Tuple):
+        parts = [
+            str(c.value) for c in stmt.test.comparators[0].elts
+            if isinstance(c, ast.Constant)
+        ]
+        if not parts:
+            return False
+        cond_rust = " || ".join(f"{rhs_var} == {p}" for p in parts)
+    elif isinstance(cmp_op, ast.NotEq) and isinstance(stmt.test.comparators[0], ast.Constant):
+        cond_rust = f"{rhs_var} != {stmt.test.comparators[0].value}"
+    else:
+        return False
+    # Body: collect Assign statements, each `field = codec.read(reader)` or
+    # an annotation-bearing AnnAssign.
+    body_lines: list[str] = []
+    for body_stmt in stmt.body:
+        if isinstance(body_stmt, ast.Assign) and len(body_stmt.targets) == 1 and isinstance(body_stmt.targets[0], ast.Name):
+            inner = _expr_to_decode(state, body_stmt.value)
+            if inner is None:
+                return False
+            expr, _ = inner
+            body_lines.append(f"    {body_stmt.targets[0].id} = Some({expr});")
+        elif isinstance(body_stmt, ast.AnnAssign) and isinstance(body_stmt.target, ast.Name) and body_stmt.value is not None:
+            inner = _expr_to_decode(state, body_stmt.value)
+            if inner is None:
+                return False
+            expr, inner_ty = inner
+            field_nm = body_stmt.target.id
+            # If the AnnAssign declares Optional[T] and field isn't yet
+            # registered, declare `let mut field: Option<T> = None;` first.
+            existing_types = {n: t for n, t in state.fields}
+            opt_ann_ty = _rust_type_from_ann(body_stmt.annotation)
+            if field_nm not in existing_types:
+                final_ty = opt_ann_ty or f"Option<{inner_ty}>"
+                if not final_ty.startswith("Option<"):
+                    final_ty = f"Option<{final_ty}>"
+                state.decode_lines.append(f"let mut {field_nm}: {final_ty} = None;")
+                _add_field(state, field_nm, final_ty)
+            body_lines.append(f"    {field_nm} = Some({expr});")
+        else:
+            return False
+    # Accept and ignore an else-branch that just sets the same name(s) to None
+    # — the field stays at its initial None value.
+    else_ok = True
+    if stmt.orelse:
+        for else_stmt in stmt.orelse:
+            if isinstance(else_stmt, ast.Assign) and len(else_stmt.targets) == 1:
+                if isinstance(else_stmt.value, ast.Constant) and else_stmt.value.value is None:
+                    continue
+                # Tuple-of-names = None, None — also OK
+                if (isinstance(else_stmt.targets[0], ast.Tuple)
+                        and isinstance(else_stmt.value, ast.Tuple)
+                        and all(isinstance(e, ast.Constant) and e.value is None for e in else_stmt.value.elts)):
+                    continue
+            else_ok = False
+            break
+    if not else_ok:
+        return False
+    state.decode_lines.append(f"if {cond_rust} {{")
+    state.decode_lines.extend(body_lines)
+    state.decode_lines.append("}")
+    return True
+
+
+def _process_if_validate_bool(state: EmitState, stmt: ast.If) -> bool:
+    """Match `if b not in (0, 1): raise ValueOutOfRange(...)` — a bool
+    validator that produces no Rust field; just inline a guard line."""
+    if not (isinstance(stmt.test, ast.Compare)
+            and len(stmt.test.ops) == 1 and isinstance(stmt.test.ops[0], ast.NotIn)
+            and isinstance(stmt.test.left, ast.Name)):
+        return False
+    name = stmt.test.left.id
+    # Body should be a single Raise.
+    if not (len(stmt.body) == 1 and isinstance(stmt.body[0], ast.Raise)):
+        return False
+    state.decode_lines.append(
+        f"if {name} > 1 {{ return Err(ProtocolError::DecodeError(format!(\"{name}: {{}}\", {name}))); }}"
+    )
+    return True
+
+
 def _process_body(state: EmitState, body: list[ast.stmt]) -> bool:
     """Walk the decode body. Returns True if everything was translated."""
     if len(body) == 1 and isinstance(body[0], ast.Return):
@@ -572,8 +847,18 @@ def _process_body(state: EmitState, body: list[ast.stmt]) -> bool:
             if (isinstance(stmt.target, ast.Name)
                     and isinstance(stmt.value, ast.List)
                     and not stmt.value.elts):
-                # Leave the field unbound; the for-loop will redeclare with the real type.
-                # We emit nothing here.
+                continue
+            # `field: Optional[T] = None` — declare as `let mut field: Option<T> = None;`
+            # The Optional<T> type comes from the annotation; we parse it textually.
+            if (isinstance(stmt.target, ast.Name)
+                    and isinstance(stmt.value, ast.Constant)
+                    and stmt.value.value is None):
+                opt_rust_ty = _rust_type_from_ann(stmt.annotation)
+                if opt_rust_ty is None:
+                    return False
+                nm = stmt.target.id
+                state.decode_lines.append(f"let mut {nm}: {opt_rust_ty} = None;")
+                _add_field(state, nm, opt_rust_ty)
                 continue
             return False
         if isinstance(stmt, ast.For):
@@ -583,32 +868,103 @@ def _process_body(state: EmitState, body: list[ast.stmt]) -> bool:
         if isinstance(stmt, ast.If):
             if _process_if_optional(state, stmt) is not None:
                 continue
+            if _process_if_validate_bool(state, stmt):
+                continue
+            if _process_if_conditional_fill(state, stmt):
+                continue
             return False
         # Unknown statement type.
         return False
 
     # If the return uses kwargs mapping `field=local_var` and the local
     # name differs from the field name, rewrite the field list to use
-    # the field names.
+    # the field names. We also handle `field=local_var == 1` (bool
+    # from byte) and `field=tuple(...)` patterns.
     if final_return is not None and isinstance(final_return.value, ast.Call):
         rename_map: dict[str, str] = {}
+        bool_conversions: list[tuple[str, str]] = []   # (field_name, local_var)
         for kw in final_return.value.keywords:
-            if kw.arg and isinstance(kw.value, ast.Name) and kw.arg != kw.value.id:
-                rename_map[kw.value.id] = kw.arg
+            if kw.arg is None:
+                continue
+            v = kw.value
+            # `field=local_var`
+            if isinstance(v, ast.Name):
+                if kw.arg != v.id:
+                    rename_map[v.id] = kw.arg
+                continue
+            # `field=local_var == 1`
+            if (isinstance(v, ast.Compare) and len(v.ops) == 1
+                    and isinstance(v.ops[0], ast.Eq)
+                    and isinstance(v.left, ast.Name)
+                    and isinstance(v.comparators[0], ast.Constant)
+                    and v.comparators[0].value == 1):
+                bool_conversions.append((kw.arg, v.left.id))
+                continue
+            # `field=tuple(...)` — already turned into an inline Vec in
+            # _expr_to_decode, but here we need to update fields.
+            inner = _expr_to_decode(state, v)
+            if inner is not None:
+                expr, ty = inner
+                state.decode_lines.append(f"let {kw.arg} = {expr};")
+                state.fields = [(n, t) for n, t in state.fields if n != kw.arg]
+                _add_field(state, kw.arg, ty)
+                continue
+            # Unsupported value — bail.
+            return False
+        # Apply bool conversions: replace `let b = reader.read_exact(1)?[0]`
+        # field with the bool conversion and update the struct field name.
+        for field_name, local in bool_conversions:
+            state.fields = [
+                (field_name if n == local else n, "bool" if n == local else t)
+                for n, t in state.fields
+            ]
+            # 1. Replace the read line of `local` with the bool-cast version.
+            patched: list[str] = []
+            for line in state.decode_lines:
+                if (f"let {local} = reader.read_exact(1)?[0];" == line
+                        or f"let {local} = reader.read_exact(1)?[0]" in line):
+                    patched.append(
+                        f"let {field_name} = "
+                        "{ let __b = reader.read_exact(1)?[0]; if __b > 1 { return Err(ProtocolError::DecodeError(format!(\""
+                        + field_name + ": {}\", __b))); } __b != 0 };"
+                    )
+                    continue
+                # 2. Drop any standalone `if local > 1 { ... }` guard line.
+                if re.match(rf"^\s*if {local} > 1 \{{", line):
+                    continue
+                # 3. Rename other references to `local` (only as standalone
+                #    identifiers); convert `local == 1`/`local == 0` to bool tests.
+                line = re.sub(rf"\b{local} == 1\b", field_name, line)
+                line = re.sub(rf"\b{local} == 0\b", f"!{field_name}", line)
+                line = re.sub(rf"\b{local}\b", field_name, line)
+                patched.append(line)
+            state.decode_lines = patched
+            # Encode: write 1 if true, 0 if false (override any prior byte write).
+            patched = []
+            for line in state.encode_lines:
+                if (f"writer.write_all(&[self.{field_name}])" in line
+                        or f"writer.write_all(&[self.{local}])" in line):
+                    line = (
+                        f"writer.write_all(&[if self.{field_name} {{ 1 }} else {{ 0 }}])?;"
+                    )
+                else:
+                    line = re.sub(rf"\bself\.{local}\b", f"self.{field_name}", line)
+                patched.append(line)
+            state.encode_lines = patched
         if rename_map:
             new_fields: list[tuple[str, str]] = []
             for n, t in state.fields:
                 new_fields.append((rename_map.get(n, n), t))
             state.fields = new_fields
-            # Patch decode_lines so references to local names are renamed in `let X = ...;`.
+            # Patch decode_lines: rename any standalone `old` identifier
+            # to `new` so conditional-fill bodies, validation guards, and
+            # the let declaration all stay consistent.
             patched: list[str] = []
             for line in state.decode_lines:
                 for old, new in rename_map.items():
-                    line = re.sub(rf"\blet {old}\b", f"let {new}", line)
-                    line = re.sub(rf"\blet mut {old}\b", f"let mut {new}", line)
+                    line = re.sub(rf"\b{old}\b", new, line)
                 patched.append(line)
             state.decode_lines = patched
-            # Patch encode_lines for self.X references the same way.
             patched = []
             for line in state.encode_lines:
                 for old, new in rename_map.items():

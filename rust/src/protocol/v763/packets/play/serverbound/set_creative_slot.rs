@@ -4,6 +4,7 @@
 //! python/minecraft_bot/protocol/v763/packets/play/serverbound/set_creative_slot.py.
 
 use crate::codec::{varint, varlong, string_codec as string, BytesReader, BytesWriter, Reader, Writer};
+use crate::codec::slot;
 use crate::errors::ProtocolError;
 use crate::protocol::v763::states::ConnectionState;
 use crate::protocol::v763::ServerboundPacket;
@@ -12,10 +13,12 @@ use crate::protocol::v763::ServerboundPacket;
 pub const PACKET_ID: i32 = 0x2B;
 
 /// SetCreativeSlot packet body (auto-generated).
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct SetCreativeSlot {
     /// Auto-generated field.
     pub slot_index: i16,
+    /// Auto-generated field.
+    pub item: Option<crate::codec::slot::SlotData>,
 }
 
 impl SetCreativeSlot {
@@ -23,7 +26,8 @@ impl SetCreativeSlot {
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(2)?;
         let slot_index = i16::from_be_bytes([__buf[0],__buf[1]]);
-        Ok(Self { slot_index })
+        let item = slot::read(reader)?;
+        Ok(Self { slot_index, item })
     }
 }
 
