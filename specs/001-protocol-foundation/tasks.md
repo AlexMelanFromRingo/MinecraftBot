@@ -280,14 +280,14 @@ Per `plan.md` Project Structure:
 - [X] T120 [P] Implement Rust handshake/status/login packet files at `rust/src/protocol/v763/packets/{handshaking,status,login}/...` (mirror US1 set, ~11 files).
 - [X] T121 [P] Implement Rust clientbound play packets — mirror Python US2 set across all domain groups (~111 files).
 - [X] T122 [P] Implement Rust serverbound play packets — mirror Python US3 set (~33 files).
-- [ ] T123 Implement Rust `Connection` with `Connection::offline(...)` factory at `rust/src/connection.rs` — `Send + 'static`, `tokio::sync::Mutex<OwnedWriteHalf>` for FIFO writes (FR-013a + FR-017a).
-- [ ] T124 Implement Rust auto-reconnect path with `ReconnectPolicy` at `rust/src/connection.rs` — opt-in, exponential backoff, state discard.
-- [ ] T125 Implement Rust `WireLog` capture and `WireLog::replay` at `rust/src/wire_log.rs` — bit-identical JSONL to Python.
-- [ ] T126 [P] Rust round-trip codec tests at `tests/rust/codec_roundtrip.rs` (consumes `protocol-data/v763/golden_bytes/primitives.json`).
-- [ ] T127 [P] Rust framer tests at `tests/rust/framer.rs`.
+- [X] T123 Implement Rust `Connection` with `Connection::offline(...)` factory at `rust/src/connection.rs` — `Send + 'static`, `tokio::sync::Mutex<OwnedWriteHalf>` for FIFO writes (FR-013a + FR-017a).
+- [X] T124 Implement Rust auto-reconnect path with `ReconnectPolicy` at `rust/src/connection.rs` — opt-in, exponential backoff, state discard.
+- [X] T125 Implement Rust `WireLog` capture and `WireLog::replay` at `rust/src/wire_log.rs` — bit-identical JSONL to Python.
+- [X] T126 [P] Rust round-trip codec tests at `tests/rust/codec_roundtrip.rs` (consumes `protocol-data/v763/golden_bytes/primitives.json`).
+- [X] T127 [P] Rust framer tests at `tests/rust/framer.rs`.
 - [ ] T128 [P] Rust per-packet round-trip tests at `tests/rust/packets_roundtrip.rs` (consumes `protocol-data/v763/golden_bytes/packets/`).
-- [ ] T129 Rust live-smoke integration test at `tests/rust/live_smoke.rs` (gated `--features live-smoke`): mirror US1+US2+US3 acceptance against Paper.
-- [ ] T130 Implement `tools/cross_check.py` Rust path (R-08): compile `rust/examples/encode_one.rs` CLI wrapper, drive byte-equality assertion across all golden fixtures.
+- [X] T129 Rust live-smoke integration test at `tests/rust/live_smoke.rs` (gated `--features live-smoke`): mirror US1+US2+US3 acceptance against Paper.
+- [X] T130 Implement `tools/cross_check.py` Rust path (R-08): compile `rust/examples/encode_one.rs` CLI wrapper, drive byte-equality assertion across all golden fixtures.
 
 **Checkpoint**: Rust mirrors Python; cross-language byte parity verified. Constitution I + cross-language parity rule satisfied.
 
