@@ -25,8 +25,13 @@ use crate::protocol::v763::packets::play::clientbound::{
     unload_chunk::UnloadChunk,
     update_health::UpdateHealth,
 };
+use crate::protocol::v763::packets::play::serverbound::block_dig::BlockDig;
 use crate::protocol::v763::packets::play::serverbound::position::Position as SbPosition;
 use crate::world::{decode_chunk, World};
+
+// BlockDig "status" code values (1.20.1, Player Action enum).
+const ACTION_DROP_ITEM: i32 = 3;
+const ACTION_DROP_STACK: i32 = 4;
 
 /// Paper anti-cheat: `moved too quickly` trips at delta² > 100 ⇒ 10
 /// blocks/tick. We cap each Player Position send to **2 blocks** from
@@ -235,6 +240,20 @@ impl Bot {
         } else {
             None
         }
+    }
+
+    /// Drop the currently-held item via a `BlockDig` Player Action.
+    /// When `full_stack` is true the entire stack is dropped (vanilla
+    /// shift-Q behaviour); otherwise a single item is dropped (Q).
+    pub async fn drop_held_item(&self, full_stack: bool) -> Result<(), ProtocolError> {
+        let status = if full_stack { ACTION_DROP_STACK } else { ACTION_DROP_ITEM };
+        let pkt = BlockDig {
+            status,
+            location: (0, 0, 0),
+            face: 0,
+            sequence: 0,
+        };
+        self.connection.send(&pkt).await
     }
 
     /// **Diagnostic / blind walk** — no path planning, no collision.

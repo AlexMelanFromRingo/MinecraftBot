@@ -110,6 +110,20 @@ impl PyBot {
         })
     }
 
+    /// Drop the currently-held item (Player Action drop_item / drop_stack).
+    #[pyo3(signature = (*, full_stack = false))]
+    fn drop_held_item<'py>(
+        &self,
+        py: Python<'py>,
+        full_stack: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let inner = Arc::clone(&self.inner);
+        future_into_py(py, async move {
+            let bot = inner.lock().await;
+            bot.drop_held_item(full_stack).await.into_py()
+        })
+    }
+
     /// **Diagnostic** `walk_to_blind(x, y, z, *, timeout=30.0)` —
     /// slides toward the target at 20 Hz with NO path planning and
     /// NO collision checks. Use for testing the position-send loop

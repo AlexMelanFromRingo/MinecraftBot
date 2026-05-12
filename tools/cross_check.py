@@ -35,6 +35,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="Path to the Rust `encode_one` example binary")
     parser.add_argument("--python-only", action="store_true",
                         help="Skip Rust comparison")
+    parser.add_argument(
+        "--accel", action="store_true",
+        help="Include the minecraft_bot_accel PyO3 façade as a third "
+             "encoder (T067). Requires `pip install -e python-ext` / "
+             "`maturin develop`.",
+    )
     args = parser.parse_args(argv)
 
     primitives_path = GOLDEN_DIR / "primitives.json"
@@ -120,7 +126,51 @@ def main(argv: list[str] | None = None) -> int:
         for f in rust_failures:
             print(f"  RS: {f}", file=sys.stderr)
 
-    return 1 if python_failures or rust_failures else 0
+    # T067 — third encoder: minecraft_bot_accel.
+    accel_failures: list[str] = []
+    accel_total = 0
+    if args.accel:
+        try:
+            import minecraft_bot_accel as mb_accel  # type: ignore[import-not-found]
+            mb_ac_codec = mb_accel.codec
+        except ImportError as exc:
+            print(f"Accel:  SKIPPED — minecraft_bot_accel not importable: {exc}")
+        else:
+            for codec_name, vectors in fixtures.items():
+                # Currently the accel façade exposes varint + varlong; other
+                # codecs are forwarded to the underlying Rust crate via the
+                # standalone Rust cross-check, so we only cross-check the
+                # subset accel directly exports.
+                if codec_name not in ("varint", "varlong"):
+                    continue
+                ac_codec_mod = getattr(mb_ac_codec, codec_name)
+                for fx in vectors:
+                    accel_total += 1
+                    expected = bytes.fromhex(fx["hex"])
+                    try:
+                        w = mb_ac_codec.Writer()
+                        ac_codec_mod.write(fx["value"], w)
+                        encoded = w.bytes()
+                    except Exception as exc:  # noqa: BLE001
+                        accel_failures.append(
+                            f"{codec_name}: accel encode error on {fx!r}: {exc}"
+                        )
+                        continue
+                    if encoded != expected:
+                        accel_failures.append(
+                            f"{codec_name}: accel mismatch — got {encoded.hex()}, "
+                            f"expected {fx['hex']}, fixture={fx!r}"
+                        )
+            print(f"Accel:  {accel_total} fixtures, {len(accel_failures)} failures")
+            if accel_failures:
+                for f in accel_failures:
+                    print(f"  AC: {f}", file=sys.stderr)
+    elif args.python_only:
+        pass
+    else:
+        print("Accel:  skipped (pass --accel to enable)")
+
+    return 1 if (python_failures or rust_failures or accel_failures) else 0
 
 
 def _encode_python(codec_name, fx, varint, varlong, string, uuid_codec,

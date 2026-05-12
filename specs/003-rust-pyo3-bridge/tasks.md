@@ -111,7 +111,7 @@ and disconnect cleanly with field-level position parity within
 - [X] T034 [P] [US1] Port `python/minecraft_bot/physics.py` → `rust/src/physics.rs` (20 Hz tick: gravity, water/lava, slab/ledge math; deterministic per Principle VII)
 - [X] T035 [US1] Port `python/minecraft_bot/behaviour/walk_to.py` → `rust/src/behaviour/walk_to.rs`; enforce 5-block anti-cheat cap on Player Position sends (data-model.md validation rules)
 - [ ] T036 [P] [US1] Port `python/minecraft_bot/behaviour/hazards.py` → `rust/src/behaviour/hazards.rs` (slab/water/ledge/drop detection + recovery)
-- [ ] T037 [P] [US1] Port `python/minecraft_bot/inventory_click.py` drop/pickup window-click flow → `rust/src/behaviour/window_click.rs`; wait for `confirm_transaction` per data-model.md
+- [X] T037 [P] [US1] Port `python/minecraft_bot/inventory_click.py` drop/pickup window-click flow → `rust/src/behaviour/window_click.rs`; wait for `confirm_transaction` per data-model.md
 - [X] T038 [US1] Extend `rust/src/connection.rs` with the full tick-loop: keep-alive, observation-side packet handlers updating WorldCache, graceful disconnect on cancel, hooks bus
 - [X] T039 [US1] Create `rust/src/bot.rs` — the top-level Bot facade — composing connection, world, walk_to, observation, hooks; mirror `python/minecraft_bot/bot.py` API one-for-one
 - [X] T040 [P] [US1] Add Rust-side unit tests in `rust/tests/world_cache.rs` exercising T024–T027
@@ -185,7 +185,7 @@ pass count, and `python tools/cross_check.py --backend all` exits
 0 with zero discrepancies across the 50 primitive + 36 per-packet
 fixtures.
 
-- [ ] T067 [P] [US3] Extend `tools/cross_check.py` to accept `--backend {python,rust,accel,all}`; when `all`, run every fixture through all three encoders and assert hash equality
+- [X] T067 [P] [US3] Extend `tools/cross_check.py` to accept `--backend {python,rust,accel,all}`; when `all`, run every fixture through all three encoders and assert hash equality
 - [ ] T068 [P] [US3] Write `tests/python/parity/test_wirelog_parity.py` — capture a deterministic 30-second packet trace under each backend (mocked clock; offline mode), then diff the resulting JSONL ignoring `ts` field per data-model.md "WireLog format invariance"
 - [ ] T069 [P] [US3] Write `tests/python/parity/test_connection_state.py` — drive a 5-second canned login session under each backend and assert state transitions matched event-for-event per data-model.md Connection FSM
 - [ ] T070 [P] [US3] Write `tests/python/parity/test_packet_encode_parity.py` — for every packet in `minecraft_bot.protocol.v763.packets`, build a representative instance, encode under both backends, assert byte equality
