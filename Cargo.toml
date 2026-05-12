@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = [
+    "rust",
+    "python-ext",
+]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

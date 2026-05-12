@@ -39,17 +39,17 @@ build, and the cross-backend test harness. After this phase, an empty
 `minecraft_bot_accel` module installs cleanly and pytest can be
 parametrised over the two backends.
 
-- [ ] T001 Create directory `python-ext/` with subdirectories `src/`, `minecraft_bot_accel/`, and `python-ext/.gitignore` excluding `target/` and `*.so`
-- [ ] T002 Write `python-ext/Cargo.toml` declaring `name = "minecraft_bot_accel"`, `crate-type = ["cdylib"]`, path-dependency on `../rust` (the `minecraft_bot` crate), and dependencies `pyo3 = { version = "0.22", features = ["extension-module", "abi3-py311"] }` and `pyo3-async-runtimes = { version = "0.22", features = ["tokio-runtime"] }`
-- [ ] T003 Write `python-ext/pyproject.toml` with `[build-system] requires = ["maturin>=1.5"] build-backend = "maturin"`; project metadata `name = "minecraft_bot_accel"`, `requires-python = ">=3.11"`, classifiers, license, authors mirroring `python/pyproject.toml`; `[tool.maturin] features = ["pyo3/extension-module"] python-source = "."` so the `minecraft_bot_accel/` python folder is packaged alongside the cdylib
-- [ ] T004 Write `python-ext/src/lib.rs` with an empty `#[pymodule] fn minecraft_bot_accel(_py: Python, _m: Bound<PyModule>) -> PyResult<()> { Ok(()) }` so `maturin develop` succeeds end-to-end
-- [ ] T005 Write `python-ext/minecraft_bot_accel/__init__.py` that does `from .minecraft_bot_accel import *` and re-exports submodules registered from Rust
-- [ ] T006 [P] Add a top-level `Cargo.toml` workspace at the repo root (`/home/young-developer/my_todo/MinecraftBot/Cargo.toml`) listing members `["rust", "python-ext"]`, with a `[profile.release]` mirroring `rust/Cargo.toml` (lto=thin, codegen-units=1)
-- [ ] T007 [P] Update `.gitignore` at the repo root to exclude `python-ext/target/`, `python-ext/*.egg-info/`, `python-ext/dist/`, `python-ext/build/`, and `*.whl`
-- [ ] T008 [P] Add `maturin` to `python/pyproject.toml` `[project.optional-dependencies].dev` so a dev install pulls the wheel-builder
-- [ ] T009 Create `tests/python/conftest.py` with a session-scoped `backend` fixture and a `--backend` CLI option (values: `python`, `accel`; default `python`), as designed in research.md R-007
-- [ ] T010 [P] Create `tests/helpers/__init__.py` and `tests/helpers/backend.py` exposing a `Bot`, `Connection`, `Reader`, `Writer`, `WireLog` symbol indexed by the active backend fixture; existing tests that do `from minecraft_bot import Bot` migrate to `from tests.helpers.backend import Bot`
-- [ ] T011 Run `maturin develop --manifest-path python-ext/Cargo.toml` once and verify `python -c "import minecraft_bot_accel; print(minecraft_bot_accel.__doc__)"` returns without error — this proves the toolchain bring-up is correct before any logic lands
+- [X] T001 Create directory `python-ext/` with subdirectories `src/`, `minecraft_bot_accel/`, and `python-ext/.gitignore` excluding `target/` and `*.so`
+- [X] T002 Write `python-ext/Cargo.toml` declaring `name = "minecraft_bot_accel"`, `crate-type = ["cdylib"]`, path-dependency on `../rust` (the `minecraft_bot` crate), and dependencies `pyo3 = { version = "0.22", features = ["extension-module", "abi3-py311"] }` and `pyo3-async-runtimes = { version = "0.22", features = ["tokio-runtime"] }`
+- [X] T003 Write `python-ext/pyproject.toml` with `[build-system] requires = ["maturin>=1.5"] build-backend = "maturin"`; project metadata `name = "minecraft_bot_accel"`, `requires-python = ">=3.11"`, classifiers, license, authors mirroring `python/pyproject.toml`; `[tool.maturin] features = ["pyo3/extension-module"] python-source = "."` so the `minecraft_bot_accel/` python folder is packaged alongside the cdylib
+- [X] T004 Write `python-ext/src/lib.rs` with an empty `#[pymodule] fn minecraft_bot_accel(_py: Python, _m: Bound<PyModule>) -> PyResult<()> { Ok(()) }` so `maturin develop` succeeds end-to-end
+- [X] T005 Write `python-ext/minecraft_bot_accel/__init__.py` that does `from .minecraft_bot_accel import *` and re-exports submodules registered from Rust
+- [X] T006 [P] Add a top-level `Cargo.toml` workspace at the repo root (`/home/young-developer/my_todo/MinecraftBot/Cargo.toml`) listing members `["rust", "python-ext"]`, with a `[profile.release]` mirroring `rust/Cargo.toml` (lto=thin, codegen-units=1)
+- [X] T007 [P] Update `.gitignore` at the repo root to exclude `python-ext/target/`, `python-ext/*.egg-info/`, `python-ext/dist/`, `python-ext/build/`, and `*.whl`
+- [X] T008 [P] Add `maturin` to `python/pyproject.toml` `[project.optional-dependencies].dev` so a dev install pulls the wheel-builder
+- [X] T009 Create `tests/python/conftest.py` with a session-scoped `backend` fixture and a `--backend` CLI option (values: `python`, `accel`; default `python`), as designed in research.md R-007
+- [X] T010 [P] Create `tests/helpers/__init__.py` and `tests/helpers/backend.py` exposing a `Bot`, `Connection`, `Reader`, `Writer`, `WireLog` symbol indexed by the active backend fixture; existing tests that do `from minecraft_bot import Bot` migrate to `from tests.helpers.backend import Bot`
+- [X] T011 Run `maturin develop --manifest-path python-ext/Cargo.toml` once and verify `python -c "import minecraft_bot_accel; print(minecraft_bot_accel.__doc__)"` returns without error — this proves the toolchain bring-up is correct before any logic lands
 
 **Checkpoint**: empty native package importable; conftest backend fixture in place; existing Python tests pass under `--backend python`.
 
@@ -65,18 +65,18 @@ consistent error/async story.
 
 **⚠️ CRITICAL**: No user-story work begins until this phase is complete.
 
-- [ ] T012 Create `python-ext/src/errors.rs` defining `pyo3::create_exception!` instances for `MinecraftBotError`, `ProtocolError`, `DecodeError`, `EncodeError`, `OversizedVarInt`, `ConnectionError`, `DisconnectedError`, `KickError`, `LoginError`, `TimeoutError` (subclass hierarchy per `contracts/api-surface.md`); register them on the `minecraft_bot_accel.errors` submodule
-- [ ] T013 Create `python-ext/src/error_map.rs` with a single `From<minecraft_bot::errors::Error> for PyErr` impl that maps every Rust-side error variant to the matching exception class from T012; ensure no path returns a generic `RuntimeError`
-- [ ] T014 [P] Create `python-ext/src/runtime.rs` that initialises the tokio runtime once via `OnceLock<tokio::runtime::Runtime>` and registers it with `pyo3_async_runtimes::tokio` so every async pyfunction can call `future_into_py(py, async move { ... })`
-- [ ] T015 [P] Create `python-ext/src/version.rs` exposing module-level `__version__`, `python_compat`, and `implementation = "rust"` attributes; pull `__version__` from the `python-ext/Cargo.toml` package version and `python_compat` from a const string that CI cross-validates against `python/pyproject.toml` (Constitution Principle I, R-010)
-- [ ] T016 Wire T012–T015 into `python-ext/src/lib.rs`: register the `errors` submodule, expose `__version__`/`python_compat`/`implementation` on the root, call `runtime::init_once()` at module-load
-- [ ] T017 [P] Create `python-ext/src/wire_log.rs` PyO3 `#[pyclass] PyWireLog` wrapping `minecraft_bot::wire_log::WireLog`; expose `to_jsonl(path)` classmethod, `append`, `flush`, `close` methods; emit JSONL byte-identical to the Python reference (R-009)
-- [ ] T018 [P] Add `python-ext/src/codec/mod.rs` registering `varint`, `varlong`, `nbt`, `bitset`, `slot`, `chat_component`, `identifier`, `position`, `string_codec`, `uuid_codec` as submodules; each submodule exposes `read` / `write` `#[pyfunction]`s delegating to the existing `minecraft_bot::codec::*` functions
-- [ ] T019 [P] Add `python-ext/src/framer.rs` `#[pyclass] PyFramer` wrapping `minecraft_bot::framer::Framer`; expose `encode_frame`, `decode_frame`, `set_compression` per `contracts/api-surface.md`
-- [ ] T020 Register codec, framer, errors, wire_log submodules on the root `#[pymodule]` in `python-ext/src/lib.rs`
-- [ ] T021 Add `tests/python/parity/__init__.py` and `tests/python/parity/test_smoke_bringup.py` that imports both backends, checks `implementation` attributes, and asserts `python_compat` matches the Python reference's `__version__` line — this is the first parity test gate
-- [ ] T022 [P] Update `rust/Cargo.toml` to compile cleanly as a workspace member (no edits expected; verify only)
-- [ ] T023 Run `pytest tests/python/parity/test_smoke_bringup.py` under both `--backend python` and `--backend accel`; both must pass before moving on
+- [X] T012 Create `python-ext/src/errors.rs` defining `pyo3::create_exception!` instances for `MinecraftBotError`, `ProtocolError`, `DecodeError`, `EncodeError`, `OversizedVarInt`, `ConnectionError`, `DisconnectedError`, `KickError`, `LoginError`, `TimeoutError` (subclass hierarchy per `contracts/api-surface.md`); register them on the `minecraft_bot_accel.errors` submodule
+- [X] T013 Create `python-ext/src/error_map.rs` with a single `From<minecraft_bot::errors::Error> for PyErr` impl that maps every Rust-side error variant to the matching exception class from T012; ensure no path returns a generic `RuntimeError`
+- [X] T014 [P] Create `python-ext/src/runtime.rs` that initialises the tokio runtime once via `OnceLock<tokio::runtime::Runtime>` and registers it with `pyo3_async_runtimes::tokio` so every async pyfunction can call `future_into_py(py, async move { ... })`
+- [X] T015 [P] Create `python-ext/src/version.rs` exposing module-level `__version__`, `python_compat`, and `implementation = "rust"` attributes; pull `__version__` from the `python-ext/Cargo.toml` package version and `python_compat` from a const string that CI cross-validates against `python/pyproject.toml` (Constitution Principle I, R-010)
+- [X] T016 Wire T012–T015 into `python-ext/src/lib.rs`: register the `errors` submodule, expose `__version__`/`python_compat`/`implementation` on the root, call `runtime::init_once()` at module-load
+- [X] T017 [P] Create `python-ext/src/wire_log.rs` PyO3 `#[pyclass] PyWireLog` wrapping `minecraft_bot::wire_log::WireLog`; expose `to_jsonl(path)` classmethod, `append`, `flush`, `close` methods; emit JSONL byte-identical to the Python reference (R-009)
+- [X] T018 [P] Add `python-ext/src/codec/mod.rs` registering `varint`, `varlong`, `nbt`, `bitset`, `slot`, `chat_component`, `identifier`, `position`, `string_codec`, `uuid_codec` as submodules; each submodule exposes `read` / `write` `#[pyfunction]`s delegating to the existing `minecraft_bot::codec::*` functions
+- [X] T019 [P] Add `python-ext/src/framer.rs` `#[pyclass] PyFramer` wrapping `minecraft_bot::framer::Framer`; expose `encode_frame`, `decode_frame`, `set_compression` per `contracts/api-surface.md`
+- [X] T020 Register codec, framer, errors, wire_log submodules on the root `#[pymodule]` in `python-ext/src/lib.rs`
+- [X] T021 Add `tests/python/parity/__init__.py` and `tests/python/parity/test_smoke_bringup.py` that imports both backends, checks `implementation` attributes, and asserts `python_compat` matches the Python reference's `__version__` line — this is the first parity test gate
+- [X] T022 [P] Update `rust/Cargo.toml` to compile cleanly as a workspace member (no edits expected; verify only)
+- [X] T023 Run `pytest tests/python/parity/test_smoke_bringup.py` under both `--backend python` and `--backend accel`; both must pass before moving on
 
 **Checkpoint**: cross-cutting infrastructure ready. New PyO3 modules added in user-story phases just plug into this scaffold.
 

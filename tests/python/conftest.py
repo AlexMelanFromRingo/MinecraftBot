@@ -16,10 +16,12 @@ Environment variables:
 
 from __future__ import annotations
 
+import importlib
 import os
 import socket
 import warnings
 from dataclasses import dataclass
+from types import ModuleType
 from typing import Iterator
 
 import pytest
@@ -86,3 +88,48 @@ async def _live_throttle_guard(request: pytest.FixtureRequest):
         import asyncio
         await asyncio.sleep(THROTTLE_DELAY)
     yield
+
+
+# ---------------------------------------------------------------------------
+# 003 — backend fixture for parametrising tests over (python, accel) backends.
+#
+# Adds a ``--backend`` CLI option (python | accel). The ``backend`` fixture
+# imports either ``minecraft_bot`` (the Python reference, default) or
+# ``minecraft_bot_accel`` (the native PyO3 façade) and exposes it to tests.
+#
+# Tests that previously did ``from minecraft_bot import Bot`` should migrate
+# to ``from tests.helpers.backend import Bot`` (see T010), which resolves
+# the active backend from this fixture.
+# ---------------------------------------------------------------------------
+
+VALID_BACKENDS = ("python", "accel")
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--backend",
+        action="store",
+        choices=list(VALID_BACKENDS),
+        default="python",
+        help="Which backend to import for tests: python (reference) or accel (PyO3).",
+    )
+
+
+@pytest.fixture(scope="session")
+def backend_name(pytestconfig: pytest.Config) -> str:
+    return str(pytestconfig.getoption("--backend"))
+
+
+@pytest.fixture(scope="session")
+def backend(backend_name: str) -> ModuleType:
+    """Import and return the active backend module."""
+    module_name = "minecraft_bot" if backend_name == "python" else "minecraft_bot_accel"
+    try:
+        return importlib.import_module(module_name)
+    except ImportError as exc:  # pragma: no cover — surfaces in CI
+        pytest.skip(
+            f"--backend={backend_name} requested but {module_name!r} is not "
+            f"importable: {exc}. Build/install it first (e.g. "
+            f"`maturin develop --manifest-path python-ext/Cargo.toml`).",
+            allow_module_level=False,
+        )

@@ -29,6 +29,8 @@ dev = [
     "pytest-benchmark>=4.0",
     "ruff>=0.5",
     "black>=24",
+    # Wheel builder for python-ext/ (Constitution VI: dev-only, NOT a runtime dep).
+    "maturin>=1.5,<2",
 ]
 
 [project.urls]

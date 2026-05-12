@@ -5,6 +5,9 @@
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]
 asyncio_mode = "auto"
+# Make `python/` importable without an explicit PYTHONPATH and make
+# `tests/` importable so `tests.helpers.backend` resolves.
+pythonpath = ["python", "."]
 # Default: skip live tests (they need a Paper server + connection-throttle
 # delays). Run them explicitly with `pytest -m live`.
 addopts = "-m 'not live'"

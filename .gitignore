@@ -26,6 +26,16 @@ Cargo.lock.bak
 *.pdb
 .idea/
 
+# PyO3 / maturin (python-ext)
+python-ext/target/
+python-ext/dist/
+python-ext/build/
+python-ext/*.egg-info/
+python-ext/minecraft_bot_accel/*.so
+python-ext/minecraft_bot_accel/*.pyd
+python-ext/minecraft_bot_accel/*.dll
+*.whl
+
 # Editor / OS
 .DS_Store
 Thumbs.db

@@ -1,0 +1,37 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "minecraft_bot_accel"
+version = "0.1.0"
+description = "Native-speed alternative implementation of minecraft_bot (Rust + PyO3 façade)."
+readme = "../README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Alex Melan", email = "cleverbotam@gmail.com" }]
+keywords = ["minecraft", "bot", "agent", "protocol", "asyncio", "pyo3"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Games/Entertainment",
+]
+# Constitution VI — accel is a separate distributable with no runtime
+# Python deps. The user opts in by installing this package.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/AlexMelanFromRingo/MinecraftBot"
+Issues = "https://github.com/AlexMelanFromRingo/MinecraftBot/issues"
+
+[tool.maturin]
+# The wheel ships the cdylib AS `minecraft_bot_accel/minecraft_bot_accel.<plat>.so`
+# alongside the Python `__init__.py` in `minecraft_bot_accel/`.
+module-name = "minecraft_bot_accel.minecraft_bot_accel"
+python-source = "."
+features = ["pyo3/extension-module", "pyo3/abi3-py311"]
+strip = true
