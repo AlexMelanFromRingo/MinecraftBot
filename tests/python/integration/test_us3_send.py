@@ -112,15 +112,28 @@ async def test_send_chat_message_appears_via_wirelog(live_server) -> None:
 
 async def test_fifo_send_ordering(live_server) -> None:
     """FR-013a: concurrent send() calls from N coroutines arrive on the
-    wire in completion order. We send 50 keep-alive packets from 5
-    coroutines and assert the WireLog shows them in lock-acquisition
-    order."""
+    wire in completion order. Sends a flood of ``arm_animation`` packets
+    from 5 coroutines, then asserts:
+
+      1. Every send made it to the WireLog (no drops).
+      2. The bot is **still connected** at the end (Paper didn't reject
+         us for the flood).
+
+    We use ``arm_animation`` instead of ``keep_alive`` because Paper's
+    anti-cheat treats unsolicited serverbound keep_alive packets as
+    abuse and immediately kicks the bot (observed during earlier runs
+    in the 2026-05-09 server log: "ITFifo1 lost connection: Timed out"
+    within one second of joining). ``arm_animation`` is a swing-arm
+    event the client can send freely at any time.
+    """
     log = WireLog.in_memory()
     bot = Connection.offline(
         host=live_server.host, port=live_server.port,
         username="ITFifo1", wire_log=log,
     )
-    from minecraft_bot.protocol.v763.packets.play.serverbound import keep_alive as p_sb_ka
+    from minecraft_bot.protocol.v763.packets.play.serverbound import (
+        arm_animation as p_sb_arm,
+    )
 
     await bot.connect()
     try:
@@ -128,23 +141,27 @@ async def test_fifo_send_ordering(live_server) -> None:
         n_tasks = 5
 
         async def producer(task_idx: int) -> None:
-            for i in range(n_per_task):
-                ka_id = task_idx * 1_000_000 + i
-                await bot.send(p_sb_ka.KeepAlive(keep_alive_id=ka_id))
+            for _ in range(n_per_task):
+                # Hand alternates 0/1 so the wire content varies; FIFO
+                # ordering is verified by the framework, not by content.
+                await bot.send(p_sb_arm.ArmAnimation(hand=task_idx % 2))
 
         await asyncio.gather(*(producer(i) for i in range(n_tasks)))
+        # Brief settle window for the WireLog sink to flush.
         await asyncio.sleep(0.5)
+
+        # The server must not have kicked us during the flood.
+        assert bot.is_connected, (
+            "bot lost connection during arm_animation flood — possible "
+            "anti-cheat trip; check server log for 'Timed out' / 'kicked'"
+        )
     finally:
         await bot.disconnect()
 
-    tx_kas = [
+    tx_arm = [
         e for e in log.entries()
-        if e.direction.label() == "tx" and e.name == "keep_alive"
+        if e.direction.label() == "tx" and e.name == "arm_animation"
     ]
-    # We sent at least n_tasks * n_per_task; framework's own keep-alive
-    # auto-replies might have added more. The exact count is OK either
-    # way; the key invariant is that every wire write that occurred is
-    # in the log (FIFO ordering held).
-    assert len(tx_kas) >= n_tasks * n_per_task, (
-        f"expected >= {n_tasks * n_per_task} keep_alive tx, got {len(tx_kas)}"
+    assert len(tx_arm) == n_tasks * n_per_task, (
+        f"expected exactly {n_tasks * n_per_task} arm_animation tx, got {len(tx_arm)}"
     )
