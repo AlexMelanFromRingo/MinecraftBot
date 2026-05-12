@@ -18,6 +18,7 @@ use crate::protocol::v763::packets::play::clientbound::{
     block_change::BlockChange,
     map_chunk::MapChunk,
     multi_block_change::MultiBlockChange,
+    position::Position as CbPosition,
     unload_chunk::UnloadChunk,
     update_health::UpdateHealth,
 };
@@ -27,16 +28,23 @@ use crate::world::{decode_chunk, World};
 const ID_BLOCK_CHANGE: i32 = 0x0A;
 const ID_UNLOAD_CHUNK: i32 = 0x1E;
 const ID_MAP_CHUNK: i32 = 0x24;
+const ID_SYNC_PLAYER_POSITION: i32 = 0x3C;
 const ID_MULTI_BLOCK_CHANGE: i32 = 0x43;
 const ID_UPDATE_HEALTH: i32 = 0x57;
 
 /// Public bot state snapshot fields kept up-to-date by the dispatch
 /// task.
-#[derive(Default)]
+#[derive(Default, Debug, Clone, Copy)]
 struct BotState {
     health: f32,
     food: i32,
     saturation: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    yaw: f32,
+    pitch: f32,
+    position_known: bool,
 }
 
 /// Top-level bot: owns a Connection, a World, a StatusEffects tracker.
@@ -67,21 +75,17 @@ impl Bot {
 
     /// Connect the underlying Connection, then start the packet
     /// dispatcher.
+    ///
+    /// **Subscribe BEFORE connect** so the spawned play loop fans
+    /// out from the first packet onward — including the initial
+    /// `synchronize_player_position` (id 0x3C) and `login` (id 0x28)
+    /// packets. Connection's `pkt_subscribers` is a shared Arc<Vec>
+    /// initialised at offline-construction time, so registering a
+    /// subscriber before `connect()` is safe.
     pub async fn connect(&mut self) -> Result<(), ProtocolError> {
-        // Subscribe BEFORE connect() — actually connect() spawns the
-        // play loop internally; subscription must outlive that, so
-        // attach after connection.connect() returns we lose initial
-        // packets. To capture from the start, subscribe FIRST, but
-        // Connection::subscribe_packets requires connect to have
-        // not-yet-started the loop. The current Connection design has
-        // run_play_loop spawned inside connect(); the subscriber list
-        // is shared by Arc so subscribing after connect() still works
-        // for packets that arrive after. Initial Login (play) is
-        // dispatched before subscribers exist; play_state is filled
-        // synchronously inside Connection::connect.
+        let mut rx = self.connection.subscribe_packets().await;
         self.connection.connect().await?;
 
-        let mut rx = self.connection.subscribe_packets().await;
         let world = Arc::clone(&self.world);
         let effects = Arc::clone(&self.effects);
         let state = Arc::clone(&self.state);
@@ -151,6 +155,25 @@ impl Bot {
                         }
                         Ok(())
                     }
+                    ID_SYNC_PLAYER_POSITION => {
+                        if let Ok(pkt) = CbPosition::decode(&mut br) {
+                            // Flags bits: 0x01=x rel, 0x02=y rel, 0x04=z rel,
+                            // 0x08=yaw rel, 0x10=pitch rel. Treat absolute
+                            // values by default; relative requires prior
+                            // tracked position. For first packet (no prior)
+                            // treat as absolute regardless of flag bits.
+                            let mut s = state.lock().await;
+                            let rel = pkt.flags as i32;
+                            let prior_known = s.position_known;
+                            s.x = if prior_known && (rel & 0x01) != 0 { s.x + pkt.x } else { pkt.x };
+                            s.y = if prior_known && (rel & 0x02) != 0 { s.y + pkt.y } else { pkt.y };
+                            s.z = if prior_known && (rel & 0x04) != 0 { s.z + pkt.z } else { pkt.z };
+                            s.yaw = if prior_known && (rel & 0x08) != 0 { s.yaw + pkt.yaw } else { pkt.yaw };
+                            s.pitch = if prior_known && (rel & 0x10) != 0 { s.pitch + pkt.pitch } else { pkt.pitch };
+                            s.position_known = true;
+                        }
+                        Ok(())
+                    }
                     _ => Ok(()),
                 };
                 // Errors in the dispatcher are non-fatal; log via eprintln
@@ -188,5 +211,17 @@ impl Bot {
     /// Bot's last-known food.
     pub async fn food(&self) -> i32 {
         self.state.lock().await.food
+    }
+
+    /// Bot's last-known position `(x, y, z, yaw, pitch)`. Returns
+    /// `None` until the server has sent at least one
+    /// `synchronize_player_position` packet.
+    pub async fn position(&self) -> Option<(f64, f64, f64, f32, f32)> {
+        let s = *self.state.lock().await;
+        if s.position_known {
+            Some((s.x, s.y, s.z, s.yaw, s.pitch))
+        } else {
+            None
+        }
     }
 }

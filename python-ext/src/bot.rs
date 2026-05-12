@@ -80,6 +80,17 @@ impl PyBot {
         })
     }
 
+    /// Last-known position `(x, y, z, yaw, pitch)`, or `None` if
+    /// the server has not yet sent a `synchronize_player_position`
+    /// packet.
+    fn position<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let inner = Arc::clone(&self.inner);
+        future_into_py(py, async move {
+            let bot = inner.lock().await;
+            Ok(bot.position().await)
+        })
+    }
+
     /// Number of loaded chunks (synchronous; reads via RwLock).
     fn loaded_chunk_count<'py>(&self, py: Python<'py>) -> PyResult<usize> {
         let inner = self.inner.clone();
