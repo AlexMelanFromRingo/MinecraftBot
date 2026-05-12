@@ -104,25 +104,25 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 ### World cache (subset needed for walk_to)
 
-- [ ] T030 [US1] Implement `python/minecraft_bot/world/cache.py` — `World` class with `chunks` dict, `min_y`/`height`, `dimension_name`. Implements `get_block(x, y, z)`, `get_block_name`, `is_solid`, `is_navigable`, `is_water`. Subscribes via Bot to `map_chunk` → decode + insert, `block_change` → single update, `multi_block_change` → batch update, `unload_chunk` → drop entry, `respawn` → reset cache, `tile_entity_data` → update block-entity NBT.
-- [ ] T031 [P] [US1] Unit test world cache at `tests/python/unit/test_world_cache.py` — load synthetic chunk, query blocks, apply block_change, verify update; apply unload_chunk, verify get_block returns None.
+- [X] T030 [US1] Implement `python/minecraft_bot/world/cache.py` — `World` class with `chunks` dict, `min_y`/`height`, `dimension_name`. Implements `get_block(x, y, z)`, `get_block_name`, `is_solid`, `is_navigable`, `is_water`. Subscribes via Bot to `map_chunk` → decode + insert, `block_change` → single update, `multi_block_change` → batch update, `unload_chunk` → drop entry, `respawn` → reset cache, `tile_entity_data` → update block-entity NBT.
+- [X] T031 [P] [US1] Unit test world cache at `tests/python/unit/test_world_cache.py` — load synthetic chunk, query blocks, apply block_change, verify update; apply unload_chunk, verify get_block returns None.
 
 ### Bot lifecycle + walk_to
 
-- [ ] T032 [US1] Implement `python/minecraft_bot/bot.py` — `Bot` class: `__init__(connection)`, `offline()` classmethod (creates Connection + Bot), `connect()` (waits Connection.connect, then spawns physics tick), `disconnect()` (cancel tick, close Connection), `__aenter__`/`__aexit__`. Read-only properties: position, yaw, pitch, health, food, saturation, game_mode, is_dead, xp_level, xp_total, held_slot, held_item, entity_id, world_name, is_connected. Owns slot locks (movement/action/container).
-- [ ] T033 [US1] Wire Bot to subscribe to Connection clientbound packets that derive state: position from `synchronize_player_position` + per-tick local prediction; health/food from `update_health`; xp from `experience`; game_mode from `login`/`game_state_change`; held_slot from `held_item_slot`; entity_id from `login`; world_name from `login`/`respawn`.
-- [ ] T034 [US1] Implement `Bot.walk_to(x, y, z, timeout, max_fall, wait_for_slot)` — acquire movement slot; build a `World` view; run A*; drive physics tick per waypoint until within 1 block of target or timeout. Auto-open obstacles (doors/gates/trapdoors) when crossing. Re-path if a new chunk loads or a key block changes.
-- [ ] T035 [US1] Implement physics auto-ticker — `_tick_task` spawned by `connect()`, runs `await self.tick()` every 50 ms best-effort. Cancelled by `disconnect()`. Server's `synchronize_player_position` resets PhysicsState before next tick (via existing Connection auto-confirm in 001's decode loop).
-- [ ] T036 [US1] Implement `Bot.tick()` public method — exposes a single physics step for deterministic offline use (FR-010 / FR-133). Uses the same `physics.tick()` pure function as the auto-ticker.
-- [ ] T037 [US1] Implement supporting movement methods: `look_at`, `look_by_vector`, `jump`, `sneak(True/False)`, `sprint(True/False)` (action slot). Each sends the appropriate serverbound packet via Connection.send (already FIFO-locked in 001).
-- [ ] T038 [US1] Implement event-hook registry on Bot — `@bot.on(EventType)`, `bot.subscribe`, `bot.unsubscribe`, `bot.drain_events`, `bot.next_event`. Subscribe Bot's internal handlers to Connection's `on` to route packets → events.
-- [ ] T039 [US1] Wire `Reconnected` event from Connection (already exists in 001) so it appears in `bot.drain_events()`.
+- [X] T032 [US1] Implement `python/minecraft_bot/bot.py` — `Bot` class: `__init__(connection)`, `offline()` classmethod (creates Connection + Bot), `connect()` (waits Connection.connect, then spawns physics tick), `disconnect()` (cancel tick, close Connection), `__aenter__`/`__aexit__`. Read-only properties: position, yaw, pitch, health, food, saturation, game_mode, is_dead, xp_level, xp_total, held_slot, held_item, entity_id, world_name, is_connected. Owns slot locks (movement/action/container).
+- [X] T033 [US1] Wire Bot to subscribe to Connection clientbound packets that derive state: position from `synchronize_player_position` + per-tick local prediction; health/food from `update_health`; xp from `experience`; game_mode from `login`/`game_state_change`; held_slot from `held_item_slot`; entity_id from `login`; world_name from `login`/`respawn`.
+- [X] T034 [US1] Implement `Bot.walk_to(x, y, z, timeout, max_fall, wait_for_slot)` — acquire movement slot; build a `World` view; run A*; drive physics tick per waypoint until within 1 block of target or timeout. Auto-open obstacles (doors/gates/trapdoors) when crossing. Re-path if a new chunk loads or a key block changes.
+- [X] T035 [US1] Implement physics auto-ticker — `_tick_task` spawned by `connect()`, runs `await self.tick()` every 50 ms best-effort. Cancelled by `disconnect()`. Server's `synchronize_player_position` resets PhysicsState before next tick (via existing Connection auto-confirm in 001's decode loop).
+- [X] T036 [US1] Implement `Bot.tick()` public method — exposes a single physics step for deterministic offline use (FR-010 / FR-133). Uses the same `physics.tick()` pure function as the auto-ticker.
+- [X] T037 [US1] Implement supporting movement methods: `look_at`, `look_by_vector`, `jump`, `sneak(True/False)`, `sprint(True/False)` (action slot). Each sends the appropriate serverbound packet via Connection.send (already FIFO-locked in 001).
+- [X] T038 [US1] Implement event-hook registry on Bot — `@bot.on(EventType)`, `bot.subscribe`, `bot.unsubscribe`, `bot.drain_events`, `bot.next_event`. Subscribe Bot's internal handlers to Connection's `on` to route packets → events.
+- [X] T039 [US1] Wire `Reconnected` event from Connection (already exists in 001) so it appears in `bot.drain_events()`.
 
 ### Tests
 
-- [ ] T040 [P] [US1] Unit test Bot construction at `tests/python/unit/test_bot_construction.py` — `Bot.offline()` factory; properties default to None before connect; methods raise `ConnectionClosed` if not connected.
-- [ ] T041 [P] [US1] Unit test walk_to with synthetic World at `tests/python/unit/test_walk_to_offline.py` — build a tiny synthetic World, mock Connection.send to capture position packets, call `walk_to`, verify the bot's local position evolves toward the target.
-- [ ] T042 [US1] Integration test `tests/python/integration/test_us1_walk_to.py` (live): bot connects, calls `walk_to(spawn.x + 30, spawn.y, spawn.z + 30)`, asserts arrives within 60 s. Throttle-aware. Also includes a "no path" assertion against a walled target.
+- [X] T040 [P] [US1] Unit test Bot construction at `tests/python/unit/test_bot_construction.py` — `Bot.offline()` factory; properties default to None before connect; methods raise `ConnectionClosed` if not connected.
+- [X] T041 [P] [US1] Unit test walk_to with synthetic World at `tests/python/unit/test_walk_to_offline.py` — build a tiny synthetic World, mock Connection.send to capture position packets, call `walk_to`, verify the bot's local position evolves toward the target.
+- [X] T042 [US1] Integration test `tests/python/integration/test_us1_walk_to.py` (live): bot connects, calls `walk_to(spawn.x + 30, spawn.y, spawn.z + 30)`, asserts arrives within 60 s. Throttle-aware. Also includes a "no path" assertion against a walled target.
 
 **Checkpoint**: US1 complete — bot autonomously walks. **MVP achieved.**
 
