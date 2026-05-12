@@ -16,11 +16,11 @@ pub const PACKET_ID: i32 = 0x14;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SetSlot {
     /// Auto-generated field.
-    pub wid: i8,
+    pub window_id: i8,
     /// Auto-generated field.
-    pub state: i32,
+    pub state_id: i32,
     /// Auto-generated field.
-    pub si: i16,
+    pub slot_index: i16,
     /// Auto-generated field.
     pub item: Option<crate::codec::slot::SlotData>,
 }
@@ -29,12 +29,12 @@ impl SetSlot {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(1)?;
-        let wid = __buf[0] as i8;
-        let state = varint::read(reader)?;
+        let window_id = __buf[0] as i8;
+        let state_id = varint::read(reader)?;
         let __buf = reader.read_exact(2)?;
-        let si = i16::from_be_bytes([__buf[0],__buf[1]]);
+        let slot_index = i16::from_be_bytes([__buf[0],__buf[1]]);
         let item = slot::read(reader)?;
-        Ok(Self { wid, state, si, item })
+        Ok(Self { window_id, state_id, slot_index, item })
     }
 }
 
@@ -42,9 +42,9 @@ impl ClientboundPacket for SetSlot {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&[self.wid as u8])?;
-        varint::write(self.state, writer)?;
-        writer.write_all(&self.si.to_be_bytes())?;
+        writer.write_all(&[self.window_id as u8])?;
+        varint::write(self.state_id, writer)?;
+        writer.write_all(&self.slot_index.to_be_bytes())?;
         slot::write(self.item.as_ref(), writer)?;
         Ok(())
     }

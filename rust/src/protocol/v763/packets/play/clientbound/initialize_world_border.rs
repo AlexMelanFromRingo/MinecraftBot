@@ -19,17 +19,17 @@ pub struct InitializeWorldBorder {
     /// Auto-generated field.
     pub z: f64,
     /// Auto-generated field.
-    pub old_d: f64,
+    pub old_diameter: f64,
     /// Auto-generated field.
-    pub new_d: f64,
+    pub new_diameter: f64,
     /// Auto-generated field.
     pub speed: i32,
     /// Auto-generated field.
-    pub ptb: i32,
+    pub portal_teleport_boundary: i32,
     /// Auto-generated field.
-    pub wb: i32,
+    pub warning_blocks: i32,
     /// Auto-generated field.
-    pub wt: i32,
+    pub warning_time: i32,
 }
 
 impl InitializeWorldBorder {
@@ -38,13 +38,13 @@ impl InitializeWorldBorder {
         let __buf = reader.read_exact(32)?;
         let x = f64::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3],__buf[4],__buf[5],__buf[6],__buf[7]]);
         let z = f64::from_be_bytes([__buf[8],__buf[9],__buf[10],__buf[11],__buf[12],__buf[13],__buf[14],__buf[15]]);
-        let old_d = f64::from_be_bytes([__buf[16],__buf[17],__buf[18],__buf[19],__buf[20],__buf[21],__buf[22],__buf[23]]);
-        let new_d = f64::from_be_bytes([__buf[24],__buf[25],__buf[26],__buf[27],__buf[28],__buf[29],__buf[30],__buf[31]]);
+        let old_diameter = f64::from_be_bytes([__buf[16],__buf[17],__buf[18],__buf[19],__buf[20],__buf[21],__buf[22],__buf[23]]);
+        let new_diameter = f64::from_be_bytes([__buf[24],__buf[25],__buf[26],__buf[27],__buf[28],__buf[29],__buf[30],__buf[31]]);
         let speed = varint::read(reader)?;
-        let ptb = varint::read(reader)?;
-        let wb = varint::read(reader)?;
-        let wt = varint::read(reader)?;
-        Ok(Self { x, z, old_d, new_d, speed, ptb, wb, wt })
+        let portal_teleport_boundary = varint::read(reader)?;
+        let warning_blocks = varint::read(reader)?;
+        let warning_time = varint::read(reader)?;
+        Ok(Self { x, z, old_diameter, new_diameter, speed, portal_teleport_boundary, warning_blocks, warning_time })
     }
 }
 
@@ -54,12 +54,12 @@ impl ClientboundPacket for InitializeWorldBorder {
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         writer.write_all(&self.x.to_be_bytes())?;
         writer.write_all(&self.z.to_be_bytes())?;
-        writer.write_all(&self.old_d.to_be_bytes())?;
-        writer.write_all(&self.new_d.to_be_bytes())?;
+        writer.write_all(&self.old_diameter.to_be_bytes())?;
+        writer.write_all(&self.new_diameter.to_be_bytes())?;
         varint::write(self.speed, writer)?;
-        varint::write(self.ptb, writer)?;
-        varint::write(self.wb, writer)?;
-        varint::write(self.wt, writer)?;
+        varint::write(self.portal_teleport_boundary, writer)?;
+        varint::write(self.warning_blocks, writer)?;
+        varint::write(self.warning_time, writer)?;
         Ok(())
     }
 }

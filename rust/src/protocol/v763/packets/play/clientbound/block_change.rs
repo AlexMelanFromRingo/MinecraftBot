@@ -16,17 +16,17 @@ pub const PACKET_ID: i32 = 0x0A;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct BlockChange {
     /// Auto-generated field.
-    pub loc: (i32, i32, i32),
+    pub location: (i32, i32, i32),
     /// Auto-generated field.
-    pub bid: i32,
+    pub block_state_id: i32,
 }
 
 impl BlockChange {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let loc = position::read(reader)?;
-        let bid = varint::read(reader)?;
-        Ok(Self { loc, bid })
+        let location = position::read(reader)?;
+        let block_state_id = varint::read(reader)?;
+        Ok(Self { location, block_state_id })
     }
 }
 
@@ -34,8 +34,8 @@ impl ClientboundPacket for BlockChange {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        position::write(&self.loc, writer)?;
-        varint::write(self.bid, writer)?;
+        position::write(&self.location, writer)?;
+        varint::write(self.block_state_id, writer)?;
         Ok(())
     }
 }

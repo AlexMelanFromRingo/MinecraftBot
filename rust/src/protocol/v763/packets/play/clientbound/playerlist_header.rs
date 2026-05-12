@@ -15,17 +15,17 @@ pub const PACKET_ID: i32 = 0x65;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct PlayerlistHeader {
     /// Auto-generated field.
-    pub h: String,
+    pub header: String,
     /// Auto-generated field.
-    pub f: String,
+    pub footer: String,
 }
 
 impl PlayerlistHeader {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let h = string::read(reader)?;
-        let f = string::read(reader)?;
-        Ok(Self { h, f })
+        let header = string::read(reader)?;
+        let footer = string::read(reader)?;
+        Ok(Self { header, footer })
     }
 }
 
@@ -33,8 +33,8 @@ impl ClientboundPacket for PlayerlistHeader {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        string::write(&self.h, writer)?;
-        string::write(&self.f, writer)?;
+        string::write(&self.header, writer)?;
+        string::write(&self.footer, writer)?;
         Ok(())
     }
 }

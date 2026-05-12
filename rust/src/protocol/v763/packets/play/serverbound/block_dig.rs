@@ -16,24 +16,24 @@ pub const PACKET_ID: i32 = 0x1D;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct BlockDig {
     /// Auto-generated field.
-    pub st: i32,
+    pub status: i32,
     /// Auto-generated field.
-    pub loc: (i32, i32, i32),
+    pub location: (i32, i32, i32),
     /// Auto-generated field.
-    pub f: i8,
+    pub face: i8,
     /// Auto-generated field.
-    pub seq: i32,
+    pub sequence: i32,
 }
 
 impl BlockDig {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let st = varint::read(reader)?;
-        let loc = position::read(reader)?;
+        let status = varint::read(reader)?;
+        let location = position::read(reader)?;
         let __buf = reader.read_exact(1)?;
-        let f = __buf[0] as i8;
-        let seq = varint::read(reader)?;
-        Ok(Self { st, loc, f, seq })
+        let face = __buf[0] as i8;
+        let sequence = varint::read(reader)?;
+        Ok(Self { status, location, face, sequence })
     }
 }
 
@@ -41,10 +41,10 @@ impl ServerboundPacket for BlockDig {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.st, writer)?;
-        position::write(&self.loc, writer)?;
-        writer.write_all(&[self.f as u8])?;
-        varint::write(self.seq, writer)?;
+        varint::write(self.status, writer)?;
+        position::write(&self.location, writer)?;
+        writer.write_all(&[self.face as u8])?;
+        varint::write(self.sequence, writer)?;
         Ok(())
     }
 }

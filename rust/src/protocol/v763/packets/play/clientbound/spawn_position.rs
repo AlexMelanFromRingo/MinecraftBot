@@ -16,18 +16,18 @@ pub const PACKET_ID: i32 = 0x50;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SpawnPosition {
     /// Auto-generated field.
-    pub loc: (i32, i32, i32),
+    pub location: (i32, i32, i32),
     /// Auto-generated field.
-    pub a: f32,
+    pub angle: f32,
 }
 
 impl SpawnPosition {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let loc = position::read(reader)?;
+        let location = position::read(reader)?;
         let __buf = reader.read_exact(4)?;
-        let a = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        Ok(Self { loc, a })
+        let angle = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        Ok(Self { location, angle })
     }
 }
 
@@ -35,8 +35,8 @@ impl ClientboundPacket for SpawnPosition {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        position::write(&self.loc, writer)?;
-        writer.write_all(&self.a.to_be_bytes())?;
+        position::write(&self.location, writer)?;
+        writer.write_all(&self.angle.to_be_bytes())?;
         Ok(())
     }
 }

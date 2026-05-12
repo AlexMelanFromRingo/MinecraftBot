@@ -15,18 +15,18 @@ pub const PACKET_ID: i32 = 0x0A;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct EnchantItem {
     /// Auto-generated field.
-    pub wid: i8,
+    pub window_id: i8,
     /// Auto-generated field.
-    pub en: i8,
+    pub enchantment: i8,
 }
 
 impl EnchantItem {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(2)?;
-        let wid = __buf[0] as i8;
-        let en = __buf[1] as i8;
-        Ok(Self { wid, en })
+        let window_id = __buf[0] as i8;
+        let enchantment = __buf[1] as i8;
+        Ok(Self { window_id, enchantment })
     }
 }
 
@@ -34,8 +34,8 @@ impl ServerboundPacket for EnchantItem {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&[self.wid as u8])?;
-        writer.write_all(&[self.en as u8])?;
+        writer.write_all(&[self.window_id as u8])?;
+        writer.write_all(&[self.enchantment as u8])?;
         Ok(())
     }
 }

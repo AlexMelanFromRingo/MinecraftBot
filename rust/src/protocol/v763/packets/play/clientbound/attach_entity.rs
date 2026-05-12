@@ -15,18 +15,18 @@ pub const PACKET_ID: i32 = 0x53;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct AttachEntity {
     /// Auto-generated field.
-    pub eid: i32,
+    pub entity_id: i32,
     /// Auto-generated field.
-    pub vid: i32,
+    pub vehicle_id: i32,
 }
 
 impl AttachEntity {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(8)?;
-        let eid = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        let vid = i32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
-        Ok(Self { eid, vid })
+        let entity_id = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        let vehicle_id = i32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
+        Ok(Self { entity_id, vehicle_id })
     }
 }
 
@@ -34,8 +34,8 @@ impl ClientboundPacket for AttachEntity {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.eid.to_be_bytes())?;
-        writer.write_all(&self.vid.to_be_bytes())?;
+        writer.write_all(&self.entity_id.to_be_bytes())?;
+        writer.write_all(&self.vehicle_id.to_be_bytes())?;
         Ok(())
     }
 }

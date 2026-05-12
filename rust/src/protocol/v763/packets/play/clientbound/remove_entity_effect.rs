@@ -15,17 +15,17 @@ pub const PACKET_ID: i32 = 0x3F;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct RemoveEntityEffect {
     /// Auto-generated field.
-    pub eid: i32,
+    pub entity_id: i32,
     /// Auto-generated field.
-    pub eff: i32,
+    pub effect_id: i32,
 }
 
 impl RemoveEntityEffect {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let eid = varint::read(reader)?;
-        let eff = varint::read(reader)?;
-        Ok(Self { eid, eff })
+        let entity_id = varint::read(reader)?;
+        let effect_id = varint::read(reader)?;
+        Ok(Self { entity_id, effect_id })
     }
 }
 
@@ -33,8 +33,8 @@ impl ClientboundPacket for RemoveEntityEffect {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.eid, writer)?;
-        varint::write(self.eff, writer)?;
+        varint::write(self.entity_id, writer)?;
+        varint::write(self.effect_id, writer)?;
         Ok(())
     }
 }

@@ -15,7 +15,7 @@ pub const PACKET_ID: i32 = 0x21;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct HurtAnimation {
     /// Auto-generated field.
-    pub eid: i32,
+    pub entity_id: i32,
     /// Auto-generated field.
     pub yaw: f32,
 }
@@ -23,10 +23,10 @@ pub struct HurtAnimation {
 impl HurtAnimation {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let eid = varint::read(reader)?;
+        let entity_id = varint::read(reader)?;
         let __buf = reader.read_exact(4)?;
         let yaw = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        Ok(Self { eid, yaw })
+        Ok(Self { entity_id, yaw })
     }
 }
 
@@ -34,7 +34,7 @@ impl ClientboundPacket for HurtAnimation {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.eid, writer)?;
+        varint::write(self.entity_id, writer)?;
         writer.write_all(&self.yaw.to_be_bytes())?;
         Ok(())
     }

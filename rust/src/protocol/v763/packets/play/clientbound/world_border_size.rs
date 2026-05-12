@@ -15,15 +15,15 @@ pub const PACKET_ID: i32 = 0x49;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct WorldBorderSize {
     /// Auto-generated field.
-    pub d: f64,
+    pub diameter: f64,
 }
 
 impl WorldBorderSize {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(8)?;
-        let d = f64::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3],__buf[4],__buf[5],__buf[6],__buf[7]]);
-        Ok(Self { d })
+        let diameter = f64::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3],__buf[4],__buf[5],__buf[6],__buf[7]]);
+        Ok(Self { diameter })
     }
 }
 
@@ -31,7 +31,7 @@ impl ClientboundPacket for WorldBorderSize {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.d.to_be_bytes())?;
+        writer.write_all(&self.diameter.to_be_bytes())?;
         Ok(())
     }
 }

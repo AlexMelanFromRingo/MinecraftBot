@@ -16,21 +16,21 @@ pub const PACKET_ID: i32 = 0x07;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct BlockBreakAnimation {
     /// Auto-generated field.
-    pub eid: i32,
+    pub entity_id: i32,
     /// Auto-generated field.
-    pub loc: (i32, i32, i32),
+    pub location: (i32, i32, i32),
     /// Auto-generated field.
-    pub stage: i8,
+    pub destroy_stage: i8,
 }
 
 impl BlockBreakAnimation {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let eid = varint::read(reader)?;
-        let loc = position::read(reader)?;
+        let entity_id = varint::read(reader)?;
+        let location = position::read(reader)?;
         let __buf = reader.read_exact(1)?;
-        let stage = __buf[0] as i8;
-        Ok(Self { eid, loc, stage })
+        let destroy_stage = __buf[0] as i8;
+        Ok(Self { entity_id, location, destroy_stage })
     }
 }
 
@@ -38,9 +38,9 @@ impl ClientboundPacket for BlockBreakAnimation {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.eid, writer)?;
-        position::write(&self.loc, writer)?;
-        writer.write_all(&[self.stage as u8])?;
+        varint::write(self.entity_id, writer)?;
+        position::write(&self.location, writer)?;
+        writer.write_all(&[self.destroy_stage as u8])?;
         Ok(())
     }
 }

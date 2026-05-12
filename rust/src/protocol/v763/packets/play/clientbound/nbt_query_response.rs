@@ -16,17 +16,17 @@ pub const PACKET_ID: i32 = 0x66;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct NbtQueryResponse {
     /// Auto-generated field.
-    pub tid: i32,
+    pub transaction_id: i32,
     /// Auto-generated field.
-    pub tag: Option<crate::codec::nbt::NbtTag>,
+    pub nbt: Option<crate::codec::nbt::NbtTag>,
 }
 
 impl NbtQueryResponse {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let tid = varint::read(reader)?;
-        let tag = nbt::read(reader)?;
-        Ok(Self { tid, tag })
+        let transaction_id = varint::read(reader)?;
+        let nbt = nbt::read(reader)?;
+        Ok(Self { transaction_id, nbt })
     }
 }
 
@@ -34,8 +34,8 @@ impl ClientboundPacket for NbtQueryResponse {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.tid, writer)?;
-        nbt::write(self.tag.as_ref(), writer)?;
+        varint::write(self.transaction_id, writer)?;
+        nbt::write(self.nbt.as_ref(), writer)?;
         Ok(())
     }
 }

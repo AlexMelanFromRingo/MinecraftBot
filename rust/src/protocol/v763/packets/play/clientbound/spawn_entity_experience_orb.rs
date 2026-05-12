@@ -15,7 +15,7 @@ pub const PACKET_ID: i32 = 0x02;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SpawnEntityExperienceOrb {
     /// Auto-generated field.
-    pub eid: i32,
+    pub entity_id: i32,
     /// Auto-generated field.
     pub x: f64,
     /// Auto-generated field.
@@ -29,14 +29,14 @@ pub struct SpawnEntityExperienceOrb {
 impl SpawnEntityExperienceOrb {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let eid = varint::read(reader)?;
+        let entity_id = varint::read(reader)?;
         let __buf = reader.read_exact(24)?;
         let x = f64::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3],__buf[4],__buf[5],__buf[6],__buf[7]]);
         let y = f64::from_be_bytes([__buf[8],__buf[9],__buf[10],__buf[11],__buf[12],__buf[13],__buf[14],__buf[15]]);
         let z = f64::from_be_bytes([__buf[16],__buf[17],__buf[18],__buf[19],__buf[20],__buf[21],__buf[22],__buf[23]]);
         let __buf = reader.read_exact(2)?;
         let count = i16::from_be_bytes([__buf[0],__buf[1]]);
-        Ok(Self { eid, x, y, z, count })
+        Ok(Self { entity_id, x, y, z, count })
     }
 }
 
@@ -44,7 +44,7 @@ impl ClientboundPacket for SpawnEntityExperienceOrb {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.eid, writer)?;
+        varint::write(self.entity_id, writer)?;
         writer.write_all(&self.x.to_be_bytes())?;
         writer.write_all(&self.y.to_be_bytes())?;
         writer.write_all(&self.z.to_be_bytes())?;

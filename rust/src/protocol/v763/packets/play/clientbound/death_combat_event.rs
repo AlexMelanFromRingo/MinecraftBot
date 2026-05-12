@@ -15,17 +15,17 @@ pub const PACKET_ID: i32 = 0x38;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct DeathCombatEvent {
     /// Auto-generated field.
-    pub pid: i32,
+    pub player_id: i32,
     /// Auto-generated field.
-    pub msg: String,
+    pub message: String,
 }
 
 impl DeathCombatEvent {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let pid = varint::read(reader)?;
-        let msg = string::read(reader)?;
-        Ok(Self { pid, msg })
+        let player_id = varint::read(reader)?;
+        let message = string::read(reader)?;
+        Ok(Self { player_id, message })
     }
 }
 
@@ -33,8 +33,8 @@ impl ClientboundPacket for DeathCombatEvent {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.pid, writer)?;
-        string::write(&self.msg, writer)?;
+        varint::write(self.player_id, writer)?;
+        string::write(&self.message, writer)?;
         Ok(())
     }
 }

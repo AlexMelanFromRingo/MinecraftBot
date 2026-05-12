@@ -15,20 +15,20 @@ pub const PACKET_ID: i32 = 0x30;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct OpenWindow {
     /// Auto-generated field.
-    pub wid: i32,
+    pub window_id: i32,
     /// Auto-generated field.
-    pub it: i32,
+    pub inventory_type: i32,
     /// Auto-generated field.
-    pub title: String,
+    pub window_title: String,
 }
 
 impl OpenWindow {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let wid = varint::read(reader)?;
-        let it = varint::read(reader)?;
-        let title = string::read(reader)?;
-        Ok(Self { wid, it, title })
+        let window_id = varint::read(reader)?;
+        let inventory_type = varint::read(reader)?;
+        let window_title = string::read(reader)?;
+        Ok(Self { window_id, inventory_type, window_title })
     }
 }
 
@@ -36,9 +36,9 @@ impl ClientboundPacket for OpenWindow {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.wid, writer)?;
-        varint::write(self.it, writer)?;
-        string::write(&self.title, writer)?;
+        varint::write(self.window_id, writer)?;
+        varint::write(self.inventory_type, writer)?;
+        string::write(&self.window_title, writer)?;
         Ok(())
     }
 }

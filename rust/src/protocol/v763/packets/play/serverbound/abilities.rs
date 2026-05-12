@@ -15,15 +15,15 @@ pub const PACKET_ID: i32 = 0x1C;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Abilities {
     /// Auto-generated field.
-    pub f: i8,
+    pub flags: i8,
 }
 
 impl Abilities {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(1)?;
-        let f = __buf[0] as i8;
-        Ok(Self { f })
+        let flags = __buf[0] as i8;
+        Ok(Self { flags })
     }
 }
 
@@ -31,7 +31,7 @@ impl ServerboundPacket for Abilities {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&[self.f as u8])?;
+        writer.write_all(&[self.flags as u8])?;
         Ok(())
     }
 }

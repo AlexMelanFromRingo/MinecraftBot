@@ -15,18 +15,18 @@ pub const PACKET_ID: i32 = 0x51;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct ScoreboardDisplayObjective {
     /// Auto-generated field.
-    pub pos: i8,
+    pub position: i8,
     /// Auto-generated field.
-    pub nm: String,
+    pub name: String,
 }
 
 impl ScoreboardDisplayObjective {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(1)?;
-        let pos = __buf[0] as i8;
-        let nm = string::read(reader)?;
-        Ok(Self { pos, nm })
+        let position = __buf[0] as i8;
+        let name = string::read(reader)?;
+        Ok(Self { position, name })
     }
 }
 
@@ -34,8 +34,8 @@ impl ClientboundPacket for ScoreboardDisplayObjective {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&[self.pos as u8])?;
-        string::write(&self.nm, writer)?;
+        writer.write_all(&[self.position as u8])?;
+        string::write(&self.name, writer)?;
         Ok(())
     }
 }

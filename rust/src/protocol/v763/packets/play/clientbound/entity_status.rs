@@ -15,19 +15,19 @@ pub const PACKET_ID: i32 = 0x1C;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct EntityStatus {
     /// Auto-generated field.
-    pub eid: i32,
+    pub entity_id: i32,
     /// Auto-generated field.
-    pub st: i8,
+    pub status: i8,
 }
 
 impl EntityStatus {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(4)?;
-        let eid = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        let entity_id = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
         let __buf = reader.read_exact(1)?;
-        let st = __buf[0] as i8;
-        Ok(Self { eid, st })
+        let status = __buf[0] as i8;
+        Ok(Self { entity_id, status })
     }
 }
 
@@ -35,8 +35,8 @@ impl ClientboundPacket for EntityStatus {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.eid.to_be_bytes())?;
-        writer.write_all(&[self.st as u8])?;
+        writer.write_all(&self.entity_id.to_be_bytes())?;
+        writer.write_all(&[self.status as u8])?;
         Ok(())
     }
 }

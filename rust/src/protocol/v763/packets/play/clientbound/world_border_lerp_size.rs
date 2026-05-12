@@ -15,9 +15,9 @@ pub const PACKET_ID: i32 = 0x48;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct WorldBorderLerpSize {
     /// Auto-generated field.
-    pub old: f64,
+    pub old_diameter: f64,
     /// Auto-generated field.
-    pub new: f64,
+    pub new_diameter: f64,
     /// Auto-generated field.
     pub speed: i32,
 }
@@ -26,10 +26,10 @@ impl WorldBorderLerpSize {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(16)?;
-        let old = f64::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3],__buf[4],__buf[5],__buf[6],__buf[7]]);
-        let new = f64::from_be_bytes([__buf[8],__buf[9],__buf[10],__buf[11],__buf[12],__buf[13],__buf[14],__buf[15]]);
+        let old_diameter = f64::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3],__buf[4],__buf[5],__buf[6],__buf[7]]);
+        let new_diameter = f64::from_be_bytes([__buf[8],__buf[9],__buf[10],__buf[11],__buf[12],__buf[13],__buf[14],__buf[15]]);
         let speed = varint::read(reader)?;
-        Ok(Self { old, new, speed })
+        Ok(Self { old_diameter, new_diameter, speed })
     }
 }
 
@@ -37,8 +37,8 @@ impl ClientboundPacket for WorldBorderLerpSize {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.old.to_be_bytes())?;
-        writer.write_all(&self.new.to_be_bytes())?;
+        writer.write_all(&self.old_diameter.to_be_bytes())?;
+        writer.write_all(&self.new_diameter.to_be_bytes())?;
         varint::write(self.speed, writer)?;
         Ok(())
     }

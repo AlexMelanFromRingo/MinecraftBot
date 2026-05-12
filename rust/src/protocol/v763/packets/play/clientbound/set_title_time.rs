@@ -15,21 +15,21 @@ pub const PACKET_ID: i32 = 0x60;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct SetTitleTime {
     /// Auto-generated field.
-    pub fi: i32,
+    pub fade_in: i32,
     /// Auto-generated field.
-    pub st: i32,
+    pub stay: i32,
     /// Auto-generated field.
-    pub fo: i32,
+    pub fade_out: i32,
 }
 
 impl SetTitleTime {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(12)?;
-        let fi = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        let st = i32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
-        let fo = i32::from_be_bytes([__buf[8],__buf[9],__buf[10],__buf[11]]);
-        Ok(Self { fi, st, fo })
+        let fade_in = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        let stay = i32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
+        let fade_out = i32::from_be_bytes([__buf[8],__buf[9],__buf[10],__buf[11]]);
+        Ok(Self { fade_in, stay, fade_out })
     }
 }
 
@@ -37,9 +37,9 @@ impl ClientboundPacket for SetTitleTime {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.fi.to_be_bytes())?;
-        writer.write_all(&self.st.to_be_bytes())?;
-        writer.write_all(&self.fo.to_be_bytes())?;
+        writer.write_all(&self.fade_in.to_be_bytes())?;
+        writer.write_all(&self.stay.to_be_bytes())?;
+        writer.write_all(&self.fade_out.to_be_bytes())?;
         Ok(())
     }
 }

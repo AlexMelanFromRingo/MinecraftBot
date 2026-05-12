@@ -15,21 +15,21 @@ pub const PACKET_ID: i32 = 0x56;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Experience {
     /// Auto-generated field.
-    pub bar: f32,
+    pub experience_bar: f32,
     /// Auto-generated field.
-    pub lvl: i32,
+    pub level: i32,
     /// Auto-generated field.
-    pub total: i32,
+    pub total_experience: i32,
 }
 
 impl Experience {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(4)?;
-        let bar = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        let lvl = varint::read(reader)?;
-        let total = varint::read(reader)?;
-        Ok(Self { bar, lvl, total })
+        let experience_bar = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        let level = varint::read(reader)?;
+        let total_experience = varint::read(reader)?;
+        Ok(Self { experience_bar, level, total_experience })
     }
 }
 
@@ -37,9 +37,9 @@ impl ClientboundPacket for Experience {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.bar.to_be_bytes())?;
-        varint::write(self.lvl, writer)?;
-        varint::write(self.total, writer)?;
+        writer.write_all(&self.experience_bar.to_be_bytes())?;
+        varint::write(self.level, writer)?;
+        varint::write(self.total_experience, writer)?;
         Ok(())
     }
 }

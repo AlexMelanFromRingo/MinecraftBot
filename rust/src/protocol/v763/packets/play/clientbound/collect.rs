@@ -15,20 +15,20 @@ pub const PACKET_ID: i32 = 0x67;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Collect {
     /// Auto-generated field.
-    pub cd: i32,
+    pub collected_entity_id: i32,
     /// Auto-generated field.
-    pub cr: i32,
+    pub collector_entity_id: i32,
     /// Auto-generated field.
-    pub cnt: i32,
+    pub pickup_item_count: i32,
 }
 
 impl Collect {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let cd = varint::read(reader)?;
-        let cr = varint::read(reader)?;
-        let cnt = varint::read(reader)?;
-        Ok(Self { cd, cr, cnt })
+        let collected_entity_id = varint::read(reader)?;
+        let collector_entity_id = varint::read(reader)?;
+        let pickup_item_count = varint::read(reader)?;
+        Ok(Self { collected_entity_id, collector_entity_id, pickup_item_count })
     }
 }
 
@@ -36,9 +36,9 @@ impl ClientboundPacket for Collect {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.cd, writer)?;
-        varint::write(self.cr, writer)?;
-        varint::write(self.cnt, writer)?;
+        varint::write(self.collected_entity_id, writer)?;
+        varint::write(self.collector_entity_id, writer)?;
+        varint::write(self.pickup_item_count, writer)?;
         Ok(())
     }
 }

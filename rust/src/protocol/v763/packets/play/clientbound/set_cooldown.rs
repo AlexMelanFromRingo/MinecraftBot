@@ -15,17 +15,17 @@ pub const PACKET_ID: i32 = 0x15;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct SetCooldown {
     /// Auto-generated field.
-    pub iid: i32,
+    pub item_id: i32,
     /// Auto-generated field.
-    pub ticks: i32,
+    pub cooldown_ticks: i32,
 }
 
 impl SetCooldown {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let iid = varint::read(reader)?;
-        let ticks = varint::read(reader)?;
-        Ok(Self { iid, ticks })
+        let item_id = varint::read(reader)?;
+        let cooldown_ticks = varint::read(reader)?;
+        Ok(Self { item_id, cooldown_ticks })
     }
 }
 
@@ -33,8 +33,8 @@ impl ClientboundPacket for SetCooldown {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.iid, writer)?;
-        varint::write(self.ticks, writer)?;
+        varint::write(self.item_id, writer)?;
+        varint::write(self.cooldown_ticks, writer)?;
         Ok(())
     }
 }

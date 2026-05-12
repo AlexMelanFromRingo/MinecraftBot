@@ -15,15 +15,15 @@ pub const PACKET_ID: i32 = 0x28;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct HeldItemSlot {
     /// Auto-generated field.
-    pub s: i16,
+    pub slot_id: i16,
 }
 
 impl HeldItemSlot {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(2)?;
-        let s = i16::from_be_bytes([__buf[0],__buf[1]]);
-        Ok(Self { s })
+        let slot_id = i16::from_be_bytes([__buf[0],__buf[1]]);
+        Ok(Self { slot_id })
     }
 }
 
@@ -31,7 +31,7 @@ impl ServerboundPacket for HeldItemSlot {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.s.to_be_bytes())?;
+        writer.write_all(&self.slot_id.to_be_bytes())?;
         Ok(())
     }
 }

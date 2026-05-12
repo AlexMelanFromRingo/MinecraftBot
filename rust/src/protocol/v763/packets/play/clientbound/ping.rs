@@ -15,15 +15,15 @@ pub const PACKET_ID: i32 = 0x32;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Ping {
     /// Auto-generated field.
-    pub pid: i32,
+    pub id: i32,
 }
 
 impl Ping {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(4)?;
-        let pid = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        Ok(Self { pid })
+        let id = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        Ok(Self { id })
     }
 }
 
@@ -31,7 +31,7 @@ impl ClientboundPacket for Ping {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.pid.to_be_bytes())?;
+        writer.write_all(&self.id.to_be_bytes())?;
         Ok(())
     }
 }

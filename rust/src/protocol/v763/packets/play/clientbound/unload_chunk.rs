@@ -15,18 +15,18 @@ pub const PACKET_ID: i32 = 0x1E;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct UnloadChunk {
     /// Auto-generated field.
-    pub cx: i32,
+    pub chunk_x: i32,
     /// Auto-generated field.
-    pub cz: i32,
+    pub chunk_z: i32,
 }
 
 impl UnloadChunk {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(8)?;
-        let cx = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        let cz = i32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
-        Ok(Self { cx, cz })
+        let chunk_x = i32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        let chunk_z = i32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
+        Ok(Self { chunk_x, chunk_z })
     }
 }
 
@@ -34,8 +34,8 @@ impl ClientboundPacket for UnloadChunk {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.cx.to_be_bytes())?;
-        writer.write_all(&self.cz.to_be_bytes())?;
+        writer.write_all(&self.chunk_x.to_be_bytes())?;
+        writer.write_all(&self.chunk_z.to_be_bytes())?;
         Ok(())
     }
 }

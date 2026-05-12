@@ -15,22 +15,22 @@ pub const PACKET_ID: i32 = 0x57;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct UpdateHealth {
     /// Auto-generated field.
-    pub h: f32,
+    pub health: f32,
     /// Auto-generated field.
-    pub f: i32,
+    pub food: i32,
     /// Auto-generated field.
-    pub s: f32,
+    pub food_saturation: f32,
 }
 
 impl UpdateHealth {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(4)?;
-        let h = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        let f = varint::read(reader)?;
+        let health = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        let food = varint::read(reader)?;
         let __buf = reader.read_exact(4)?;
-        let s = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        Ok(Self { h, f, s })
+        let food_saturation = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        Ok(Self { health, food, food_saturation })
     }
 }
 
@@ -38,9 +38,9 @@ impl ClientboundPacket for UpdateHealth {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&self.h.to_be_bytes())?;
-        varint::write(self.f, writer)?;
-        writer.write_all(&self.s.to_be_bytes())?;
+        writer.write_all(&self.health.to_be_bytes())?;
+        varint::write(self.food, writer)?;
+        writer.write_all(&self.food_saturation.to_be_bytes())?;
         Ok(())
     }
 }

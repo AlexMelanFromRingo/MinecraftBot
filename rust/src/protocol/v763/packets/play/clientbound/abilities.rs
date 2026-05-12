@@ -17,9 +17,9 @@ pub struct Abilities {
     /// Auto-generated field.
     pub flags: i8,
     /// Auto-generated field.
-    pub fly: f32,
+    pub flying_speed: f32,
     /// Auto-generated field.
-    pub walk: f32,
+    pub walking_speed: f32,
 }
 
 impl Abilities {
@@ -28,9 +28,9 @@ impl Abilities {
         let __buf = reader.read_exact(1)?;
         let flags = __buf[0] as i8;
         let __buf = reader.read_exact(8)?;
-        let fly = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
-        let walk = f32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
-        Ok(Self { flags, fly, walk })
+        let flying_speed = f32::from_be_bytes([__buf[0],__buf[1],__buf[2],__buf[3]]);
+        let walking_speed = f32::from_be_bytes([__buf[4],__buf[5],__buf[6],__buf[7]]);
+        Ok(Self { flags, flying_speed, walking_speed })
     }
 }
 
@@ -39,8 +39,8 @@ impl ClientboundPacket for Abilities {
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
         writer.write_all(&[self.flags as u8])?;
-        writer.write_all(&self.fly.to_be_bytes())?;
-        writer.write_all(&self.walk.to_be_bytes())?;
+        writer.write_all(&self.flying_speed.to_be_bytes())?;
+        writer.write_all(&self.walking_speed.to_be_bytes())?;
         Ok(())
     }
 }

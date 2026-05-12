@@ -15,18 +15,18 @@ pub const PACKET_ID: i32 = 0x33;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct CraftRecipeResponse {
     /// Auto-generated field.
-    pub wid: i8,
+    pub window_id: i8,
     /// Auto-generated field.
-    pub rec: String,
+    pub recipe: String,
 }
 
 impl CraftRecipeResponse {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
         let __buf = reader.read_exact(1)?;
-        let wid = __buf[0] as i8;
-        let rec = string::read(reader)?;
-        Ok(Self { wid, rec })
+        let window_id = __buf[0] as i8;
+        let recipe = string::read(reader)?;
+        Ok(Self { window_id, recipe })
     }
 }
 
@@ -34,8 +34,8 @@ impl ClientboundPacket for CraftRecipeResponse {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        writer.write_all(&[self.wid as u8])?;
-        string::write(&self.rec, writer)?;
+        writer.write_all(&[self.window_id as u8])?;
+        string::write(&self.recipe, writer)?;
         Ok(())
     }
 }

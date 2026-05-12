@@ -15,7 +15,7 @@ pub const PACKET_ID: i32 = 0x54;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct EntityVelocity {
     /// Auto-generated field.
-    pub eid: i32,
+    pub entity_id: i32,
     /// Auto-generated field.
     pub vx: i16,
     /// Auto-generated field.
@@ -27,12 +27,12 @@ pub struct EntityVelocity {
 impl EntityVelocity {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let eid = varint::read(reader)?;
+        let entity_id = varint::read(reader)?;
         let __buf = reader.read_exact(6)?;
         let vx = i16::from_be_bytes([__buf[0],__buf[1]]);
         let vy = i16::from_be_bytes([__buf[2],__buf[3]]);
         let vz = i16::from_be_bytes([__buf[4],__buf[5]]);
-        Ok(Self { eid, vx, vy, vz })
+        Ok(Self { entity_id, vx, vy, vz })
     }
 }
 
@@ -40,7 +40,7 @@ impl ClientboundPacket for EntityVelocity {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.eid, writer)?;
+        varint::write(self.entity_id, writer)?;
         writer.write_all(&self.vx.to_be_bytes())?;
         writer.write_all(&self.vy.to_be_bytes())?;
         writer.write_all(&self.vz.to_be_bytes())?;

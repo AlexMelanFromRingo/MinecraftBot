@@ -17,20 +17,20 @@ pub const PACKET_ID: i32 = 0x08;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TileEntityData {
     /// Auto-generated field.
-    pub loc: (i32, i32, i32),
+    pub location: (i32, i32, i32),
     /// Auto-generated field.
-    pub act: i32,
+    pub action: i32,
     /// Auto-generated field.
-    pub tag: Option<crate::codec::nbt::NbtTag>,
+    pub nbt_data: Option<crate::codec::nbt::NbtTag>,
 }
 
 impl TileEntityData {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let loc = position::read(reader)?;
-        let act = varint::read(reader)?;
-        let tag = nbt::read(reader)?;
-        Ok(Self { loc, act, tag })
+        let location = position::read(reader)?;
+        let action = varint::read(reader)?;
+        let nbt_data = nbt::read(reader)?;
+        Ok(Self { location, action, nbt_data })
     }
 }
 
@@ -38,9 +38,9 @@ impl ClientboundPacket for TileEntityData {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        position::write(&self.loc, writer)?;
-        varint::write(self.act, writer)?;
-        nbt::write(self.tag.as_ref(), writer)?;
+        position::write(&self.location, writer)?;
+        varint::write(self.action, writer)?;
+        nbt::write(self.nbt_data.as_ref(), writer)?;
         Ok(())
     }
 }

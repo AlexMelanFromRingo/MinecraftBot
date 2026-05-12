@@ -15,17 +15,17 @@ pub const PACKET_ID: i32 = 0x4E;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct UpdateViewPosition {
     /// Auto-generated field.
-    pub cx: i32,
+    pub chunk_x: i32,
     /// Auto-generated field.
-    pub cz: i32,
+    pub chunk_z: i32,
 }
 
 impl UpdateViewPosition {
     /// Decode from `reader`.
     pub fn decode(reader: &mut BytesReader<'_>) -> Result<Self, ProtocolError> {
-        let cx = varint::read(reader)?;
-        let cz = varint::read(reader)?;
-        Ok(Self { cx, cz })
+        let chunk_x = varint::read(reader)?;
+        let chunk_z = varint::read(reader)?;
+        Ok(Self { chunk_x, chunk_z })
     }
 }
 
@@ -33,8 +33,8 @@ impl ClientboundPacket for UpdateViewPosition {
     fn state(&self) -> ConnectionState { ConnectionState::Play }
     fn packet_id(&self) -> i32 { PACKET_ID }
     fn encode(&self, writer: &mut BytesWriter) -> Result<(), ProtocolError> {
-        varint::write(self.cx, writer)?;
-        varint::write(self.cz, writer)?;
+        varint::write(self.chunk_x, writer)?;
+        varint::write(self.chunk_z, writer)?;
         Ok(())
     }
 }
