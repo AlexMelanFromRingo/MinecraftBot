@@ -12,6 +12,9 @@ mod version;
 mod wire_log;
 mod framer;
 mod codec;
+mod world;
+mod pathfinding;
+mod physics;
 
 #[pymodule]
 fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
@@ -29,6 +32,9 @@ fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
     wire_log::register(py, &m)?;
     framer::register(py, &m)?;
     codec::register(py, &m)?;
+    world::register(py, &m)?;
+    pathfinding::register(py, &m)?;
+    physics::register(py, &m)?;
 
     Ok(())
 }

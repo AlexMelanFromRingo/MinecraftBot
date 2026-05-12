@@ -1,5 +1,6 @@
 //! Walkability predicates the A* pathfinder relies on.
 
+use crate::physics::CollisionWorld;
 use crate::world::World;
 
 /// Minimal world-side interface the pathfinder needs.
@@ -21,6 +22,14 @@ impl NavWorld for World {
     }
     fn is_navigable_obstacle(&self, x: i32, y: i32, z: i32) -> bool {
         World::is_navigable_obstacle(self, x, y, z)
+    }
+}
+
+/// World implements `CollisionWorld` (single is_solid predicate)
+/// so the physics tick can collide against a live `World` cache.
+impl CollisionWorld for World {
+    fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
+        World::is_solid(self, x, y, z)
     }
 }
 

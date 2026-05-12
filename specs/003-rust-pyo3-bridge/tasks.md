@@ -102,7 +102,7 @@ and disconnect cleanly with field-level position parity within
 - [X] T025 [P] [US1] Port `python/minecraft_bot/world/decode_chunk.py` → `rust/src/world/decode_chunk.rs` (paletted-container decode for block-states and biomes; light arrays)
 - [X] T026 [US1] Port `python/minecraft_bot/world/cache.py` → `rust/src/world/cache.rs` using `parking_lot::RwLock<HashMap<(i32,i32), Chunk>>` (or DashMap — pick by benchmark in implementation); same eviction policy as Python
 - [X] T027 [P] [US1] Port `python/minecraft_bot/world/block_table.py` → `rust/src/world/block_table.rs` (Block struct, is_solid/is_water tables from `protocol-data/v763/`)
-- [ ] T028 [P] [US1] Port `python/minecraft_bot/slots.py` → `rust/src/slots.rs` (ItemStack with item_id, count, nbt)
+- [X] T028 [P] [US1] Port `python/minecraft_bot/slots.py` → `rust/src/slots.rs` (ItemStack with item_id, count, nbt)
 - [ ] T029 [P] [US1] Port `python/minecraft_bot/entities/*.py` → `rust/src/entities/` (Entity struct, EntityMetadata schema decoder)
 - [X] T030 [P] [US1] Port `python/minecraft_bot/status_effects.py` → `rust/src/effects.rs`
 - [ ] T031 [US1] Port `python/minecraft_bot/observation.py` → `rust/src/observation.rs` (Observation snapshot builder from cache + connection state); fields per `data-model.md` parity table
@@ -123,7 +123,7 @@ and disconnect cleanly with field-level position parity within
 - [ ] T043 [P] [US1] Write `tests/python/parity/test_api_surface.py` enumerating every public symbol of `minecraft_bot` and asserting matching presence + signature in `minecraft_bot_accel` per `contracts/api-surface.md`
 - [ ] T044 [P] [US1] Write `tests/python/parity/test_field_parity.py` introspecting `__dataclass_fields__` of every Python dataclass listed in `data-model.md` parity table and asserting matching `__dict__` / `get_all`-exposed attrs in accel
 - [ ] T045 [P] [US1] Write `tests/python/parity/test_us1_substitution.py` (live, mark `pytest.mark.live`) — Python and accel bots connect in sequence to Paper, walk to (10005,200,10005), drop an item, disconnect; assert position parity within 0.5 blocks per quickstart.md
-- [ ] T046 [P] [US1] Write `tests/python/parity/test_observation_parity.py` asserting `bot_py.observation().to_dict() == bot_acc.observation().to_dict()` after a deterministic packet trace replay
+- [X] T046 [P] [US1] Write `tests/python/parity/test_observation_parity.py` asserting `bot_py.observation().to_dict() == bot_acc.observation().to_dict()` after a deterministic packet trace replay
 
 ### PyO3 façade — wrap T024–T039 into `python-ext/src/`
 
@@ -131,8 +131,8 @@ and disconnect cleanly with field-level position parity within
 - [ ] T048 [P] [US1] Add `python-ext/src/observation.rs` `#[pyclass] PyVec3`, `PyObservation`; implement `__repr__`, `__eq__`, `to_dict`/`from_dict`
 - [ ] T049 [P] [US1] Add `python-ext/src/effects.rs` `#[pyclass] PyStatusEffect`
 - [ ] T050 [P] [US1] Add `python-ext/src/entities.rs` `#[pyclass] PyEntity` with metadata-dict access
-- [ ] T051 [P] [US1] Add `python-ext/src/world/mod.rs` registering `PyWorld`, `PyChunk`, `PyChunkSection`, `PyBlock` per data-model.md and api-surface.md
-- [ ] T052 [P] [US1] Add `python-ext/src/pathfinding.rs` `#[pyclass] PyPath` (steps, cost, node_count) wrapping Rust path output
+- [X] T051 [P] [US1] Add `python-ext/src/world/mod.rs` registering `PyWorld`, `PyChunk`, `PyChunkSection`, `PyBlock` per data-model.md and api-surface.md
+- [X] T052 [P] [US1] Add `python-ext/src/pathfinding.rs` `#[pyclass] PyPath` (steps, cost, node_count) wrapping Rust path output
 - [ ] T053 [US1] Add `python-ext/src/connection.rs` `#[pyclass] PyConnection`; expose `offline`, `connect`, `disconnect`, `send`, `state`, `is_connected` as async-aware methods using `pyo3_async_runtimes::tokio::future_into_py`
 - [ ] T054 [US1] Add `python-ext/src/bot.rs` `#[pyclass] PyBot`; expose `offline`, `connect`, `disconnect`, `tick`, `run`, `walk_to`, `observation`, `use_item`, `drop_held_item`, `send`, `on_packet`, `pre_tick`, `post_tick`, plus the property surface (`world`, `position`, `health`, `food`, `yaw`, `pitch`, `on_ground`, `inventory`, `effects`)
 - [ ] T055 [US1] Add `python-ext/src/protocol/mod.rs` registering a submodule tree mirroring `python/minecraft_bot/protocol/v763/packets/{state}/{direction}/*` — each leaf module exposes the packet dataclass type + `encode` / `decode` per api-surface.md
