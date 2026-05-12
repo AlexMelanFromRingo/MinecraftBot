@@ -52,6 +52,7 @@ from minecraft_bot.status_effects import StatusEffects
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
     block_change as cb_block_change,
     close_window as cb_close_window,
+    collect as cb_collect,
     entity_destroy as cb_entity_destroy,
     entity_effect as cb_entity_effect,
     entity_look as cb_entity_look,
@@ -145,6 +146,10 @@ class Bot:
         self._has_initial_position = False
         self._server_position: Optional[tuple[float, float, float]] = None
         self._auto_eat_task: Optional[asyncio.Task] = None
+        # Monotonic chat timestamp — Paper kicks "out-of-order chat" when
+        # two say/command packets share or invert their wall-clock
+        # millisecond stamp, which happens easily in tight loops.
+        self._last_chat_ts_ms: int = 0
 
         # Slot locks (FR-027).
         self.movement_slot = Slot("movement")
@@ -303,6 +308,8 @@ class Bot:
         # Status effects.
         sub(c.on(cb_entity_effect.EntityEffect, self.effects.on_entity_effect))
         sub(c.on(cb_remove_effect.RemoveEntityEffect, self.effects.on_remove_entity_effect))
+        # Item pickup (collect packet).
+        sub(c.on(cb_collect.Collect, self._on_collect))
         sub(c.on(Reconnected, self._on_reconnected))
 
     # --- packet handlers ----------------------------------------------
@@ -409,6 +416,24 @@ class Bot:
 
     def _on_reconnected(self, evt: Reconnected) -> None:
         self._emit(evt)
+
+    def _on_collect(self, p) -> None:
+        """Server tells us we (or another entity) collected an item entity."""
+        if p.collector_entity_id != self._entity_id:
+            return
+        # Look up the item entity in the tracker for richer event data.
+        item_entity = self.entities.find_by_id(p.collected_entity_id)
+        item_id = 0
+        if item_entity is not None and hasattr(item_entity, "item"):
+            item_slot = item_entity.item
+            if item_slot is not None and hasattr(item_slot, "item_id"):
+                item_id = item_slot.item_id
+        from minecraft_bot.events import ItemPickupEvent
+        self._emit(ItemPickupEvent(
+            slot_index=-1,           # we don't know the destination slot yet
+            item_id=item_id,
+            count=p.pickup_item_count,
+        ))
 
     def _on_open_window(self, p) -> None:
         self.inventory.on_open_window(p)
@@ -725,20 +750,26 @@ class Bot:
         self._held_slot = hotbar_index
 
     async def drop_item(self, *, drop_stack: bool = False) -> None:
-        """Drop the currently-held item: one (Q key) or full stack
-        (Ctrl+Q). Uses the player_action serverbound packet."""
-        from minecraft_bot.protocol.v763.packets.play.serverbound import (
-            block_dig as sb_block_dig,
+        """Drop the currently-held item: one (Q key behaviour) or the
+        full stack (Ctrl+Q).
+
+        Vanilla MC uses the ``player_action`` (block_dig) packet here,
+        but Paper seems to silently ignore that packet for stack drops
+        coming from a non-vanilla client. Use a window-click in mode 4
+        instead — drops are mode 4 (button 0 = one, button 1 = stack)
+        and Paper accepts them in every game mode.
+        """
+        from minecraft_bot import inventory_click as click_helpers
+        from minecraft_bot.inventory.tracker import SLOT_HOTBAR_FIRST
+        # The currently-held hotbar slot in player-window coordinates.
+        slot_index = SLOT_HOTBAR_FIRST + self._held_slot
+        pkt = click_helpers.drop_stack(
+            window_id=0, state_id=self.inventory.state_id, slot_index=slot_index,
+        ) if drop_stack else click_helpers.drop_one(
+            window_id=0, state_id=self.inventory.state_id, slot_index=slot_index,
         )
         async with guard(self.action_slot):
-            # block_dig status codes 3=drop stack, 4=drop one
-            status = 3 if drop_stack else 4
-            await self._conn.send(sb_block_dig.BlockDig(
-                status=status,
-                location=(0, 0, 0),
-                face=0,
-                sequence=0,
-            ))
+            await self._conn.send(pkt)
 
     # --- click operations (FR-068..FR-070) -----------------------------
 
@@ -1373,19 +1404,47 @@ class Bot:
                         if mag < 0.4:
                             break
                         nx, nz = (ddx / mag, ddz / mag)
-                        self._set_intent(dx=nx, dz=nz, sprint=True)
+                        # Auto-jump: if the next waypoint is above our
+                        # current feet level AND we're on ground (or in
+                        # water), pulse jump so physics can clear the
+                        # step. STEP_HEIGHT alone (0.6) can't lift the
+                        # bot over a full-block / 0.5-slab boundary.
+                        in_water_now = self.world.is_water(
+                            int(self._physics.x), int(self._physics.y),
+                            int(self._physics.z),
+                        )
+                        need_jump = (
+                            (wy > int(self._physics.y))
+                            and (self._physics.on_ground or in_water_now)
+                        )
+                        self._set_intent(
+                            dx=nx, dz=nz,
+                            sprint=True, jump=need_jump,
+                        )
                         await asyncio.sleep(PHYSICS_TICK_DT)
+                        if need_jump:
+                            # Jump is a one-tick velocity impulse; clear
+                            # it so we don't keep pushing up.
+                            self._set_intent(jump=False)
                 # After full path, loop and re-plan or exit.
 
     # --- chat ----------------------------------------------------------
 
+    def _next_chat_ts(self) -> int:
+        """Return a strictly-increasing millisecond timestamp for the
+        next chat packet. Paper kicks "Out-of-order chat" if two
+        timestamps tie or invert, so we floor each new value at
+        ``last + 1``."""
+        ts = max(int(time.time() * 1000), self._last_chat_ts_ms + 1)
+        self._last_chat_ts_ms = ts
+        return ts
+
     async def say(self, message: str) -> None:
         """Send a chat message (action slot)."""
         async with guard(self.action_slot):
-            now_ms = int(time.time() * 1000)
             await self._conn.send(sb_chat.ChatMessage(
                 message=message,
-                timestamp=now_ms,
+                timestamp=self._next_chat_ts(),
                 salt=0,
                 signature=None,
                 message_count=0,
@@ -1402,11 +1461,10 @@ class Bot:
         import struct as _s
         if cmd.startswith("/"):
             cmd = cmd[1:]
-        now_ms = int(time.time() * 1000)
         payload = (
-            _s.pack(">qq", now_ms, 0) + b"\x00"      # 0 signatures
-            + b"\x00"                                 # message_count = 0
-            + b"\x00\x00\x00"                         # 3-byte ack bitset
+            _s.pack(">qq", self._next_chat_ts(), 0) + b"\x00"   # 0 signatures
+            + b"\x00"                                            # message_count = 0
+            + b"\x00\x00\x00"                                    # 3-byte ack bitset
         )
         async with guard(self.action_slot):
             await self._conn.send(sb_command.ChatCommand(

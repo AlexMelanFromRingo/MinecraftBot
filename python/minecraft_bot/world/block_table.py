@@ -88,6 +88,12 @@ _PASSTHROUGH_NAMES: frozenset[str] = frozenset({
     "minecraft:activator_rail", "minecraft:cobweb",
     "minecraft:lever", "minecraft:tripwire", "minecraft:tripwire_hook",
     "minecraft:scaffolding",
+    # Snow layers: vanilla treats 1–2-layer snow as walkable (height
+    # 0.125–0.25 falls under STEP_HEIGHT=0.6). Without per-state
+    # property parsing here we treat ALL snow_layer as passable; the
+    # bot may waste a tick stepping into 7-layer snow but won't get
+    # stuck on the common 1–2-layer case.
+    "minecraft:snow",
     # Sign / banner / item-frame ride-throughs handled separately by
     # the navigable-obstacle predicate.
 })
