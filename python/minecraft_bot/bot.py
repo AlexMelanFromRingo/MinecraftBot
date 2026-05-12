@@ -1010,6 +1010,112 @@ class Bot:
         finally:
             await self.close_container()
 
+    # --- follow (FR-036..FR-038) ---------------------------------------
+
+    async def follow(
+        self,
+        eid: int,
+        *,
+        distance: float = 3.0,
+        timeout: Optional[float] = None,
+        wait_for_slot: bool = False,
+        re_path_radius: float = 2.0,
+    ) -> None:
+        """Track entity ``eid`` keeping ``distance`` blocks behind it.
+
+        Re-paths whenever the target moves more than ``re_path_radius``
+        blocks from the position the bot was walking toward. Stops only
+        when:
+
+        - the bot is within ``distance + 1`` of the target AND target
+          has stopped moving for a few ticks, OR
+        - the entity disappears from the tracker → raises :class:`TargetLost`, OR
+        - the timeout elapses → raises :class:`WalkTimeout`.
+        """
+        from minecraft_bot.errors import TargetLost
+        async with guard(self.movement_slot, wait_for_slot=wait_for_slot):
+            start_t = time.monotonic()
+            last_target_pos: Optional[tuple[float, float, float]] = None
+            target_lost_count = 0
+
+            while True:
+                if timeout is not None and time.monotonic() - start_t > timeout:
+                    self._set_intent(dx=0, dz=0)
+                    raise WalkTimeout(("entity", eid), time.monotonic() - start_t)
+
+                target = self.entities.find_by_id(eid)
+                if target is None:
+                    target_lost_count += 1
+                    # Allow a brief grace period — entity_move packets may
+                    # transiently desync — but bail after ~1.5 s.
+                    if target_lost_count > 30:
+                        self._set_intent(dx=0, dz=0)
+                        raise TargetLost(eid)
+                    await asyncio.sleep(0.05)
+                    continue
+                target_lost_count = 0
+
+                tx, ty, tz = target.x, target.y, target.z
+                # Already close enough?
+                dx, dz = tx - self._physics.x, tz - self._physics.z
+                horiz = math.hypot(dx, dz)
+                if horiz <= distance:
+                    self._set_intent(dx=0, dz=0)
+                    # Stay close: sample again next tick.
+                    last_target_pos = (tx, ty, tz)
+                    await asyncio.sleep(0.1)
+                    continue
+
+                # Decide a goal: distance blocks short of the target
+                # (along the line from us to it).
+                norm = max(horiz, 1e-6)
+                gx = tx - dx / norm * distance
+                gz = tz - dz / norm * distance
+
+                # Re-path only when target has moved significantly OR no plan yet.
+                need_replan = (
+                    last_target_pos is None
+                    or math.hypot(tx - last_target_pos[0], tz - last_target_pos[2]) > re_path_radius
+                )
+                if not need_replan:
+                    # Keep current intent and let the previous waypoint
+                    # iteration drive movement.
+                    await asyncio.sleep(0.1)
+                    continue
+                last_target_pos = (tx, ty, tz)
+
+                # Plan to one block short of the target. Iterate waypoints
+                # for a short window (~3 s), then re-evaluate from the top.
+                start = (int(self._physics.x), int(self._physics.y), int(self._physics.z))
+                goal = (int(gx), int(ty), int(gz))
+                if start == goal:
+                    self._set_intent(dx=0, dz=0)
+                    await asyncio.sleep(0.1)
+                    continue
+                try:
+                    path = find_path(self.world, start, goal, max_fall=3)
+                except NoPathFound:
+                    await asyncio.sleep(0.25)
+                    continue
+                # Walk through up to 3 s worth of waypoints, then re-check.
+                window_end = time.monotonic() + 3.0
+                for waypoint in path.nodes[1:]:
+                    while time.monotonic() < window_end:
+                        if timeout is not None and time.monotonic() - start_t > timeout:
+                            self._set_intent(dx=0, dz=0)
+                            raise WalkTimeout(("entity", eid), time.monotonic() - start_t)
+                        wx, wy, wz = waypoint
+                        ddx = (wx + 0.5) - self._physics.x
+                        ddz = (wz + 0.5) - self._physics.z
+                        mag = math.hypot(ddx, ddz)
+                        if mag < 0.4:
+                            break
+                        nxv, nzv = (ddx / mag, ddz / mag)
+                        self._set_intent(dx=nxv, dz=nzv, sprint=True)
+                        await asyncio.sleep(PHYSICS_TICK_DT)
+                    if time.monotonic() >= window_end:
+                        break
+
     # --- dig (FR-081..FR-085) ------------------------------------------
 
     async def dig(

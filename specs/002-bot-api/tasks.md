@@ -230,7 +230,7 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 - [X] T071 [US5] Implement `Bot.follow(eid, distance, timeout, wait_for_slot)` (movement slot) — periodically re-paths with A* to a position `distance` blocks from the target's current location; restarts walk_to whenever target moves more than 2 blocks. Raises `TargetLost` if entity vanishes; `WalkTimeout` if elapsed.
 - [X] T072 [P] [US5] Unit test follow re-path trigger at `tests/python/unit/test_follow.py` — mock target that moves; assert follow issues a new walk_to after the target moves > 2 blocks.
-- [ ] T073 [US5] Integration test `tests/python/integration/test_us5_follow.py` (live): bot connects, looks for any other nearby player (skip with informative message if none); `follow(player_id, distance=3, timeout=60)`; asserts distance to target stays ≤ 4 blocks throughout (sampled every 2 s).
+- [X] T073 [US5] Integration test `tests/python/integration/test_us5_follow.py` (live): bot connects, looks for any other nearby player (skip with informative message if none); `follow(player_id, distance=3, timeout=60)`; asserts distance to target stays ≤ 4 blocks throughout (sampled every 2 s).
 
 **Checkpoint**: US5 complete.
 
