@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Bot API — высокоуровневый интерфейс над протокольным фундаментом 001. Движение, физика, pathfinding, world cache, entity/inventory tracker, survival helpers, hooks, chat."
 
+## Clarifications
+
+### Session 2026-05-12
+
+- Q: Concurrent action policy — what happens when two coroutines call Bot methods at the same time? → A: **Implicit composition with two intent slots.** Long-running movement methods (`walk_to`, `follow`, `dig`, `swim_to`, `fly_to`) take the **movement slot** and are mutually exclusive — a second call on the slot raises `BotBusy` (or waits if `wait_for_slot=True`). Instant-effect methods (`attack`, `interact_entity`, `look_at`, `look_by_vector`, `swing_arm`, `use_item`, `say`, `command`, `sneak`, `sprint`, `jump`, single `click_slot`) take the **action slot** which only serialises in-flight encode+send, so they freely interleave with movement (e.g., attack-on-the-move works). Container interaction (`open_chest`/`open_furnace` + subsequent clicks until `close_container`) holds a third **container slot**, mutually exclusive with itself but composable with movement and instant actions.
+- Q: World cache eviction policy — what stays in memory? → A: **Server-driven only.** The World cache stores every chunk the server sends via `map_chunk` and evicts only when the server sends `unload_chunk`. No client-side LRU, no radius cap, no max-chunk count. This mirrors the server's authoritative view of what the bot can "see" — querying a block outside view distance is meaningless because the server itself has no fresh data for it. `bot.world.get_block(x, y, z)` returns `None` for any block in an unloaded chunk.
+- Q: Auto-eat food selection — which food to eat when multiple types are available? → A: **Caller-supplied selector with a `BEST_SATURATION` default.** `auto_eat(threshold, picker=None)` accepts an optional callable `picker(eligible_items: list[ItemSlot]) -> ItemSlot` that picks which food to eat from the list of inventory food items. When `picker=None` (default), the framework uses `BEST_SATURATION`: highest `food_points + saturation_modifier` from the vanilla food table; ties broken by lowest slot index. The framework also exposes named pre-built pickers: `BEST_SATURATION`, `WORST_FIRST` (eat junk before the good stuff), `OLDEST_FIRST` (lowest slot index, predictable).
+- Q: Entity metadata typed accessor scope — what subset of MC 1.20.1's ~50 entity types get typed Python accessors? → A: **Full coverage.** Every entity type defined in protocol 763 (all ~50 living, projectile, item, vehicle, decoration, and misc entities) gets typed Python accessors for every metadata index its server-side metadata table defines. Source-of-truth is PrismarineJS `minecraft-data` (`entities.json` + the metadata schemas in the entity-tracker source). Generic `entity.metadata[index]` access remains available as an escape hatch for custom/modded fields, but every vanilla index has a typed Pythonic accessor (e.g., `wolf.collar_color`, `villager.profession`, `horse.armor`, `creeper.is_charged`, `ender_dragon.phase`). Scope estimate: ~50 entity classes × 5-15 indices each ≈ 500-700 accessors, generated/scaffolded from the data table and verified by tests.
+- Q: Physics tick strictness — what happens when a tick falls behind the 20 Hz schedule? → A: **Best-effort + server correction.** The auto-ticker schedules each tick 50 ms after the previous tick's start; if a tick takes longer than 50 ms, the next tick starts as soon as control returns to the event loop (no catch-up replays, no compensation sleep). Server-pushed `SynchronizePlayerPosition` packets correct any cumulative drift between local prediction and the server's authoritative state. For deterministic offline use (ML/RL, unit tests), the developer calls the public `bot.tick()` manually instead of relying on the auto-ticker.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The "users" of this feature are developers (and ML-agent code) that build
@@ -329,10 +339,19 @@ the bot's hook fires with the parsed text.
 
 **Physics**
 
-- **FR-010**: A physics tick runs at **20 Hz** (server tick rate) on
-  the bot, computing gravity, collision, water drag, step-up of ≤ 0.6
-  blocks, and auto-sprint when the bot is moving toward a waypoint
-  more than 4 blocks away.
+- **FR-010**: A physics tick runs at a target rate of **20 Hz**
+  (50 ms between ticks, matching the server tick rate) on the bot,
+  computing gravity, collision, water drag, step-up of ≤ 0.6 blocks,
+  and auto-sprint when the bot is moving toward a waypoint more than
+  4 blocks away. The auto-ticker is **best-effort**: each tick is
+  scheduled 50 ms after the previous tick's *start*. If a tick takes
+  longer than 50 ms (slow host, GC pause, user hook), the next tick
+  starts immediately on event-loop resume — no catch-up replays, no
+  compensation sleep. Any cumulative drift between local prediction
+  and the server's authoritative state is corrected by server-pushed
+  ``SynchronizePlayerPosition`` packets (FR-011). For deterministic
+  offline use (ML/RL, unit tests), the developer calls the public
+  ``await bot.tick()`` manually instead of relying on the auto-ticker.
 - **FR-011**: Local position prediction MUST be reset to the server's
   authoritative value when ``SynchronizePlayerPosition`` is received
   (consistent with the FR-006 teleport-confirm in 001).
@@ -346,8 +365,11 @@ the bot's hook fires with the parsed text.
 
 **Movement APIs**
 
-- **FR-020**: ``await bot.walk_to(x, y, z, timeout=30.0, max_fall=3)``
-  navigates the bot to within 1 block of the target using A*; raises
+- **FR-020**: ``await bot.walk_to(x, y, z, timeout=30.0, max_fall=3,
+  wait_for_slot=False)`` navigates the bot to within 1 block of the
+  target using A*. Holds the **movement slot** for its duration;
+  raises ``BotBusy`` if the slot is already held and
+  ``wait_for_slot=False`` (default), or queues otherwise. Raises
   ``NoPathFound`` if A* fails, ``WalkTimeout`` if elapsed >= timeout.
 - **FR-021**: ``await bot.look_at(x, y, z)`` rotates yaw and pitch to
   point the bot's eye line at ``(x, y, z)``; arrives within 1 server
@@ -361,9 +383,21 @@ the bot's hook fires with the parsed text.
   on the next physics tick.
 - **FR-025**: ``await bot.fly_to(x, y, z)`` (creative only) flies in a
   straight line to the target, bypassing the pathfinder.
-- **FR-026**: ``await bot.follow(eid, distance, timeout)`` tracks
-  another entity and maintains a target distance, re-pathing as the
-  entity moves; resolves on ``timeout`` or ``TargetLost``.
+- **FR-026**: ``await bot.follow(eid, distance, timeout,
+  wait_for_slot=False)`` tracks another entity and maintains a target
+  distance, re-pathing as the entity moves; resolves on ``timeout`` or
+  ``TargetLost``. Holds the **movement slot** for its duration.
+- **FR-027**: Bot defines three concurrency slots: **movement**
+  (``walk_to`` / ``follow`` / ``fly_to`` / ``swim_to`` / ``dig``),
+  **action** (``attack`` / ``interact_entity`` / ``look_at`` /
+  ``look_by_vector`` / ``swing_arm`` / ``use_item`` / ``say`` /
+  ``command`` / ``sneak`` / ``sprint`` / ``jump`` / single
+  ``click_slot``), and **container** (``open_chest`` / ``open_furnace``
+  / ``open_crafting_table`` and clicks while open). Each slot
+  serialises calls within it; slots compose freely with each other
+  (e.g., ``attack`` mid-``walk_to`` is allowed and expected). Calls
+  contending for an already-held slot raise
+  :class:`BotBusy` unless invoked with ``wait_for_slot=True``.
 
 **Pathfinding**
 
@@ -408,6 +442,13 @@ the bot's hook fires with the parsed text.
 - **FR-045**: The world cache updates on ``block_change``,
   ``multi_block_change``, ``unload_chunk``, and (when block-entity
   data changes) ``tile_entity_data``.
+- **FR-046**: World cache eviction is **strictly server-driven**: a
+  chunk is dropped from memory if and only if the server sends an
+  ``unload_chunk`` packet for it. The framework MUST NOT impose its
+  own LRU cap, radius cap, or maximum-chunk-count policy. ``get_block``
+  on a coordinate in an unloaded chunk returns ``None``; the developer
+  cannot ask "what was this block five minutes ago when the chunk was
+  loaded" because the bot has no authoritative answer.
 
 **Entity tracker**
 
@@ -419,12 +460,31 @@ the bot's hook fires with the parsed text.
   filtered by entity type, sorted ascending by distance.
 - **FR-052**: ``bot.entities.nearby_players(radius)`` returns nearby
   player entities.
-- **FR-053**: Each tracked Entity exposes ``id``, ``type``,
-  ``position``, ``yaw``, ``pitch``, ``health``,
-  ``display_name``, ``metadata`` (parsed entity-metadata index map),
-  and convenience accessors for common metadata indices
-  (e.g., sheep ``wool_color``, armor ``equipment``, name tag
-  ``custom_name_visible``).
+- **FR-053**: Each tracked Entity exposes the common shared fields
+  ``id``, ``type``, ``position``, ``yaw``, ``pitch``, ``health``,
+  ``display_name``, plus a raw ``metadata`` mapping
+  ``{index: parsed_value}`` for the entity's current data-watcher
+  stream. Per-entity-type subclasses (``Sheep``, ``Wolf``, ``Horse``,
+  ``Villager``, ``Creeper``, ``ItemEntity``, ``Player``, etc. — one
+  subclass per entity type in protocol 763) expose typed Python
+  accessors for **every** metadata index that entity defines
+  (e.g., ``sheep.wool_color``, ``sheep.is_sheared``,
+  ``wolf.collar_color``, ``horse.armor_item``,
+  ``villager.profession``, ``creeper.is_charged``,
+  ``ender_dragon.phase``). The Entity returned by the tracker for a
+  given ``entity_id`` is the appropriate subclass instance based on
+  the ``type`` field of the spawn packet.
+- **FR-056**: Entity metadata schemas (which index maps to which
+  field, for which entity type) ship as a generated data table at
+  ``protocol-data/v763/entity_metadata.json``, derived from
+  PrismarineJS ``minecraft-data`` (``entities.json`` +
+  ``protocol.json`` ``entityMetadata`` switch table). The table is
+  consumed by code-gen tooling that produces the per-entity-type
+  subclass files (one file per entity type in
+  ``protocol/v763/entities/``), each with the typed accessors
+  declared as properties over ``metadata[index]``. Unknown / modded
+  metadata indices fall through to the raw ``entity.metadata`` map
+  without raising.
 - **FR-054**: ``await bot.attack(eid)`` sends ``use_entity`` with
   attack semantics; ``await bot.interact_entity(eid)`` sends
   ``use_entity`` with interact semantics; both swing the bot's main
@@ -494,10 +554,18 @@ the bot's hook fires with the parsed text.
 
 **Survival helpers**
 
-- **FR-090**: ``bot.auto_eat(threshold=15, eat_duration=1.6)``
-  registers a hook: when ``bot.food < threshold`` and the inventory
-  contains any food item, the bot equips it, right-clicks for
-  ``eat_duration`` seconds, and food returns to full.
+- **FR-090**: ``bot.auto_eat(threshold=15, eat_duration=1.6,
+  picker=None)`` registers a hook: when ``bot.food < threshold`` and
+  the inventory contains any food item, the bot equips it,
+  right-clicks for ``eat_duration`` seconds, and food returns to full.
+  ``picker`` is an optional ``Callable[[list[ItemSlot]], ItemSlot]``
+  that selects which food to eat from the eligible list; defaults to
+  the framework-provided ``BEST_SATURATION`` strategy
+  (max ``food_points + saturation_modifier`` from the vanilla food
+  table, ties broken by lowest slot index). The framework also
+  exports the pre-built pickers ``BEST_SATURATION``, ``WORST_FIRST``
+  (eat lowest-nutrition items first), and ``OLDEST_FIRST`` (lowest
+  slot index, deterministic).
 - **FR-091**: ``bot.in_reach(x, y, z, max_dist=4.5)`` returns
   ``True`` if the bot's eye position is within ``max_dist`` blocks of
   the target (matching vanilla reach semantics).
@@ -680,4 +748,7 @@ the bot's hook fires with the parsed text.
 - Entity metadata schemas for the ~50 entity types in 1.20.1 ship as
   a generated data table; this milestone implements the metadata
   stream decoder that ``entity_metadata`` packet currently captures
-  as opaque bytes.
+  as opaque bytes, plus **typed Python accessors for every index of
+  every entity type** (per Q4 clarification — full coverage, ~50
+  subclasses × 5-15 indices each ≈ 500-700 accessors, scaffolded
+  from `protocol-data/v763/entity_metadata.json`).
