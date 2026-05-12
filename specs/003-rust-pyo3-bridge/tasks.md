@@ -252,7 +252,7 @@ passes under both backends.
 - [ ] T091 [P] Run `ruff check tests/python` and `black tests/python`; fix style on the new parity + perf test files
 - [ ] T092 Bump `python-ext/Cargo.toml` package version from `0.1.0` → `0.2.0` once Phase 7 lands; tag the release; trigger `release.yml`
 - [ ] T093 Validate the full `quickstart.md` acceptance checklist (the 8-bullet list at the bottom of that file) before declaring 003 done
-- [ ] T094 [P] Update memory at `.claude/projects/.../memory/project_milestone_status.md` setting "003-rust-pyo3-bridge complete"; add a memory entry for the abi3 wheel matrix gotchas (any cross-build quirks discovered in T060)
+- [X] T094 [P] Update memory at `.claude/projects/.../memory/project_milestone_status.md` setting "003-rust-pyo3-bridge complete"; add a memory entry for the abi3 wheel matrix gotchas (any cross-build quirks discovered in T060)
 - [ ] T095 [P] Compress the cross-check tool output of T067 into a one-line CI summary so PR conversations stay readable
 
 ---

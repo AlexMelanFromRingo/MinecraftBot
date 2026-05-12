@@ -275,22 +275,34 @@ impl Bot {
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
-        if !self.state.lock().await.position_known {
-            return Err(ProtocolError::DecodeError(
-                "walk_to_blind: no position arrived within 4s".into(),
-            ));
-        }
+        let (mut local_x, mut local_y, mut local_z) = {
+            let s = self.state.lock().await;
+            if !s.position_known {
+                return Err(ProtocolError::DecodeError(
+                    "walk_to_blind: no position arrived within 4s".into(),
+                ));
+            }
+            (s.x, s.y, s.z)
+        };
         loop {
             if tokio::time::Instant::now() > deadline {
                 return Ok(false);
             }
-            let (cur_x, cur_y, cur_z) = {
+            // Re-sync from dispatcher on drift.
+            {
                 let s = self.state.lock().await;
-                (s.x, s.y, s.z)
-            };
-            let dx = tx - cur_x;
-            let dy = ty - cur_y;
-            let dz = tz - cur_z;
+                let dsx = s.x - local_x;
+                let dsy = s.y - local_y;
+                let dsz = s.z - local_z;
+                if (dsx * dsx + dsy * dsy + dsz * dsz).sqrt() > 1.0 {
+                    local_x = s.x;
+                    local_y = s.y;
+                    local_z = s.z;
+                }
+            }
+            let dx = tx - local_x;
+            let dy = ty - local_y;
+            let dz = tz - local_z;
             let dist = (dx * dx + dy * dy + dz * dz).sqrt();
             if dist <= 1.5 {
                 return Ok(true);
@@ -304,19 +316,13 @@ impl Bot {
                 step_dy *= scale;
                 step_dz *= scale;
             }
-            let send_x = cur_x + step_dx;
-            let send_y = cur_y + step_dy;
-            let send_z = cur_z + step_dz;
-            {
-                let mut s = self.state.lock().await;
-                s.x = send_x;
-                s.y = send_y;
-                s.z = send_z;
-            }
+            local_x += step_dx;
+            local_y += step_dy;
+            local_z += step_dz;
             let pkt = SbPosition {
-                x: send_x,
-                y: send_y,
-                z: send_z,
+                x: local_x,
+                y: local_y,
+                z: local_z,
                 on_ground: true,
             };
             self.connection.send(&pkt).await?;
@@ -383,20 +389,36 @@ impl Bot {
 
         let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(timeout_secs);
         let mut waypoint_idx: usize = 0;
+        // Maintain a **local** prediction separate from the dispatcher-
+        // updated bot_state. The dispatcher writes bot_state on every
+        // sync_player_position; if its value disagrees with our
+        // prediction by more than a few blocks we re-sync to it.
+        let mut local_x = start_state.x;
+        let mut local_y = start_state.y;
+        let mut local_z = start_state.z;
         loop {
             if tokio::time::Instant::now() > deadline {
                 return Ok(false);
             }
-            // Where are we right now?
-            let (cur_x, cur_y, cur_z) = {
+            // Periodically re-sync from server-confirmed state if it
+            // has drifted from our prediction.
+            {
                 let s = self.state.lock().await;
-                (s.x, s.y, s.z)
-            };
+                let dsx = s.x - local_x;
+                let dsy = s.y - local_y;
+                let dsz = s.z - local_z;
+                let drift = (dsx * dsx + dsy * dsy + dsz * dsz).sqrt();
+                if drift > 1.0 {
+                    local_x = s.x;
+                    local_y = s.y;
+                    local_z = s.z;
+                }
+            }
 
             // Goal-distance check.
-            let dx = tx - cur_x;
-            let dy = ty - cur_y;
-            let dz = tz - cur_z;
+            let dx = tx - local_x;
+            let dy = ty - local_y;
+            let dz = tz - local_z;
             if (dx * dx + dy * dy + dz * dz).sqrt() <= 1.5 {
                 return Ok(true);
             }
@@ -405,9 +427,9 @@ impl Bot {
             // reached.
             while waypoint_idx + 1 < path_nodes.len() {
                 let (wx, wy, wz) = path_nodes[waypoint_idx];
-                let ddx = (wx as f64 + 0.5) - cur_x;
-                let ddy = (wy as f64) - cur_y;
-                let ddz = (wz as f64 + 0.5) - cur_z;
+                let ddx = (wx as f64 + 0.5) - local_x;
+                let ddy = (wy as f64) - local_y;
+                let ddz = (wz as f64 + 0.5) - local_z;
                 if (ddx * ddx + ddy * ddy + ddz * ddz).sqrt() < 1.0 {
                     waypoint_idx += 1;
                 } else {
@@ -415,8 +437,6 @@ impl Bot {
                 }
             }
             if waypoint_idx >= path_nodes.len() {
-                // Past last waypoint but not at target — let goal
-                // check finish the loop.
                 tokio::time::sleep(Duration::from_millis(50)).await;
                 continue;
             }
@@ -427,9 +447,9 @@ impl Bot {
             let target_x = wx as f64 + 0.5;
             let target_y = wy as f64;
             let target_z = wz as f64 + 0.5;
-            let mut step_dx = target_x - cur_x;
-            let mut step_dy = target_y - cur_y;
-            let mut step_dz = target_z - cur_z;
+            let mut step_dx = target_x - local_x;
+            let mut step_dy = target_y - local_y;
+            let mut step_dz = target_z - local_z;
             let dist = (step_dx * step_dx + step_dy * step_dy + step_dz * step_dz).sqrt();
             if dist > MAX_PREDICTION_RADIUS {
                 let scale = MAX_PREDICTION_RADIUS / dist;
@@ -437,20 +457,16 @@ impl Bot {
                 step_dy *= scale;
                 step_dz *= scale;
             }
-            let send_x = cur_x + step_dx;
-            let send_y = cur_y + step_dy;
-            let send_z = cur_z + step_dz;
+            let send_x = local_x + step_dx;
+            let send_y = local_y + step_dy;
+            let send_z = local_z + step_dz;
 
-            // Predict locally so the next tick's slide starts from
-            // here (we update upon server confirmation via
-            // sync_player_position; this is just a between-tick
-            // estimate).
-            {
-                let mut s = self.state.lock().await;
-                s.x = send_x;
-                s.y = send_y;
-                s.z = send_z;
-            }
+            // Update LOCAL prediction only; the dispatcher owns
+            // bot_state and writes the server-confirmed value when
+            // sync_player_position arrives.
+            local_x = send_x;
+            local_y = send_y;
+            local_z = send_z;
 
             let pkt = SbPosition {
                 x: send_x,
