@@ -6,7 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "minecraft_bot"
 version = "0.1.0"
 description = "Minecraft Java Edition bot/agent framework — Python reference implementation."
-readme = "../README.md"
+# (`readme = "../README.md"` would break `pip install -e python/` because
+# pip/setuptools refuse paths outside the package root. The full README
+# lives at repo root for git/GitHub consumers; here we keep a one-line
+# inline description so editable installs work in CI containers.)
+readme = { text = "Python reference implementation of the MinecraftBot framework. See repo README for full documentation.", content-type = "text/plain" }
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Alex Melan", email = "cleverbotam@gmail.com" }]

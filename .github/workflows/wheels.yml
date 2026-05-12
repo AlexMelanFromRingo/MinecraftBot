@@ -1,0 +1,175 @@
+name: Wheels (003)
+
+on:
+  push:
+    branches: [main, master, "003-*"]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "rust/**"
+      - "python-ext/**"
+      - ".github/workflows/wheels.yml"
+  workflow_dispatch:
+
+# T060 — abi3 maturin matrix building one wheel per (OS, arch). The
+# abi3-py311 feature in `python-ext/Cargo.toml` means each wheel
+# covers Python 3.11+ without rebuild.
+
+jobs:
+  linux-x86_64:
+    name: Linux x86_64 (manylinux2014)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64-unknown-linux-gnu
+          manylinux: "2014"
+          args: --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+          working-directory: .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-linux-x86_64
+          path: python-ext/target/wheels/*.whl
+          if-no-files-found: error
+
+  linux-aarch64:
+    name: Linux aarch64 (manylinux2014 cross)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: aarch64-unknown-linux-gnu
+          manylinux: "2014"
+          args: --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-linux-aarch64
+          path: python-ext/target/wheels/*.whl
+          if-no-files-found: error
+
+  macos-arm64:
+    name: macOS arm64
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: aarch64-apple-darwin
+          args: --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-macos-arm64
+          path: python-ext/target/wheels/*.whl
+          if-no-files-found: error
+
+  macos-x86_64:
+    name: macOS x86_64
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64-apple-darwin
+          args: --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-macos-x86_64
+          path: python-ext/target/wheels/*.whl
+          if-no-files-found: error
+
+  windows-x86_64:
+    name: Windows x86_64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64-pc-windows-msvc
+          args: --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-windows-x86_64
+          path: python-ext/target/wheels/*.whl
+          if-no-files-found: error
+
+  # T062 — smoke-install: confirm every wheel can be installed and
+  # imported into a clean Python 3.11 venv.
+  smoke-test:
+    name: Wheel smoke (${{ matrix.platform }})
+    needs: [linux-x86_64, macos-arm64, macos-x86_64, windows-x86_64]
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runs-on: ubuntu-latest
+          - platform: macos-arm64
+            runs-on: macos-latest
+          - platform: macos-x86_64
+            runs-on: macos-latest
+          - platform: windows-x86_64
+            runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-${{ matrix.platform }}
+          path: dist
+      - name: Install wheel + pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install dist/*.whl pytest pytest-asyncio
+        shell: bash
+      - name: Smoke import
+        run: |
+          python -c "import minecraft_bot_accel as mb; print(mb.__version__, mb.implementation)"
+      - name: Install python reference for parity bringup
+        run: |
+          pip install -e python/
+      - name: Run smoke parity tests
+        run: |
+          pytest -q tests/python/parity/test_smoke_bringup.py
+
+  # T063 — Python 3.12 smoke on Linux only (the abi3 single wheel
+  # must accept both 3.11 and 3.12 interpreters).
+  smoke-test-py312:
+    name: Wheel smoke py3.12 (linux-x86_64)
+    needs: [linux-x86_64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-linux-x86_64
+          path: dist
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install dist/*.whl pytest pytest-asyncio
+          pip install -e python/
+      - run: python -c "import minecraft_bot_accel as mb; assert mb.implementation == 'rust'"
+      - run: pytest -q tests/python/parity/test_smoke_bringup.py

@@ -160,11 +160,11 @@ wheels; a separate matrix install-and-smoke job downloads each wheel
 into a fresh container and runs `tests/python/parity/test_smoke_bringup.py`
 plus `test_api_surface.py`. All five green.
 
-- [ ] T060 [P] [US2] Create `.github/workflows/wheels.yml` with five jobs: linux-x86_64 (manylinux2014 container, PyO3/maturin-action), linux-aarch64 (cross via `aarch64-unknown-linux-gnu`), macos-arm64 (macos-latest native), macos-x86_64 (macos-latest with `--target x86_64-apple-darwin`), windows-x86_64 (windows-latest native); each uses `maturin build --release --strip --interpreter python3.11` (abi3 single-build)
-- [ ] T061 [US2] In `wheels.yml`, upload each job's `target/wheels/*.whl` as a build artifact named `wheel-{os}-{arch}`
-- [ ] T062 [P] [US2] Add a second `wheels.yml` job `smoke-test` (matrix over the 5 platforms) that downloads its artefact, `pip install`s it into a clean Python 3.11 venv, and runs `pytest tests/python/parity/test_smoke_bringup.py tests/python/parity/test_api_surface.py` against `--backend accel`
-- [ ] T063 [P] [US2] Add a `smoke-test` extra row for Python 3.12 on Linux x86_64 (the only OS where we already have 3.12 in CI containers) to verify abi3 single-wheel coverage of both interpreters
-- [ ] T064 [US2] Create `.github/workflows/release.yml` triggered on tag push (`v*`); depends-on `wheels.yml`; downloads all 5 artifacts and uploads them to the GitHub release using `gh release upload`
+- [X] T060 [P] [US2] Create `.github/workflows/wheels.yml` with five jobs: linux-x86_64 (manylinux2014 container, PyO3/maturin-action), linux-aarch64 (cross via `aarch64-unknown-linux-gnu`), macos-arm64 (macos-latest native), macos-x86_64 (macos-latest with `--target x86_64-apple-darwin`), windows-x86_64 (windows-latest native); each uses `maturin build --release --strip --interpreter python3.11` (abi3 single-build)
+- [X] T061 [US2] In `wheels.yml`, upload each job's `target/wheels/*.whl` as a build artifact named `wheel-{os}-{arch}`
+- [X] T062 [P] [US2] Add a second `wheels.yml` job `smoke-test` (matrix over the 5 platforms) that downloads its artefact, `pip install`s it into a clean Python 3.11 venv, and runs `pytest tests/python/parity/test_smoke_bringup.py tests/python/parity/test_api_surface.py` against `--backend accel`
+- [X] T063 [P] [US2] Add a `smoke-test` extra row for Python 3.12 on Linux x86_64 (the only OS where we already have 3.12 in CI containers) to verify abi3 single-wheel coverage of both interpreters
+- [X] T064 [US2] Create `.github/workflows/release.yml` triggered on tag push (`v*`); depends-on `wheels.yml`; downloads all 5 artifacts and uploads them to the GitHub release using `gh release upload`
 - [ ] T065 [US2] Write `tests/python/parity/test_us2_wheel_smoke.py` — a CI-only smoke that asserts `pip show minecraft_bot_accel` returns and the wheel size is under the 5 MiB budget (R-011); fails the build if the budget is exceeded
 - [ ] T066 [US2] Run the workflow manually via `workflow_dispatch` once Phase 3 lands; capture sample wheel sizes and record them in `specs/003-rust-pyo3-bridge/quickstart.md` "wheel sizes" footnote for future regressions
 
@@ -190,7 +190,7 @@ fixtures.
 - [ ] T069 [P] [US3] Write `tests/python/parity/test_connection_state.py` — drive a 5-second canned login session under each backend and assert state transitions matched event-for-event per data-model.md Connection FSM
 - [ ] T070 [P] [US3] Write `tests/python/parity/test_packet_encode_parity.py` — for every packet in `minecraft_bot.protocol.v763.packets`, build a representative instance, encode under both backends, assert byte equality
 - [ ] T071 [P] [US3] Write `tests/python/parity/test_walk_to_packet_trace.py` — issue `bot.walk_to(...)` under each backend with a fixed pathfinding seed; capture outbound Player-Position packets via WireLog; assert byte-identical sequences (Principle IV: bots are packet sets)
-- [ ] T072 [US3] Update `.github/workflows/ci.yml` to run a `parity-matrix` job: matrix `backend = [python, accel]`; runs unit + replay + parity suites; both must pass for the PR to merge
+- [X] T072 [US3] Update `.github/workflows/ci.yml` to run a `parity-matrix` job: matrix `backend = [python, accel]`; runs unit + replay + parity suites; both must pass for the PR to merge
 - [ ] T073 [US3] Update `.github/workflows/ci.yml` to add a `live-parity` job (gated on `pull_request_target` to a `live-tests` label) running `pytest --backend accel -m live` against Paper 1.20.1; required for any PR touching `python-ext/`, `rust/`, or `tools/cross_check.py`
 - [ ] T074 [US3] Update `.github/workflows/ci.yml` with a `cross-check-all` job invoking `python tools/cross_check.py --backend all`; required-status for any PR touching codec/packet modules
 - [ ] T075 [US3] Verify SC-006 (zero cross-check discrepancies) by running T074 once locally; if any fixture mismatches, file a bug and fix on the accel side before merging Phase 5
