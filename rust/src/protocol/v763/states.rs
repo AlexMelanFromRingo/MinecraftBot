@@ -1,7 +1,7 @@
 //! Connection states and packet directions for protocol 763.
 
 /// Discrete protocol phases of a Connection.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
 pub enum ConnectionState {
     /// Pre-handshake state; client announces protocol + next state.
@@ -27,7 +27,7 @@ impl ConnectionState {
 }
 
 /// Packet flow direction.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
 pub enum Direction {
     /// Server → client.

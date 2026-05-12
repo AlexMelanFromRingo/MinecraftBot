@@ -274,10 +274,10 @@ Per `plan.md` Project Structure:
 - [ ] T114 [P] Implement Rust codecs `position`, `identifier`, `bitset` at `rust/src/codec/{position,identifier,bitset}.rs`.
 - [ ] T115 [P] Implement Rust NBT codec at `rust/src/codec/nbt.rs` (R-04, all 13 tag types + network-NBT variant).
 - [ ] T116 [P] Implement Rust `slot` and `chat_component` codecs at `rust/src/codec/{slot,chat_component}.rs`.
-- [ ] T117 Implement `ConnectionState`, `Direction`, `ProtocolVersion`, `ProtocolError` at `rust/src/protocol/v763/states.rs`, `rust/src/errors.rs`.
-- [ ] T118 Implement Rust framer at `rust/src/framer.rs` (mirror Python; `tokio::AsyncRead`/`AsyncWrite`).
-- [ ] T119 Implement `ServerboundPacket` / `ClientboundPacket` traits and `CodecRegistry` at `rust/src/protocol/v763/registry.rs`.
-- [ ] T120 [P] Implement Rust handshake/status/login packet files at `rust/src/protocol/v763/packets/{handshaking,status,login}/...` (mirror US1 set, ~11 files).
+- [X] T117 Implement `ConnectionState`, `Direction`, `ProtocolVersion`, `ProtocolError` at `rust/src/protocol/v763/states.rs`, `rust/src/errors.rs`.
+- [X] T118 Implement Rust framer at `rust/src/framer.rs` (mirror Python; `tokio::AsyncRead`/`AsyncWrite`).
+- [X] T119 Implement `ServerboundPacket` / `ClientboundPacket` traits and `CodecRegistry` at `rust/src/protocol/v763/registry.rs`.
+- [X] T120 [P] Implement Rust handshake/status/login packet files at `rust/src/protocol/v763/packets/{handshaking,status,login}/...` (mirror US1 set, ~11 files).
 - [ ] T121 [P] Implement Rust clientbound play packets — mirror Python US2 set across all domain groups (~111 files).
 - [ ] T122 [P] Implement Rust serverbound play packets — mirror Python US3 set (~33 files).
 - [ ] T123 Implement Rust `Connection` with `Connection::offline(...)` factory at `rust/src/connection.rs` — `Send + 'static`, `tokio::sync::Mutex<OwnedWriteHalf>` for FIFO writes (FR-013a + FR-017a).

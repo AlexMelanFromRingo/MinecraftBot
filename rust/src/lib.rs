@@ -9,8 +9,10 @@
 
 pub mod codec;
 pub mod errors;
+pub mod framer;
 pub mod protocol;
 
 pub use crate::errors::ProtocolError;
+pub use crate::framer::{Framer, MAX_PACKET_SIZE};
 pub use crate::protocol::{ProtocolVersion, V_1_20_1, V_1_20_2};
 pub use crate::protocol::v763::states::{ConnectionState, Direction};
