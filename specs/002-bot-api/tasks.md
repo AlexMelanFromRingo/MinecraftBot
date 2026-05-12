@@ -136,25 +136,25 @@ Per `plan.md` Project Structure (additive on top of 001):
 
 ### World cache full surface
 
-- [ ] T043 [US2] Extend `python/minecraft_bot/world/cache.py` — implement `find_blocks_nearby(name, radius, limit) -> list[(x, y, z)]` with chunk-by-chunk scan; sort ascending by distance to bot; respect `limit`.
-- [ ] T044 [P] [US2] Unit test `find_blocks_nearby` at `tests/python/unit/test_world_cache.py` (extends T031) — synthetic World with multiple matching blocks, assert sorted-by-distance correctness and limit truncation.
+- [X] T043 [US2] Extend `python/minecraft_bot/world/cache.py` — implement `find_blocks_nearby(name, radius, limit) -> list[(x, y, z)]` with chunk-by-chunk scan; sort ascending by distance to bot; respect `limit`.
+- [X] T044 [P] [US2] Unit test `find_blocks_nearby` at `tests/python/unit/test_world_cache.py` (extends T031) — synthetic World with multiple matching blocks, assert sorted-by-distance correctness and limit truncation.
 
 ### Entity tracker + metadata application
 
-- [ ] T045 [US2] Implement `python/minecraft_bot/entities/tracker.py` — `EntityTracker` class with `_entities: dict[int, Entity]`. Public methods `nearby_entities(radius, type_filter)`, `nearby_players(radius)`, `find_by_id(id)`, `distance_to(eid)`. Subscribes to `spawn_entity` / `named_entity_spawn` / `spawn_entity_experience_orb` (construct appropriate subclass via type-id), `entity_metadata` (decode stream + update metadata + re-apply typed accessors), `rel_entity_move`/`entity_move_look`/`entity_teleport` (position update with fixed-point unpacking), `entity_velocity`, `entity_head_rotation`, `entity_destroy`, `entity_status`, `update_entity_attributes` (per-attribute store).
-- [ ] T046 [US2] Generate ~50 entity subclasses via `tools/generate_entity_subclasses.py --version v763` — produces files under `python/minecraft_bot/entities/types/{snake_name}.py`. Each has `ENTITY_TYPE_ID`, inheritance from appropriate base (Mob / Animal / Hostile / Vehicle / Item / Projectile), typed `@property` accessors for every metadata index in `entity_metadata.json`.
-- [ ] T047 [US2] Hand-tune the generated entity subclasses — fix docstrings, add convenience helpers (e.g., `wolf.owner_uuid` → resolved name via tab list), add type unions for `OptUUID`/`OptVarInt`. Mark hand-edits with explicit `# manual edit` blocks so codegen doesn't overwrite.
-- [ ] T048 [US2] Implement `python/minecraft_bot/entities/types/__init__.py` — type-id → subclass lookup `lookup_class(type_id) -> type[Entity]`. Defaults to base `Mob` / `Entity` / `Player` if type-id unrecognised (e.g., modded entities) so the tracker never crashes.
-- [ ] T049 [P] [US2] Unit test entity tracker at `tests/python/unit/test_entity_tracker.py` — synthetic `spawn_entity` for sheep → returned object is `Sheep` instance with `wool_color` accessor; `rel_entity_move` updates position; `entity_destroy` removes entity.
-- [ ] T050 [P] [US2] Lint test entity subclass shape at `tests/python/unit/test_entity_subclass_shape.py` — every entity-type-id in `entity_metadata.json` has a corresponding Python class with every declared metadata index exposed as a property.
+- [X] T045 [US2] Implement `python/minecraft_bot/entities/tracker.py` — `EntityTracker` class with `_entities: dict[int, Entity]`. Public methods `nearby_entities(radius, type_filter)`, `nearby_players(radius)`, `find_by_id(id)`, `distance_to(eid)`. Subscribes to `spawn_entity` / `named_entity_spawn` / `spawn_entity_experience_orb` (construct appropriate subclass via type-id), `entity_metadata` (decode stream + update metadata + re-apply typed accessors), `rel_entity_move`/`entity_move_look`/`entity_teleport` (position update with fixed-point unpacking), `entity_velocity`, `entity_head_rotation`, `entity_destroy`, `entity_status`, `update_entity_attributes` (per-attribute store).
+- [X] T046 [US2] Generate ~50 entity subclasses via `tools/generate_entity_subclasses.py --version v763` — produces files under `python/minecraft_bot/entities/types/{snake_name}.py`. Each has `ENTITY_TYPE_ID`, inheritance from appropriate base (Mob / Animal / Hostile / Vehicle / Item / Projectile), typed `@property` accessors for every metadata index in `entity_metadata.json`.
+- [X] T047 [US2] Hand-tune the generated entity subclasses — fix docstrings, add convenience helpers (e.g., `wolf.owner_uuid` → resolved name via tab list), add type unions for `OptUUID`/`OptVarInt`. Mark hand-edits with explicit `# manual edit` blocks so codegen doesn't overwrite.
+- [X] T048 [US2] Implement `python/minecraft_bot/entities/types/__init__.py` — type-id → subclass lookup `lookup_class(type_id) -> type[Entity]`. Defaults to base `Mob` / `Entity` / `Player` if type-id unrecognised (e.g., modded entities) so the tracker never crashes.
+- [X] T049 [P] [US2] Unit test entity tracker at `tests/python/unit/test_entity_tracker.py` — synthetic `spawn_entity` for sheep → returned object is `Sheep` instance with `wool_color` accessor; `rel_entity_move` updates position; `entity_destroy` removes entity.
+- [X] T050 [P] [US2] Lint test entity subclass shape at `tests/python/unit/test_entity_subclass_shape.py` — every entity-type-id in `entity_metadata.json` has a corresponding Python class with every declared metadata index exposed as a property.
 
 ### Attack + interact
 
-- [ ] T051 [US2] Implement `Bot.attack(eid)`, `Bot.interact_entity(eid)`, `Bot.swing_arm(hand=0)`, `Bot.use_item(hand=0)` (all action slot). Each sends the appropriate `use_entity` / `arm_animation` / `use_item` packet via Connection.send. attack also swings arm automatically.
+- [X] T051 [US2] Implement `Bot.attack(eid)`, `Bot.interact_entity(eid)`, `Bot.swing_arm(hand=0)`, `Bot.use_item(hand=0)` (all action slot). Each sends the appropriate `use_entity` / `arm_animation` / `use_item` packet via Connection.send. attack also swings arm automatically.
 
 ### Tests
 
-- [ ] T052 [US2] Integration test `tests/python/integration/test_us2_world_entities.py` (live): bot connects, waits 5 s for chunks, asserts `find_blocks_nearby("dirt", radius=16, limit=10)` returns > 0; asserts `nearby_entities(radius=64)` is non-empty; asserts at least one Sheep has typed `wool_color` if any sheep around.
+- [X] T052 [US2] Integration test `tests/python/integration/test_us2_world_entities.py` (live): bot connects, waits 5 s for chunks, asserts `find_blocks_nearby("dirt", radius=16, limit=10)` returns > 0; asserts `nearby_entities(radius=64)` is non-empty; asserts at least one Sheep has typed `wool_color` if any sheep around.
 
 **Checkpoint**: US2 complete — bot observes world + entities with typed access.
 

@@ -39,18 +39,29 @@ from minecraft_bot.pathfinding import find_path
 from minecraft_bot.physics import (
     PhysicsIntent, PhysicsState, tick as physics_tick,
 )
+from minecraft_bot.entities.base import Entity, Player
+from minecraft_bot.entities.tracker import EntityTracker
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
     block_change as cb_block_change,
+    entity_destroy as cb_entity_destroy,
+    entity_look as cb_entity_look,
+    entity_metadata as cb_entity_metadata,
+    entity_move_look as cb_entity_move_look,
+    entity_teleport as cb_entity_teleport,
+    entity_velocity as cb_entity_velocity,
     experience as cb_experience,
     game_state_change as cb_game_state,
     held_item_slot as cb_held,
     login as cb_login,
     map_chunk as cb_map_chunk,
     multi_block_change as cb_mbc,
+    named_entity_spawn as cb_named_spawn,
     player_chat as cb_player_chat,
     position as cb_position,
     profileless_chat as cb_profileless_chat,
+    rel_entity_move as cb_rel_move,
     respawn as cb_respawn,
+    spawn_entity as cb_spawn_entity,
     system_chat as cb_system_chat,
     unload_chunk as cb_unload,
     update_health as cb_update_health,
@@ -61,6 +72,8 @@ from minecraft_bot.protocol.v763.packets.play.serverbound import (
     chat_message as sb_chat,
     position as sb_position,
     position_look as sb_position_look,
+    use_entity as sb_use_entity,
+    use_item as sb_use_item,
 )
 from minecraft_bot.slots import BotBusy, Slot, guard
 from minecraft_bot.world.cache import World
@@ -90,6 +103,7 @@ class Bot:
     def __init__(self, connection: Connection) -> None:
         self._conn = connection
         self.world = World()
+        self.entities = EntityTracker()
 
         self._physics = PhysicsState(x=0.0, y=64.0, z=0.5)
         self._yaw = 0.0
@@ -240,12 +254,23 @@ class Bot:
         sub(c.on(cb_block_change.BlockChange, self._on_block_change))
         sub(c.on(cb_mbc.MultiBlockChange, self._on_multi_block_change))
         sub(c.on(cb_unload.UnloadChunk, self._on_unload_chunk))
+        # Entity tracker.
+        sub(c.on(cb_spawn_entity.SpawnEntity, self.entities.on_spawn_entity))
+        sub(c.on(cb_named_spawn.NamedEntitySpawn, self.entities.on_named_entity_spawn))
+        sub(c.on(cb_entity_metadata.EntityMetadata, self.entities.on_entity_metadata))
+        sub(c.on(cb_rel_move.RelEntityMove, self.entities.on_rel_entity_move))
+        sub(c.on(cb_entity_move_look.EntityMoveLook, self.entities.on_entity_move_look))
+        sub(c.on(cb_entity_look.EntityLook, self.entities.on_entity_look))
+        sub(c.on(cb_entity_teleport.EntityTeleport, self.entities.on_entity_teleport))
+        sub(c.on(cb_entity_velocity.EntityVelocity, self.entities.on_entity_velocity))
+        sub(c.on(cb_entity_destroy.EntityDestroy, self.entities.on_entity_destroy))
         sub(c.on(Reconnected, self._on_reconnected))
 
     # --- packet handlers ----------------------------------------------
 
     def _on_login(self, p) -> None:
         self._entity_id = p.entity_id
+        self.entities.bot_eid = p.entity_id
         self._game_mode = p.game_mode
         self._world_name = getattr(p, "world_name", None)
         self._dimension = getattr(p, "world_type", None) or self._dimension
@@ -471,10 +496,64 @@ class Bot:
     def sprint(self, enabled: bool) -> None:
         self._set_intent(sprint=enabled)
 
-    async def swing_arm(self) -> None:
-        """Action slot: animate arm swing (hand=0 main)."""
+    async def swing_arm(self, hand: int = 0) -> None:
+        """Action slot: animate arm swing (hand=0 main, hand=1 off)."""
         async with guard(self.action_slot):
+            await self._conn.send(sb_arm.ArmAnimation(hand=hand))
+
+    # --- attack / interact / use ---------------------------------------
+
+    async def attack(self, eid: int) -> None:
+        """Attack the entity ``eid`` (action slot). Also swings arm."""
+        async with guard(self.action_slot):
+            await self._conn.send(sb_use_entity.UseEntity(
+                target=eid, mouse=1,
+                x=None, y=None, z=None, hand=None,
+                sneaking=self._intent.sneak,
+            ))
             await self._conn.send(sb_arm.ArmAnimation(hand=0))
+
+    async def interact_entity(self, eid: int, *, hand: int = 0) -> None:
+        """Right-click / interact with an entity (action slot)."""
+        async with guard(self.action_slot):
+            await self._conn.send(sb_use_entity.UseEntity(
+                target=eid, mouse=0,
+                x=None, y=None, z=None, hand=hand,
+                sneaking=self._intent.sneak,
+            ))
+
+    async def use_item(self, hand: int = 0) -> None:
+        """Right-click with the currently-held item (action slot)."""
+        async with guard(self.action_slot):
+            await self._conn.send(sb_use_item.UseItem(
+                hand=hand, sequence=0,
+            ))
+
+    # --- observe helpers (FR-061..FR-070) ------------------------------
+
+    def find_blocks_nearby(
+        self, name: str, *, radius: int = 32, limit: int = 16,
+    ) -> list[tuple[int, int, int]]:
+        """Find loaded blocks named ``name`` within ``radius`` of the
+        bot's current feet position, sorted ascending by distance.
+        Returns up to ``limit`` positions."""
+        return self.world.find_blocks_nearby(
+            name, origin=self.position, radius=radius, limit=limit,
+        )
+
+    def nearby_entities(
+        self, *, radius: float = 32.0, type_filter: Optional[type] = None,
+    ) -> list[Entity]:
+        """Entities within ``radius`` of the bot, sorted by distance."""
+        return self.entities.nearby_entities(
+            self.position, radius=radius, type_filter=type_filter,
+        )
+
+    def nearby_players(self, *, radius: float = 32.0) -> list[Player]:
+        return self.entities.nearby_players(self.position, radius=radius)
+
+    def distance_to(self, eid: int) -> Optional[float]:
+        return self.entities.distance_to(eid, self.position)
 
     # --- walk_to (FR-031..FR-035) -------------------------------------
 
