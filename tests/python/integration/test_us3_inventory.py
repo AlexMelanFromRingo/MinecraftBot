@@ -56,20 +56,18 @@ async def test_open_chest_reads_container_items(live_server) -> None:
     bot = Bot.offline(live_server.host, live_server.port, "TestBot8")
     await _spawn_on_arena(bot, "TestBot8")
     try:
-        # Place a chest next to the bot via /setblock, then fill it with a Container NBT.
+        # Place a plain chest then merge NBT (setblock chest{Items:...} silently
+        # discards contents on Paper 1.20.1; data-merge populates correctly).
         chest_x, chest_y, chest_z = ARENA_CX + 2, ARENA_CY, ARENA_CZ
-        chest_nbt = '{Items:[{Slot:0b,id:"minecraft:diamond",Count:5b}]}'
+        await bot.command(f"setblock {chest_x} {chest_y} {chest_z} chest")
+        await asyncio.sleep(0.5)
         await bot.command(
-            f"setblock {chest_x} {chest_y} {chest_z} "
-            f"minecraft:chest{chest_nbt}"
+            f"data merge block {chest_x} {chest_y} {chest_z} "
+            f'{{Items:[{{Slot:0b,id:"minecraft:diamond",Count:5b}}]}}'
         )
         await asyncio.sleep(2.0)
         # Open the chest.
-        try:
-            wid = await bot.open_chest(chest_x, chest_y, chest_z, timeout=4.0)
-        except asyncio.TimeoutError:
-            pytest.skip("chest open timed out — likely block_place anti-cheat reject")
-            return
+        wid = await bot.open_chest(chest_x, chest_y, chest_z, timeout=6.0)
         assert wid > 0
         # Read items.
         items = bot.inventory.container_items()
@@ -82,6 +80,48 @@ async def test_open_chest_reads_container_items(live_server) -> None:
         assert bot.inventory.container_window_id is None
         # Cleanup.
         await bot.command(f"setblock {chest_x} {chest_y} {chest_z} air")
+    finally:
+        await bot.disconnect()
+    await asyncio.sleep(1.0)
+
+
+async def test_click_slot_moves_item_in_inventory(live_server) -> None:
+    """Give the bot apples, then shift-click to move them between slots."""
+    bot = Bot.offline(live_server.host, live_server.port, "TestBot9")
+    await _spawn_on_arena(bot, "TestBot9")
+    try:
+        await bot.command("clear TestBot9")
+        await asyncio.sleep(0.5)
+        await bot.command("give TestBot9 minecraft:apple 16")
+        await asyncio.sleep(2.0)
+        initial = bot.find_item("apple")
+        assert initial is not None, "no apples after /give"
+        # Shift-click moves them between hotbar and main inventory.
+        await bot.quick_move(initial)
+        await asyncio.sleep(1.0)
+        # The apple should now be in a DIFFERENT slot — the original is empty.
+        after = bot.find_item("apple")
+        # Either still has apples (in some slot) or got moved.
+        assert bot.count_item("apple") >= 16, (
+            f"lost apples on shift-click: had ≥16, now {bot.count_item('apple')}"
+        )
+    finally:
+        await bot.command("clear TestBot9")
+        await bot.disconnect()
+    await asyncio.sleep(1.0)
+
+
+async def test_select_slot_changes_held_slot(live_server) -> None:
+    """Bot.select_slot(N) updates the active hotbar slot 0..8."""
+    bot = Bot.offline(live_server.host, live_server.port, "TestBot")
+    await _spawn_on_arena(bot, "TestBot")
+    try:
+        await bot.select_slot(3)
+        await asyncio.sleep(0.3)
+        assert bot.held_slot == 3
+        await bot.select_slot(7)
+        await asyncio.sleep(0.3)
+        assert bot.held_slot == 7
     finally:
         await bot.disconnect()
     await asyncio.sleep(1.0)

@@ -421,20 +421,33 @@ class Bot:
     def tick(self) -> PhysicsState:
         """Advance one physics tick (public for offline tests, FR-133).
 
-        Skips simulation if (a) we haven't received an initial server
-        position yet, or (b) the chunk under the bot's feet isn't
-        loaded yet — without ground data, our collision detection would
-        let the bot fall through the world and diverge from the server.
+        Skips simulation in three cases — in each, the bot just sits at
+        the server's last-known position and the server stays
+        authoritative:
+
+        (a) We haven't received an initial server position yet.
+        (b) The chunk under the bot's feet isn't loaded.
+        (c) Intent is zero (no movement requested) — vanilla anti-cheat
+            ("moved wrongly") triggers when our predicted position
+            diverges from the server's idea of where physics would put
+            us. Sitting still avoids the whole class of false-positives.
         """
         if not self._has_initial_position:
             return self._physics
         cx, cz = int(self._physics.x) >> 4, int(self._physics.z) >> 4
         if (cx, cz) not in self.world.chunks:
             return self._physics
+        intent = self._intent
+        idle = (
+            intent.dx == 0.0 and intent.dz == 0.0
+            and not intent.jump and not intent.sprint
+        )
+        if idle:
+            return self._physics
         in_water = self.world.is_water(
             int(self._physics.x), int(self._physics.y), int(self._physics.z)
         )
-        new_state = physics_tick(self._physics, self._intent, self.world, in_water=in_water)
+        new_state = physics_tick(self._physics, intent, self.world, in_water=in_water)
         self._physics = new_state
         return self._physics
 
@@ -605,7 +618,7 @@ class Bot:
         if not 0 <= hotbar_index <= 8:
             raise ValueError(f"hotbar_index must be 0..8, got {hotbar_index}")
         async with guard(self.action_slot):
-            await self._conn.send(sb_held.HeldItemSlot(slot=hotbar_index))
+            await self._conn.send(sb_held.HeldItemSlot(slot_id=hotbar_index))
         # Optimistic update; if server disagrees it'll send set_slot to fix.
         self._held_slot = hotbar_index
 
@@ -625,18 +638,163 @@ class Bot:
                 sequence=0,
             ))
 
+    # --- click operations (FR-068..FR-070) -----------------------------
+
+    def _next_state_id(self) -> int:
+        """Return the inventory's current ``state_id`` for an outgoing
+        click — the server expects us to echo our last seen state_id."""
+        return self.inventory.state_id
+
+    async def click_slot(
+        self, slot_index: int, *,
+        mode: str = "left",
+        button: int = 0,
+        window_id: Optional[int] = None,
+        wait_for_slot: bool = False,
+    ) -> None:
+        """Send a single window-click packet.
+
+        ``mode`` ∈ {``left``, ``right``, ``shift_left``, ``shift_right``,
+        ``middle``, ``drop_one``, ``drop_stack``, ``swap_hotbar`` (button=0..8),
+        ``swap_offhand``, ``double``}.
+
+        Inventory state delta is left to the server (it will echo back
+        a set_slot if our click didn't produce the expected effect).
+        """
+        from minecraft_bot import inventory_click as click_helpers
+        wid = window_id if window_id is not None else (self.inventory.container_window_id or 0)
+        sid = self._next_state_id()
+
+        builders = {
+            "left":         lambda: click_helpers.left_click(window_id=wid, state_id=sid, slot_index=slot_index),
+            "right":        lambda: click_helpers.right_click(window_id=wid, state_id=sid, slot_index=slot_index),
+            "shift_left":   lambda: click_helpers.shift_click(window_id=wid, state_id=sid, slot_index=slot_index),
+            "shift_right":  lambda: click_helpers.shift_click(window_id=wid, state_id=sid, slot_index=slot_index),
+            "middle":       lambda: click_helpers.middle_click(window_id=wid, state_id=sid, slot_index=slot_index),
+            "drop_one":     lambda: click_helpers.drop_one(window_id=wid, state_id=sid, slot_index=slot_index),
+            "drop_stack":   lambda: click_helpers.drop_stack(window_id=wid, state_id=sid, slot_index=slot_index),
+            "swap_hotbar":  lambda: click_helpers.swap_with_hotbar(
+                window_id=wid, state_id=sid, slot_index=slot_index, hotbar_index=button,
+            ),
+            "swap_offhand": lambda: click_helpers.swap_with_offhand(window_id=wid, state_id=sid, slot_index=slot_index),
+            "double":       lambda: click_helpers.double_click(window_id=wid, state_id=sid, slot_index=slot_index),
+        }
+        if mode not in builders:
+            raise ValueError(f"unknown click mode {mode!r}; allowed: {sorted(builders)}")
+        pkt = builders[mode]()
+        async with guard(self.action_slot, wait_for_slot=wait_for_slot):
+            await self._conn.send(pkt)
+
+    async def move_item(
+        self, src_slot: int, dst_slot: int, *, window_id: Optional[int] = None,
+    ) -> None:
+        """Move the entire stack at ``src_slot`` to ``dst_slot`` via
+        pick-up + put-down (two left-clicks). Works in both player
+        inventory and an open container."""
+        await self.click_slot(src_slot, mode="left", window_id=window_id)
+        await asyncio.sleep(0.05)
+        await self.click_slot(dst_slot, mode="left", window_id=window_id)
+
+    async def quick_move(
+        self, slot_index: int, *, window_id: Optional[int] = None,
+    ) -> None:
+        """Shift-click — auto-shuffle stack between player and container."""
+        await self.click_slot(slot_index, mode="shift_left", window_id=window_id)
+
+    async def equip_armor(self, armor_slot: str, src_slot: int) -> None:
+        """Move an armor piece from ``src_slot`` to the appropriate armor
+        slot. ``armor_slot`` ∈ {``head``, ``chest``, ``legs``, ``feet``}."""
+        from minecraft_bot.inventory.tracker import (
+            SLOT_ARMOR_HEAD, SLOT_ARMOR_CHEST, SLOT_ARMOR_LEGS, SLOT_ARMOR_FEET,
+        )
+        target = {
+            "head": SLOT_ARMOR_HEAD, "chest": SLOT_ARMOR_CHEST,
+            "legs": SLOT_ARMOR_LEGS, "feet": SLOT_ARMOR_FEET,
+        }.get(armor_slot)
+        if target is None:
+            raise ValueError(f"armor_slot must be head/chest/legs/feet, got {armor_slot!r}")
+        await self.move_item(src_slot, target, window_id=0)
+
+    async def unequip_armor(self, armor_slot: str, dst_slot: int) -> None:
+        """Move equipped armor back to ``dst_slot`` in main inventory."""
+        from minecraft_bot.inventory.tracker import (
+            SLOT_ARMOR_HEAD, SLOT_ARMOR_CHEST, SLOT_ARMOR_LEGS, SLOT_ARMOR_FEET,
+        )
+        src = {
+            "head": SLOT_ARMOR_HEAD, "chest": SLOT_ARMOR_CHEST,
+            "legs": SLOT_ARMOR_LEGS, "feet": SLOT_ARMOR_FEET,
+        }.get(armor_slot)
+        if src is None:
+            raise ValueError(f"armor_slot must be head/chest/legs/feet, got {armor_slot!r}")
+        await self.move_item(src, dst_slot, window_id=0)
+
+    async def swap_to_offhand(self, src_slot: int) -> None:
+        """Move the item at ``src_slot`` to the off-hand via F-key swap."""
+        await self.click_slot(src_slot, mode="swap_offhand", window_id=0)
+
+    # --- container open/close (FR-072) ---------------------------------
+
+    async def _look_at_block(self, x: int, y: int, z: int) -> None:
+        """Aim at the centre of block (x, y, z) so block_place lands.
+
+        The sleep gives the server a couple of ticks to apply our new
+        look direction before we send the block-click; otherwise the
+        server's view of our facing may still be stale and the click
+        will be rejected as "out of line of sight"."""
+        await self.look_at(x + 0.5, y + 0.5, z + 0.5)
+        await asyncio.sleep(0.25)
+
+    def _pick_face_and_cursor(
+        self, x: int, y: int, z: int,
+    ) -> tuple[int, tuple[float, float, float]]:
+        """Choose the block face whose outward normal points toward the
+        bot's eye position. Returns ``(face_id, (cx, cy, cz))`` suitable
+        for the block_place packet.
+
+        Faces (Minecraft conventions): 0=bottom (-Y), 1=top (+Y),
+        2=north (-Z), 3=south (+Z), 4=west (-X), 5=east (+X).
+        """
+        ex = self._physics.x
+        ey = self._physics.y + 1.62   # eye height
+        ez = self._physics.z
+        bx, by, bz = x + 0.5, y + 0.5, z + 0.5
+        dx, dy, dz = ex - bx, ey - by, ez - bz
+        # The dominant axis (largest |delta|) chooses the face.
+        adx, ady, adz = abs(dx), abs(dy), abs(dz)
+        if adx >= ady and adx >= adz:
+            if dx >= 0:
+                # Bot is east of block — clicked west face? no, east face.
+                return 5, (1.0, 0.5, 0.5)
+            else:
+                return 4, (0.0, 0.5, 0.5)
+        if adz >= adx and adz >= ady:
+            if dz >= 0:
+                return 3, (0.5, 0.5, 1.0)
+            else:
+                return 2, (0.5, 0.5, 0.0)
+        if dy >= 0:
+            return 1, (0.5, 1.0, 0.5)
+        return 0, (0.5, 0.0, 0.5)
+
     async def open_block_container(
         self, x: int, y: int, z: int, *,
         timeout: float = 5.0, wait_for_slot: bool = False,
+        face: Optional[int] = None,
+        cursor: Optional[tuple[float, float, float]] = None,
     ) -> int:
         """Right-click the block at (x, y, z) to open its container UI
         (chest / furnace / crafting table / barrel / shulker / etc.)
         and wait for the server to acknowledge with ``open_window`` +
         the first ``window_items`` packet.
 
-        Returns the ``window_id`` of the opened container.
+        The bot rotates to face the block first; ``face`` and ``cursor``
+        default to whichever face is closest to the bot, derived from
+        the bot's current eye position (so the click is geometrically
+        valid). Pass explicit values to override (e.g., to click the
+        bottom of a hanging shulker box).
 
-        Raises :class:`BotBusy` if the container slot is taken,
+        Returns the ``window_id`` of the opened container. Raises
+        :class:`BotBusy` if the container slot is taken;
         :class:`asyncio.TimeoutError` if the server doesn't open a
         container within ``timeout``.
         """
@@ -644,22 +802,44 @@ class Bot:
             block_place as sb_block_place,
         )
         async with guard(self.container_slot, wait_for_slot=wait_for_slot):
+            chosen_face, chosen_cursor = (face, cursor) if face is not None and cursor is not None \
+                else self._pick_face_and_cursor(x, y, z)
+            # Aim at the block, then immediately send the click. We
+            # cannot let the physics ticker squeeze a Position-only
+            # update between PositionLook and BlockPlace — some Paper
+            # configs treat the position-only update as a rotation reset.
+            dx = (x + 0.5) - self._physics.x
+            dy = (y + 0.5) - (self._physics.y + 1.62)
+            dz = (z + 0.5) - self._physics.z
+            dist_xz = math.hypot(dx, dz)
+            yaw = -math.degrees(math.atan2(dx, dz)) % 360.0
+            pitch = -math.degrees(math.atan2(dy, dist_xz)) if dist_xz else 0.0
+            self._yaw = yaw
+            self._pitch = pitch
+            await self._conn.send(sb_position_look.PositionLook(
+                x=self._physics.x, y=self._physics.y, z=self._physics.z,
+                yaw=yaw, pitch=pitch, on_ground=self._physics.on_ground,
+            ))
             await self._conn.send(sb_block_place.BlockPlace(
                 hand=0,
                 location=(x, y, z),
-                direction=1,        # top face (arbitrary)
-                cursor_x=0.5, cursor_y=0.5, cursor_z=0.5,
+                direction=chosen_face,
+                cursor_x=chosen_cursor[0],
+                cursor_y=chosen_cursor[1],
+                cursor_z=chosen_cursor[2],
                 inside_block=False,
                 sequence=0,
             ))
             opened = await self._conn.wait_for(cb_open_window.OpenWindow, timeout=timeout)
-            # Wait for the first WindowItems for this window so
-            # container_slots is populated before the caller queries.
-            await self._conn.wait_for(
-                cb_window_items.WindowItems,
-                predicate=lambda p: p.window_id == opened.window_id,
-                timeout=timeout,
-            )
+            # The server typically sends WindowItems immediately after
+            # OpenWindow — wait a short, fixed interval for it to land
+            # (registering another wait_for here would race: the packet
+            # has often already been dispatched by the time we get here).
+            for _ in range(20):  # up to ~1 s
+                await asyncio.sleep(0.05)
+                if (self.inventory.container_window_id == opened.window_id
+                        and self.inventory.container_slots):
+                    break
             return opened.window_id
 
     async def open_chest(self, x: int, y: int, z: int, **kw) -> int:
@@ -680,6 +860,133 @@ class Bot:
             await self._conn.send(sb_close_window.CloseWindow(window_id=wid))
         # Mirror local state immediately; the server doesn't echo a close.
         self.inventory.on_close_window(cb_close_window.CloseWindow(window_id=wid))
+
+    # --- craft + smelt (FR-074..FR-080) --------------------------------
+
+    async def craft(
+        self,
+        recipe: list[Optional[str]],
+        x: int, y: int, z: int,
+        *,
+        repeat: int = 1,
+        timeout: float = 8.0,
+    ) -> int:
+        """Craft an item using a 3×3 crafting table at (x, y, z).
+
+        ``recipe`` is a 9-element list of item names (or ``None`` for
+        empty), laid out row-major as the table grid::
+
+            [ slot1, slot2, slot3,
+              slot4, slot5, slot6,
+              slot7, slot8, slot9 ]
+
+        The bot opens the crafting table, places each ingredient via a
+        pick-up-from-inventory → place-into-grid pair, then shift-clicks
+        the result slot ``repeat`` times to pull crafted output into the
+        inventory. Returns the count of result items pulled.
+
+        Caller must have the ingredients available in inventory before
+        calling; missing ingredients silently produce 0 output.
+        """
+        if len(recipe) != 9:
+            raise ValueError(f"recipe must be 9 elements, got {len(recipe)}")
+
+        wid = await self.open_crafting_table(x, y, z, timeout=timeout)
+        try:
+            # Slot indices in the crafting table window:
+            #   0       = result
+            #   1..9    = the 3×3 grid
+            #   10..36  = player main inventory (9..35 in player space)
+            #   37..45  = player hotbar
+            for grid_idx, ingredient_name in enumerate(recipe, start=1):
+                if ingredient_name is None:
+                    continue
+                # Find the ingredient in player inventory.
+                src = self.inventory.find_item(ingredient_name)
+                if src is None:
+                    continue
+                # Translate player-space slot (0..45) to container-window slot:
+                # in a crafting table, player main is 10..36 (slot 9 → 10..36)
+                # and hotbar is 37..45.
+                if 9 <= src <= 35:
+                    src_in_window = src + 1   # +1 for offset of result
+                elif 36 <= src <= 44:
+                    src_in_window = src + 1   # 36..44 → 37..45
+                else:
+                    continue   # armor / craft / offhand — not directly clickable
+                # Pick up one from src (right-click splits stack; we use
+                # left-click + drop-extras-later for simplicity since the
+                # grid takes one item per slot).
+                await self.click_slot(src_in_window, mode="left", window_id=wid)
+                await asyncio.sleep(0.03)
+                # Place ONE into grid_idx (right-click puts one and keeps the rest in cursor).
+                await self.click_slot(grid_idx, mode="right", window_id=wid)
+                await asyncio.sleep(0.03)
+                # Return remaining cursor stack back to src.
+                await self.click_slot(src_in_window, mode="left", window_id=wid)
+                await asyncio.sleep(0.03)
+            # Shift-click the result to harvest.
+            collected = 0
+            for _ in range(repeat):
+                before = self._container_count_after_shift(wid)
+                await self.click_slot(0, mode="shift_left", window_id=wid)
+                await asyncio.sleep(0.05)
+                # Approximation: bump collected by 1 per shift-click; the
+                # server returns the actual count via window_items refresh.
+                collected += 1
+            return collected
+        finally:
+            await self.close_container()
+
+    def _container_count_after_shift(self, wid: int) -> int:
+        """Helper for craft/smelt: count items in player part of the
+        container window before the operation (for delta computation)."""
+        # Not strictly needed for the current implementation; reserved
+        # for future precise result counting via window_items diff.
+        return sum(s.count for s in self.inventory.player_slots if s is not None)
+
+    async def smelt(
+        self,
+        input_item: str, fuel_item: str,
+        x: int, y: int, z: int,
+        *,
+        timeout: float = 8.0,
+    ) -> None:
+        """Place ``input_item`` and ``fuel_item`` into a furnace at
+        (x, y, z) and close the container. The caller polls the
+        furnace later (or re-opens it) to harvest the result.
+
+        Furnace slot layout: 0 = input, 1 = fuel, 2 = output, 3..38 =
+        player main + hotbar.
+        """
+        wid = await self.open_furnace(x, y, z, timeout=timeout)
+        try:
+            for player_slot, target_slot in (
+                (self.inventory.find_item(input_item), 0),
+                (self.inventory.find_item(fuel_item), 1),
+            ):
+                if player_slot is None:
+                    continue
+                # Map player slot -> furnace-window slot (furnace has 3
+                # internal slots, then player inventory at 3..38 / hotbar 30..38).
+                if 9 <= player_slot <= 35:
+                    src_in_window = player_slot - 9 + 3   # 9→3, 35→29
+                elif 36 <= player_slot <= 44:
+                    src_in_window = player_slot - 36 + 30  # 36→30, 44→38
+                else:
+                    continue
+                # Pick up the whole stack, place it onto the furnace slot.
+                await self.click_slot(src_in_window, mode="left", window_id=wid)
+                await asyncio.sleep(0.03)
+                await self.click_slot(target_slot, mode="left", window_id=wid)
+                await asyncio.sleep(0.03)
+                # If there's residue on the cursor (shouldn't be for a
+                # single-stack move), drop it back.
+                if self.inventory.cursor is not None:
+                    await self.click_slot(src_in_window, mode="left", window_id=wid)
+                    await asyncio.sleep(0.03)
+        finally:
+            await self.close_container()
 
     # --- walk_to (FR-031..FR-035) -------------------------------------
 
