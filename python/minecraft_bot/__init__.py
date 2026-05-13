@@ -21,7 +21,7 @@ import logging
 # Constitution VII (Observability and Determinism).
 logging.getLogger("minecraft_bot.protocol").addHandler(logging.NullHandler())
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 # Backend identifier — distinct from `minecraft_bot_accel.implementation`
 # (== "rust"). Used by parity tests to confirm which backend is active.
 implementation = "python"

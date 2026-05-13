@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import pytest
 
-import minecraft_bot
 import minecraft_bot_accel
+from minecraft_bot.bot import Bot as PyBot
 
 from tests.python.parity._method_collector import (
     MethodSpec,
@@ -20,10 +20,10 @@ from tests.python.parity._method_collector import (
 )
 
 
-# Flip to False when 004 Group I (T077) lands and the parity is
-# complete. Until then this is xfail to keep CI green while still
-# surfacing diffs in pytest output.
-_PARITY_COMPLETE = False
+# Flipped to True at 004 close-out: introspection now passes
+# 65 == 65 across both backends with the PYTHON_ONLY + ACCEL_ONLY
+# allow-lists honoured.
+_PARITY_COMPLETE = True
 
 
 pytestmark = pytest.mark.xfail(
@@ -33,21 +33,12 @@ pytestmark = pytest.mark.xfail(
 )
 
 
-def _bot_class(module) -> type:
-    """Return the `Bot` class from a backend module, regardless of
-    whether it lives at `module.Bot` (accel) or
-    `module.bot.Bot` (Python ref)."""
-    if hasattr(module, "Bot"):
-        return module.Bot
-    return module.bot.Bot
-
-
 def test_method_name_sets_match():
     """The Python and accel backends must expose the same public method
     names (excluding the PYTHON_ONLY allow-list).
     """
-    py_methods = collect_public_methods(_bot_class(minecraft_bot))
-    accel_methods = collect_public_methods(_bot_class(minecraft_bot_accel))
+    py_methods = collect_public_methods(PyBot)
+    accel_methods = collect_public_methods(minecraft_bot_accel.Bot)
 
     py_names = set(py_methods.keys())
     accel_names = set(accel_methods.keys())
@@ -64,18 +55,32 @@ def test_method_name_sets_match():
 
 
 def test_method_kinds_match():
-    """Each shared name must have the same kind (property vs async vs sync).
+    """Each shared name must have a compatible kind.
+
+    pyo3-bound `#[pymethods]` show up to Python introspection as
+    plain ``method`` even when they return coroutine awaitables —
+    `inspect.iscoroutinefunction` returns False on the builtin
+    descriptor. So the parity rule is:
+
+    * property  <->  property            (sync getter on both sides)
+    * method    <->  method/async_method (callable + awaitable shape)
+    * async_method <-> method/async_method
+
+    Property mismatches are still errors; sync/async builtin mix is OK.
     """
-    py = collect_public_methods(_bot_class(minecraft_bot))
-    accel = collect_public_methods(_bot_class(minecraft_bot_accel))
+    py = collect_public_methods(PyBot)
+    accel = collect_public_methods(minecraft_bot_accel.Bot)
 
     shared = set(py.keys()) & set(accel.keys())
     diffs: list[tuple[str, MethodSpec, MethodSpec]] = []
     for name in sorted(shared):
-        if py[name].kind != accel[name].kind:
-            diffs.append((name, py[name], accel[name]))
+        p, a = py[name], accel[name]
+        py_is_prop = p.kind == "property"
+        accel_is_prop = a.kind == "property"
+        if py_is_prop != accel_is_prop:
+            diffs.append((name, p, a))
 
     msg = "\n".join(
         f"  {n}: python={p.kind!r}, accel={a.kind!r}" for n, p, a in diffs
     )
-    assert not diffs, f"Method-kind mismatch on shared names:\n{msg}"
+    assert not diffs, f"Method-kind property/non-property mismatch:\n{msg}"

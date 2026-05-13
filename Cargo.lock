@@ -419,7 +419,7 @@ dependencies = [
 
 [[package]]
 name = "minecraft_bot"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -434,7 +434,7 @@ dependencies = [
 
 [[package]]
 name = "minecraft_bot_accel"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "minecraft_bot",
  "pyo3",

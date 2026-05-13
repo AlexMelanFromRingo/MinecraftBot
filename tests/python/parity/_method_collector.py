@@ -15,7 +15,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 
-from minecraft_bot._parity_meta import PYTHON_ONLY_METHODS
+from minecraft_bot._parity_meta import ACCEL_ONLY_METHODS, PYTHON_ONLY_METHODS
 
 
 @dataclass(frozen=True)
@@ -47,11 +47,18 @@ def _looks_like_getter(obj: object) -> bool:
     return False
 
 
-def collect_public_methods(cls: type) -> dict[str, MethodSpec]:
+def collect_public_methods(
+    cls: type,
+    *,
+    exclude_backend_specific: bool = True,
+) -> dict[str, MethodSpec]:
     """Walk `cls.__dict__` collecting one MethodSpec per public symbol.
 
     Used by `tests/python/parity/test_bot_full_parity.py` (T012) to compare
-    the Python reference's `Bot` against `minecraft_bot_accel.Bot`.
+    the Python reference's `Bot` against `minecraft_bot_accel.Bot`. The
+    `exclude_backend_specific` flag filters out the `PYTHON_ONLY_METHODS`
+    and `ACCEL_ONLY_METHODS` allow-lists so the comparison only covers
+    the shared surface.
     """
     out: dict[str, MethodSpec] = {}
     # Walk MRO so inherited methods from mixins show up too. For pyo3
@@ -63,7 +70,9 @@ def collect_public_methods(cls: type) -> dict[str, MethodSpec]:
                 continue
             if name.startswith("_"):
                 continue
-            if name in PYTHON_ONLY_METHODS:
+            if exclude_backend_specific and name in PYTHON_ONLY_METHODS:
+                continue
+            if exclude_backend_specific and name in ACCEL_ONLY_METHODS:
                 continue
             if isinstance(obj, (classmethod, staticmethod)):
                 continue

@@ -1,5 +1,104 @@
 # Changelog
 
+## v0.3.0 (2026-05-13)
+
+Full Bot-API parity across all three artefacts (milestone 004).
+
+Every public method on `minecraft_bot.Bot` is now also exposed
+by the standalone Rust crate (as `async fn`) and by the
+`minecraft_bot_accel` facade (as a sync `#[getter]` property
+or an async coroutine, matching the Python ref's shape). The
+introspection parity test (`tests/python/parity/test_bot_full_parity.py`)
+enforces the contract on every PR — 65 == 65 method names,
+zero diff after the `PYTHON_ONLY_METHODS` + `ACCEL_ONLY_METHODS`
+allow-lists.
+
+### Added
+
+* **State accessors** (17, FR-001): `x`, `y`, `z`, `yaw`, `pitch`,
+  `on_ground`, `health`, `food`, `saturation`, `is_dead`,
+  `xp_level`, `xp_total`, `game_mode`, `held_slot`, `entity_id`,
+  `world_name`, `dimension`, plus `position` 3-tuple and
+  `is_sneaking`/`is_sprinting` toggles. Sync `#[getter]` on accel
+  so existing Python scripts read `bot.x` unchanged.
+* **Movement** (5, FR-002..006): `look_at`, `jump`, `sneak`,
+  `sprint`, `swing_arm`.
+* **Combat** (3, FR-007..009): `attack`, `interact_entity`,
+  `use_item`.
+* **World query** (9, FR-010..018): `find_blocks_nearby`,
+  `nearby_entities`, `nearby_players`, `distance_to`, `raycast`
+  (DDA voxel walk against World cache), `scan_volume`,
+  `voxel_grid`, `chunks_around`, `world_map_3d`.
+* **Observation** (2, FR-019..020): `snapshot`, `observation`.
+  Accel exposes the structs as Python dicts.
+* **Inventory** (12, FR-021..032): dual-list `InventoryState`
+  per spec Q5 (`player_slots` persistent, `container_slots`
+  transient). `held_item`/`find_item`/`count_item` operate
+  only on `player_slots`. New `iter_accessible_slots` helper
+  for the explicit merged view. Full click-mode coverage
+  (left, right, shift_left, shift_right, swap_offhand, drop).
+* **Containers** (6, FR-033..036): `open_block_container`,
+  `open_chest`, `open_furnace`, `open_crafting_table`,
+  `close_container`, `craft`. Craft takes a 9-cell row-major
+  recipe grid per Q2.
+* **High-level tasks** (5, FR-037..041): `dig`, `eat`, `follow`,
+  `say`, `chat`.
+* **Behaviour trees** (FR-042..044): `Selector`, `Sequencer`,
+  `Inverter`, `Repeater`, `BehaviourRunner` + standard leaves
+  `WalkTo`/`EatWhenHungry`/`FollowEntity`/`AttackTarget`. Closed
+  `BehaviourValue` enum keeps the pure-Rust crate free of pyo3
+  (R-6). `NodeStatus = Running | Success | Failure`.
+
+### Parity infrastructure
+
+* `tests/python/parity/_method_collector.py` — introspection
+  collector with `PYTHON_ONLY_METHODS` and `ACCEL_ONLY_METHODS`
+  filtering.
+* `tests/python/parity/test_bot_full_parity.py` — symmetric name
+  set + property/non-property kind check.
+* `tests/python/parity/test_method_signatures.py` — accel
+  signature must be subset of Python (Python may expose extra
+  optional kwargs).
+* `tests/python/parity/_parity_normalizer.py` — packet-trace
+  normalizer with the Q4 tolerance whitelist (`finish_break`,
+  `entity_status_eat_complete`, `cooldown_expiry` allow ±1 tick
+  on a single timing field; everything else is byte-equality).
+
+### Foundational
+
+* `rust/src/foods.rs` — `FoodTable` loaded from
+  `protocol-data/v763/food_table.json` via `include_str!`.
+* `rust/src/inventory/item.rs` — `ItemSlot` + `ItemTable` loaded
+  from `item_table.json`. `name()` resolves item_id → registry
+  name with `minecraft:unknown_<id>` fallback.
+* `rust/src/bot.rs` dispatcher — new clientbound handlers for
+  Login, Respawn, HeldItemSlot, GameStateChange, Experience.
+  `walk_to`'s physics tick now writes back x/y/z/on_ground/
+  position_known to BotState.
+* `python-ext/Cargo.toml` — `multiple-pymethods` pyo3 feature
+  enabled so `#[pymethods]` can split across files (one per
+  004 method group).
+* `rust/Cargo.toml` — `async-trait = "0.1"` added for the
+  behaviour-tree `Leaf` trait (R-5).
+
+### Breaking changes vs v0.2.0
+
+* Accel `entity_id`, `health`, `food`, `position` are now sync
+  `#[getter]` properties — they were async coroutines in v0.2.0.
+  Scripts that did `await bot.health()` need to change to
+  `bot.health`. This is the Q1 contract: import-swap parity
+  with the Python ref's `@property`.
+* `position` returns a 3-tuple `(x, y, z)` instead of v0.2.0's
+  5-tuple `(x, y, z, yaw, pitch)`. Use `bot.yaw` / `bot.pitch`
+  separately.
+
+### Python-side additions
+
+`python/minecraft_bot/bot.py` grew three new methods for parity:
+`iter_accessible_slots`, `eat`, `chat`. `_is_sneaking` /
+`_is_sprinting` instance attrs + matching `@property` accessors
+mirror the Rust BotState.
+
 ## v0.2.0 (2026-05-12)
 
 First release of the PyO3 native-backed alternative

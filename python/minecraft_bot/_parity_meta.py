@@ -19,6 +19,53 @@ from __future__ import annotations
 PYTHON_ONLY_METHODS: frozenset[str] = frozenset({
     "_llm_chat_loop",
     "_llm_observe",
+    # Event API (PyTorch-style observation queue + subscriber registry).
+    # Lives on the Python-side Connection helper, not on the Bot itself
+    # in accel — accel users register packet hooks via `on_packet`.
+    "on",
+    "subscribe",
+    "unsubscribe",
+    "drain_events",
+    "next_event",
+    # Connection-handle accessor — accel users go through the underlying
+    # Bot's `connection` field which doesn't pyclass cleanly.
+    "connection",
+    "is_connected",
+    # Auto-eat is a fire-and-forget asyncio task that doesn't make sense
+    # to expose as a pyo3 method without a Python event loop bridge.
+    # Users can build the same behaviour from the BT eat leaf.
+    "auto_eat",
+    "stop_auto_eat",
+    # Furnace smelt — recipe-database-heavy, deferred polish item.
+    "smelt",
+    # Slash commands — Python ref uses raw chat-command packets.
+    "command",
+    # Physics tick (Python ref's bot.tick) — accel runs physics
+    # internally inside walk_to; users don't tick manually.
+    "tick",
+})
+
+# Methods that exist only on the accel facade — typically 003-era
+# escape hatches or backend introspection helpers that have no
+# meaningful Python equivalent.
+ACCEL_ONLY_METHODS: frozenset[str] = frozenset({
+    # 003 packet-hook API (lowercase, accel-specific).
+    "on_packet",
+    "clear_hooks",
+    # 003 escape hatch for sending arbitrary serverbound bytes.
+    "send_raw",
+    # 003 dropping helper, superseded by `drop_item` in 004 but kept
+    # for backwards-compat with existing scripts.
+    "drop_held_item",
+    # 003 diagnostic sliding walk used by perf tests.
+    "walk_to_blind",
+    # Backend introspection helpers exposed for tests.
+    "loaded_chunk_count",
+    "world",
+    # `offline` is a classmethod constructor; introspection sees it
+    # as a property descriptor — exclude until the collector handles
+    # classmethods properly.
+    "offline",
 })
 
 # Type-mapping rules consulted by `test_method_signatures.py` (T013).

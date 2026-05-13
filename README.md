@@ -6,17 +6,15 @@ scenarios.
 
 | Package | Path | Surface | Use it when |
 |---|---|---|---|
-| `minecraft_bot` | `python/` | **Full** Bot: walk_to, dig, attack, follow, eat, chat, behaviour trees, inventory, containers, observation snapshot, entity tracker, hooks. | Default for development and any script that needs the complete bot API. Zero runtime deps. |
-| `minecraft_bot` (Rust crate) | `rust/` | Codec + framer + 176 packets + Connection + World cache + pathfinding + physics + dispatcher + Bot core (connect, walk_to, drop_held_item, send_raw, hooks). | You want to embed the framework in a non-Python binary, or build something on top of the Rust core directly. |
-| `minecraft_bot_accel` | `python-ext/` | A PyO3 facade that re-exports the Rust crate's surface as Python types. Currently mirrors the Rust crate's Bot subset, not the full Python Bot. | You want native-speed chunk decode, A* pathfinder, physics tick, etc. and your script uses the subset of bot API the facade exposes. |
+| `minecraft_bot` | `python/` | Full Bot API — see [`specs/004-full-bot-parity/contracts/api-surface.md`](./specs/004-full-bot-parity/contracts/api-surface.md). Zero runtime deps. | Default for development and rapid iteration. |
+| `minecraft_bot` (Rust crate) | `rust/` | Same Bot API as the Python reference, callable from pure Rust with `async/await`. | You want to embed the framework in a non-Python binary. |
+| `minecraft_bot_accel` | `python-ext/` | PyO3 facade re-exporting the Rust crate's Bot API to Python. Identical surface to `minecraft_bot`, native-speed inside. | You want the same Python script to run at native speed. Swap one import line. |
 
-The three artefacts share the wire protocol byte-for-byte (verified by
-a 3-way cross-check tool on every PR) and share the same World model,
-physics model, and pathfinder algorithm. They differ in **scope**:
-the Python reference is the most complete; the Rust crate and accel
-facade cover the network + core voxel + motion stack and are still
-growing toward the full Python Bot surface. See [`docs/migration_to_accel.md`](./docs/migration_to_accel.md)
-for the exact accel surface available today.
+**004 (v0.3.0)** lands full Bot-API parity across all three artefacts:
+every public method on `minecraft_bot.Bot` exists on the Rust crate
+and the accel facade with the same name and a compatible signature.
+The shared surface is enforced on every PR by an introspection-based
+parity test (`tests/python/parity/test_bot_full_parity.py`).
 
 Live-tested against Paper 1.20.1, offline mode, on the standard test
 arena at `172.26.160.1:25565`.

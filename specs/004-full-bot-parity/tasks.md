@@ -150,8 +150,8 @@ description: "Task list for 004 full bot parity across three backends"
 
 **Purpose**: New world-query perf gates, plus regression check on existing 003 gates.
 
-- [ ] T078 [US4] [P] Add `tests/python/perf/test_speedup_world_query.py` with 3 benches: `find_blocks_nearby` (radius=32, filter stone), `raycast` (32-block ray), `scan_volume` (radius=8). Each asserts accel >= 3x Python. Fixture is a pre-loaded chunk from `tests/python/fixtures/chunk_*.bin`.
-- [ ] T079 [US4] [P] Confirm existing 003 gates still pass after the bot.rs split: `pytest tests/python/perf/test_speedup_chunk.py tests/python/perf/test_speedup_varint.py tests/python/perf/test_speedup_physics.py tests/python/perf/test_speedup_pathfinder.py tests/python/perf/test_speedup_nbt.py`. Document any drift in the commit message.
+- [X] T078 [US4] [P] Add `tests/python/perf/test_speedup_world_query.py` with 3 benches: `find_blocks_nearby` (radius=32, filter stone), `raycast` (32-block ray), `scan_volume` (radius=8). Each asserts accel >= 3x Python. Fixture is a pre-loaded chunk from `tests/python/fixtures/chunk_*.bin`.
+- [X] T079 [US4] [P] Confirm existing 003 gates still pass after the bot.rs split: `pytest tests/python/perf/test_speedup_chunk.py tests/python/perf/test_speedup_varint.py tests/python/perf/test_speedup_physics.py tests/python/perf/test_speedup_pathfinder.py tests/python/perf/test_speedup_nbt.py`. Document any drift in the commit message.
 
 ---
 
@@ -159,11 +159,11 @@ description: "Task list for 004 full bot parity across three backends"
 
 **Purpose**: Documentation, version bumps, release flow. Runs only after all parity tests are green.
 
-- [ ] T080 Confirm `pytest tests/python/parity -q` is green: 0 failures, 60+ method coverage, introspection test passes. Same for `cargo test --features live-smoke -- --test-threads=1` (~12 method-group live tests).
-- [ ] T081 Bump versions in `python/pyproject.toml`, `rust/Cargo.toml`, `python-ext/Cargo.toml`, `python-ext/pyproject.toml`, `python/minecraft_bot/__init__.py`. `python-ext/src/version.rs::PYTHON_COMPAT` -> `"0.3.x"`.
-- [ ] T082 Update `CHANGELOG.md` with v0.3.0 entry listing every newly-ported method group (use `contracts/api-surface.md` as source).
-- [ ] T083 Update `README.md`: remove "subset" language, restate that all three artefacts share the same Bot API surface. Refresh the artefact table (Surface column for Rust crate + accel now reads "Full Bot surface — see [api-surface.md]"). Add link to `docs/migration_to_accel.md` and update that doc too if it still says subset.
-- [ ] T084 Run lint pass: `cargo fmt --all && cargo clippy --all-targets --no-deps -p minecraft_bot -p minecraft_bot_accel || true` (clippy is informational per 003); `ruff check python/ python-ext/ tests/python/ --fix`. Commit any auto-fixes.
+- [X] T080 Confirm `pytest tests/python/parity -q` is green: 0 failures, 60+ method coverage, introspection test passes. Same for `cargo test --features live-smoke -- --test-threads=1` (~12 method-group live tests).
+- [X] T081 Bump versions in `python/pyproject.toml`, `rust/Cargo.toml`, `python-ext/Cargo.toml`, `python-ext/pyproject.toml`, `python/minecraft_bot/__init__.py`. `python-ext/src/version.rs::PYTHON_COMPAT` -> `"0.3.x"`.
+- [X] T082 Update `CHANGELOG.md` with v0.3.0 entry listing every newly-ported method group (use `contracts/api-surface.md` as source).
+- [X] T083 Update `README.md`: remove "subset" language, restate that all three artefacts share the same Bot API surface. Refresh the artefact table (Surface column for Rust crate + accel now reads "Full Bot surface — see [api-surface.md]"). Add link to `docs/migration_to_accel.md` and update that doc too if it still says subset.
+- [X] T084 Run lint pass: `cargo fmt --all && cargo clippy --all-targets --no-deps -p minecraft_bot -p minecraft_bot_accel || true` (clippy is informational per 003); `ruff check python/ python-ext/ tests/python/ --fix`. Commit any auto-fixes.
 - [ ] T085 Merge `004-full-bot-parity` -> `main` (fast-forward). Tag `v0.3.0` on the merge HEAD. `git push origin main && git push origin v0.3.0`. Verify Wheels (003) workflow publishes 6-artefact release (3 accel wheels + 1 py wheel + 1 sdist + 1 .crate).
 - [ ] T086 Update `MEMORY.md` (`project_milestone_status.md`): mark 004 done, note v0.3.0 published.
 
