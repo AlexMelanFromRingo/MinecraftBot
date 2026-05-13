@@ -36,13 +36,14 @@ use crate::errors::ProtocolError;
 use crate::pathfinding::{find_path, Pos};
 use crate::physics::{self as rphys, PhysicsIntent, PhysicsState};
 use crate::protocol::v763::packets::play::clientbound::{
-    block_change::BlockChange, entity_destroy::EntityDestroy, entity_teleport::EntityTeleport,
+    block_change::BlockChange, entity_destroy::EntityDestroy, entity_move_look::EntityMoveLook,
+    entity_teleport::EntityTeleport, entity_velocity::EntityVelocity,
     experience::Experience as CbExperience, game_state_change::GameStateChange,
     held_item_slot::HeldItemSlot as CbHeldItemSlot, login::Login as CbLogin, map_chunk::MapChunk,
     multi_block_change::MultiBlockChange, named_entity_spawn::NamedEntitySpawn,
-    open_window::OpenWindow, position::Position as CbPosition, respawn::Respawn as CbRespawn,
-    set_slot::SetSlot, spawn_entity::SpawnEntity, unload_chunk::UnloadChunk,
-    update_health::UpdateHealth, window_items::WindowItems,
+    open_window::OpenWindow, position::Position as CbPosition, rel_entity_move::RelEntityMove,
+    respawn::Respawn as CbRespawn, set_slot::SetSlot, spawn_entity::SpawnEntity,
+    unload_chunk::UnloadChunk, update_health::UpdateHealth, window_items::WindowItems,
 };
 use crate::protocol::v763::packets::play::serverbound::block_dig::BlockDig;
 use crate::protocol::v763::packets::play::serverbound::position::Position as SbPosition;
@@ -72,6 +73,9 @@ const ID_SPAWN_ENTITY: i32 = 0x01;
 const ID_NAMED_ENTITY_SPAWN: i32 = 0x03;
 const ID_ENTITY_DESTROY: i32 = 0x3E;
 const ID_ENTITY_TELEPORT: i32 = 0x68;
+const ID_ENTITY_VELOCITY: i32 = 0x54;
+const ID_REL_ENTITY_MOVE: i32 = 0x2B;
+const ID_ENTITY_MOVE_LOOK: i32 = 0x2C;
 const ID_SET_SLOT: i32 = 0x14;
 const ID_WINDOW_ITEMS: i32 = 0x12;
 const ID_OPEN_WINDOW: i32 = 0x30;
@@ -410,6 +414,41 @@ impl Bot {
                                 e.z = pkt.z;
                                 e.yaw = pkt.yaw as f32;
                                 e.pitch = pkt.pitch as f32;
+                                entities.add(e);
+                            }
+                        }
+                        Ok(())
+                    }
+                    ID_ENTITY_VELOCITY => {
+                        if let Ok(pkt) = EntityVelocity::decode(&mut br) {
+                            if let Some(mut e) = entities.get(pkt.entity_id) {
+                                e.vx = pkt.vx;
+                                e.vy = pkt.vy;
+                                e.vz = pkt.vz;
+                                entities.add(e);
+                            }
+                        }
+                        Ok(())
+                    }
+                    ID_REL_ENTITY_MOVE => {
+                        if let Ok(pkt) = RelEntityMove::decode(&mut br) {
+                            if let Some(mut e) = entities.get(pkt.entity_id) {
+                                // dx/dy/dz are fixed-point: dpos = delta / 4096.0
+                                // (Mojang protocol — see wiki.vg).
+                                e.x += pkt.dx as f64 / 4096.0;
+                                e.y += pkt.dy as f64 / 4096.0;
+                                e.z += pkt.dz as f64 / 4096.0;
+                                entities.add(e);
+                            }
+                        }
+                        Ok(())
+                    }
+                    ID_ENTITY_MOVE_LOOK => {
+                        if let Ok(pkt) = EntityMoveLook::decode(&mut br) {
+                            if let Some(mut e) = entities.get(pkt.entity_id) {
+                                e.x += pkt.dx as f64 / 4096.0;
+                                e.y += pkt.dy as f64 / 4096.0;
+                                e.z += pkt.dz as f64 / 4096.0;
                                 entities.add(e);
                             }
                         }
