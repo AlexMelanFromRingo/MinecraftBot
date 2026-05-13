@@ -41,8 +41,8 @@ gh repo edit <your-account>/MinecraftBot \
 gh repo edit <your-account>/MinecraftBot \
     --description "Minecraft Java Edition 1.20.1 bot framework. Three artefacts: Python reference, standalone Rust crate, PyO3 facade. Live-tested on Paper."
 
-# 5. Tag and create the v0.2.0 release. The release.yml workflow
-# triggers on the tag, builds wheels for 5 platforms, and uploads
+# 5. Tag and create the v0.2.0 release. The wheels.yml `publish-release` job
+# triggers on the tag, builds wheels for 5 platforms, smoke-installs each, and uploads
 # them to the release.
 git tag -a v0.2.0 -m "v0.2.0: first PyO3 facade release"
 git push origin v0.2.0
