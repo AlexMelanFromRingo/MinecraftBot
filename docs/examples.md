@@ -86,9 +86,11 @@ async with Bot.offline("172.26.160.1", 25565, "Walker") as bot:
     await bot.walk_to(bot.x + 10, bot.y, bot.z, timeout=30.0)
 ```
 
-Accel uses pathfinder slides with a 2-block-per-tick anti-cheat cap.
-The function signature is the same; the motion profile is different
-but the bot ends up at the target.
+Accel drives motion through the same 20 Hz physics tick the Python
+reference uses: A* plans the path, the tick applies walk speed,
+gravity, auto-jump, and per-axis collision against the World cache.
+The function signature, motion profile, and per-tick Player Position
+packets match across backends.
 
 ```python
 bot = mb.Bot.offline("172.26.160.1", 25565, "Walker")

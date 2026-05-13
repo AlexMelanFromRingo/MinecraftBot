@@ -19,7 +19,7 @@ pub const PACKAGE_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Bumped by hand whenever the Python reference releases a new
 /// MINOR. CI verifies this matches ``python/pyproject.toml`` via
 /// ``tests/python/parity/test_smoke_bringup.py``.
-pub const PYTHON_COMPAT: &str = "0.1.x";
+pub const PYTHON_COMPAT: &str = "0.2.x";
 
 /// Backend identifier — distinct from ``minecraft_bot.implementation``.
 pub const IMPLEMENTATION: &str = "rust";

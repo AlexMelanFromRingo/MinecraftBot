@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "minecraft_bot"
-version = "0.1.0"
+version = "0.2.0"
 description = "Minecraft Java Edition bot/agent framework — Python reference implementation."
 # (`readme = "../README.md"` would break `pip install -e python/` because
 # pip/setuptools refuse paths outside the package root. The full README

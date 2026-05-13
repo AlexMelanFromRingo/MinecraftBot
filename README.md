@@ -1,13 +1,22 @@
 # MinecraftBot
 
-A bot framework for Minecraft Java Edition 1.20.1 (protocol 763), shipped as
-three coordinated artefacts:
+A bot framework for Minecraft Java Edition 1.20.1 (protocol 763),
+shipped as three coordinated artefacts that target three deployment
+scenarios.
 
-| Package | Path | What it is |
-|---|---|---|
-| `minecraft_bot` | `python/` | Pure-Python reference implementation. Zero runtime deps. |
-| `minecraft_bot` (Rust crate) | `rust/` | Standalone Rust framework. Same wire protocol, same bot API. |
-| `minecraft_bot_accel` | `python-ext/` | PyO3 facade over the Rust crate. Drop-in faster alternative to `minecraft_bot`. |
+| Package | Path | Surface | Use it when |
+|---|---|---|---|
+| `minecraft_bot` | `python/` | **Full** Bot: walk_to, dig, attack, follow, eat, chat, behaviour trees, inventory, containers, observation snapshot, entity tracker, hooks. | Default for development and any script that needs the complete bot API. Zero runtime deps. |
+| `minecraft_bot` (Rust crate) | `rust/` | Codec + framer + 176 packets + Connection + World cache + pathfinding + physics + dispatcher + Bot core (connect, walk_to, drop_held_item, send_raw, hooks). | You want to embed the framework in a non-Python binary, or build something on top of the Rust core directly. |
+| `minecraft_bot_accel` | `python-ext/` | A PyO3 facade that re-exports the Rust crate's surface as Python types. Currently mirrors the Rust crate's Bot subset, not the full Python Bot. | You want native-speed chunk decode, A* pathfinder, physics tick, etc. and your script uses the subset of bot API the facade exposes. |
+
+The three artefacts share the wire protocol byte-for-byte (verified by
+a 3-way cross-check tool on every PR) and share the same World model,
+physics model, and pathfinder algorithm. They differ in **scope**:
+the Python reference is the most complete; the Rust crate and accel
+facade cover the network + core voxel + motion stack and are still
+growing toward the full Python Bot surface. See [`docs/migration_to_accel.md`](./docs/migration_to_accel.md)
+for the exact accel surface available today.
 
 Live-tested against Paper 1.20.1, offline mode, on the standard test
 arena at `172.26.160.1:25565`.

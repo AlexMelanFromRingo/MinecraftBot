@@ -136,13 +136,9 @@ def test_pathfinder_speedup() -> None:
         f"SC-011 unmet: accel pathfinder {ratio:.2f}× (need ≥4.5×; "
         "below the ≥5× spec target with CI variance margin)"
     )
-    # Historical context (pre-snapshot fix): single-shot find_path was
-    # ~0.6× of Python because every is_solid/is_water query through
-    # parking_lot::RwLock<HashMap> added ~10 ns per lock-take, and A*
-    # makes O(neighbours × expansions) such queries. The Python ref
-    # has no lock; dict.get is essentially free. To hit SC-011 (≥5×)
-    # we need either a lock-free chunk-cache snapshot or DashMap for
-    # the World inner storage — tracked as a future perf task.
-    # This test stays informational (no hard assertion) until that
-    # optimisation lands.
-    # assert ratio >= 5.0  # SC-011 target — deferred to perf optimisation milestone.
+    # Historical context: pre-WorldQueryGuard, single-shot find_path
+    # was ~0.6× of Python because every is_solid/is_water query took
+    # the chunk-cache RwLock once. World::query_guard() hoists the
+    # lock outside the search, so per-cell queries become plain
+    # HashMap::get and accel exceeds the SC-011 ≥5× target with
+    # margin.

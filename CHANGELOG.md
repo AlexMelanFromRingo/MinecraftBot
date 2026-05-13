@@ -6,6 +6,40 @@ First release of the PyO3 native-backed alternative
 (`minecraft_bot_accel`). The Python reference (`minecraft_bot`) and
 the standalone Rust crate ship in lockstep at the same version.
 
+### Distributables
+
+Three artefacts attach to the GitHub Release:
+
+- **`minecraft_bot`** (pure-Python) — one universal
+  `py3-none-any.whl` plus an sdist tarball. Zero runtime deps. This
+  is the full reference surface: codec, Connection, dispatcher, world
+  cache, A* pathfinder, physics tick, full Bot (`walk_to`, `dig`,
+  `attack`, `follow`, `eat`, `say`, behaviour trees, inventory,
+  containers, observation snapshot, entity tracker, packet hooks).
+- **`minecraft_bot_accel`** (PyO3 facade) — abi3 wheels for Linux
+  x86_64, Linux aarch64, macOS arm64, macOS x86_64, Windows x86_64.
+  Mirrors the standalone Rust crate's surface: codec, Connection,
+  dispatcher, world cache, A* pathfinder, physics tick, and the
+  current Bot subset (`connect`, `walk_to`, `drop_held_item`,
+  `send_raw`, `on_packet`/`clear_hooks`, `position`,
+  `world.is_block_solid`). High-level helpers that are Python-only
+  today (dig, attack, follow, eat, behaviour trees, inventory,
+  containers, observation snapshot, entity tracker) are not yet on
+  the facade; build them as user code on top of the typed Python
+  packets plus `send_raw` and `on_packet`, or use the Python
+  reference for those flows.
+- **`minecraft_bot` (Rust crate)** — `cargo package` tarball
+  (`*.crate`). Same surface as the accel facade, callable directly
+  from Rust without Python. Install via `cargo install --path` from
+  the tarball, or use it as a path/git dependency in another crate.
+
+The three artefacts share the wire protocol byte-for-byte (verified
+by `tools/cross_check.py --accel` across 117 fixtures) and share the
+same World model, physics model, and pathfinder algorithm. They
+differ in **scope**, not behaviour: Python reference is the most
+complete; Rust + accel cover the network plus core voxel plus motion
+stack.
+
 ### Added
 
 - **`minecraft_bot_accel`** PyO3 facade over the standalone Rust

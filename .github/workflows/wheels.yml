@@ -187,6 +187,52 @@ jobs:
       - run: python -c "import minecraft_bot_accel as mb; assert mb.implementation == 'rust'"
       - run: pytest -q tests/python/parity/test_smoke_bringup.py
 
+  # Pure-Python `minecraft_bot` distribution: one universal wheel
+  # (py3-none-any) plus the source tarball, built from python/.
+  python-sdist-wheel:
+    name: Pure-Python minecraft_bot sdist + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build backend
+        run: python -m pip install --upgrade pip build
+      - name: Build sdist + wheel from python/
+        run: python -m build python/ --outdir dist-python
+      - name: List built artefacts
+        run: ls -lh dist-python
+      - name: Smoke install + import
+        run: |
+          python -m pip install dist-python/*.whl
+          python -c "import minecraft_bot; print('python ref', minecraft_bot.__version__, minecraft_bot.implementation)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-ref-dist
+          path: dist-python/*
+          if-no-files-found: error
+
+  # Rust standalone crate (`minecraft_bot`): packaged source tarball
+  # via `cargo package`. Distributable via `cargo publish` (manual
+  # step; the artefact is attached to the release for offline use).
+  rust-crate-package:
+    name: Rust crate package (minecraft_bot)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo package
+        working-directory: rust
+        run: cargo package --no-verify
+      - name: List produced artefact
+        run: ls -lh rust/target/package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-crate
+          path: rust/target/package/*.crate
+          if-no-files-found: error
+
   # T064 — on a tag push, collect every wheel and attach to the
   # matching GitHub Release. Depends only on the 5 build jobs, not
   # on the smoke-test matrix: smoke runs in parallel and serves as
@@ -202,18 +248,30 @@ jobs:
       - macos-arm64
       - macos-x86_64
       - windows-x86_64
+      - python-sdist-wheel
+      - rust-crate-package
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Download all wheel artefacts
+      - name: Download accel wheels (5 platforms)
         uses: actions/download-artifact@v4
         with:
           pattern: wheel-*
           path: dist
           merge-multiple: true
-      - name: List collected wheels
+      - name: Download pure-Python sdist + wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: python-ref-dist
+          path: dist
+      - name: Download Rust crate package
+        uses: actions/download-artifact@v4
+        with:
+          name: rust-crate
+          path: dist
+      - name: List collected artefacts
         run: ls -lh dist
       - name: Create or update Release
         uses: softprops/action-gh-release@v2
@@ -221,11 +279,26 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           fail_on_unmatched_files: false
-          files: dist/*.whl
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/*.crate
           body: |
-            Pre-built ABI3 wheels of `minecraft_bot_accel`
-            (PyO3 façade over the standalone Rust framework).
+            Distributables for all three artefacts in the workspace:
 
-            One wheel per platform; each covers Python 3.11+.
+            **`minecraft_bot_accel`** — PyO3 facade over the standalone
+            Rust framework. Pre-built ABI3 wheels for Linux x86_64 +
+            aarch64, macOS arm64 + x86_64, and Windows x86_64. One
+            wheel per platform; each covers Python 3.11+.
+
+            **`minecraft_bot`** — pure-Python reference implementation.
+            One universal wheel (`py3-none-any`) plus the source
+            tarball. Zero runtime dependencies; runs on any platform
+            with Python 3.11+.
+
+            **`minecraft_bot` (Rust crate)** — standalone Rust
+            framework, packaged via `cargo package`. Install from this
+            tarball via `cargo install --path` or republish to
+            crates.io.
 
             See [CHANGELOG.md](https://github.com/AlexMelanFromRingo/MinecraftBot/blob/main/CHANGELOG.md) for release notes.

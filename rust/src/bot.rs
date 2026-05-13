@@ -32,12 +32,12 @@ use crate::world::{decode_chunk, World};
 const ACTION_DROP_ITEM: i32 = 3;
 const ACTION_DROP_STACK: i32 = 4;
 
-/// Paper anti-cheat: `moved too quickly` trips at delta² > 100 ⇒ 10
-/// blocks/tick. We cap each Player Position send to **2 blocks** from
-/// the last server-known position — half the Python reference's
-/// `MAX_PREDICTION_RADIUS = 5.0`. The conservative value avoids
-/// kicks when the path interpolates through air over uneven terrain
-/// (each tick the server checks both speed *and* on_ground state).
+/// Per-tick cap for the **diagnostic** `walk_to_blind` slider only.
+/// The production [`Bot::walk_to`] drives motion through
+/// `physics::tick` instead, which produces vanilla 0.21-blocks/tick
+/// sub-steps and never needs an explicit anti-cheat cap. This 2-block
+/// budget gives `walk_to_blind` plenty of margin under Paper's
+/// `delta² > 100` ⇒ ~10 blocks/tick "moved too quickly" gate.
 const MAX_PREDICTION_RADIUS: f64 = 2.0;
 
 // Clientbound packet IDs we care about in the dispatcher.

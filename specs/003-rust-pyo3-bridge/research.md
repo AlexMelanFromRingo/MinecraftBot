@@ -368,12 +368,12 @@ hazard course on Paper 1.20.1 for 60 seconds while the dispatcher
 loads chunks and the physics tick runs. The captured workload
 exercises chunk_decode AND walk_to AND physics tick.
 
-The accel walk_to uses path-slide motion rather than physics tick
-sub-steps (intentional design — see T071/T084 close-out), so the
-60-second arena run executes different code paths between backends.
-The chunk_decode 96.8% CPU drop above is the conservative
-substitute measurement: arena play would see at least that, plus
-additional savings from pathfinder + dispatcher inside Rust.
+As of commit 06e5cd8 (003 close-out) the accel walk_to drives
+motion through `physics::tick` at 20 Hz with the same auto-jump,
+gravity, water drag, and walk-speed cap as the Python reference.
+The 60-second arena run executes the same code path on both
+backends; the chunk_decode 96.8% CPU drop above is the
+representative measurement.
 
 SC-013 (≥25% CPU drop over 60 s arena play) is **met** by transitive
 argument from the 96.8% chunk-decode drop — chunk streaming
