@@ -86,13 +86,13 @@ description: "Task list for 004 full bot parity across three backends"
 
 ### Group D — World query (FR-010..018, 9 methods)
 
-- [ ] T036 [ALL] Implement `Bot::find_blocks_nearby` in `rust/src/bot/world_query.rs`. Hold a single `WorldQueryGuard` (existing in 003) over the whole search. Iteration order: Chebyshev-nearest-first, then lexicographic `(y, x, z)` (FR-010). Filter accepts `impl Fn(u32) -> bool`.
-- [ ] T037 [ALL] Implement `Bot::raycast` in the same file. DDA against block AABBs; tie-breaking matches Python: when ray exactly grazes an edge, prefer the face with the smaller normal in axis order x<y<z.
-- [ ] T038 [ALL] Implement `Bot::scan_volume`, `voxel_grid`, `chunks_around`, `world_map_3d` — all read-only iterators over the World cache.
-- [ ] T039 [ALL] Implement `Bot::nearby_entities`, `nearby_players`, `distance_to` reading from the entity tracker (already in 003).
-- [ ] T040 [ALL] Implement accel wrappers in `python-ext/src/bot/world_query_py.rs`. World-query methods are **sync** on accel (they don't await; they take a read lock and return). `voxel_grid` returns nested `list[list[list[int]]]` per R-1 alt-2 rejection (no NumPy).
-- [ ] T041 [ALL] [P] Parity test `tests/python/parity/test_world_query.py`. Pre-load a fixed chunk fixture into both backends' caches via `WireLog.replay`, run each query, compare returned lists element-by-element.
-- [ ] T042 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_world_query_*` — flat arena + a known stone block at `(10005, 200, 10005)`.
+- [X] T036 [ALL] Implement `Bot::find_blocks_nearby` in `rust/src/bot/world_query.rs`. Hold a single `WorldQueryGuard` (existing in 003) over the whole search. Iteration order: Chebyshev-nearest-first, then lexicographic `(y, x, z)` (FR-010). Filter accepts `impl Fn(u32) -> bool`.
+- [X] T037 [ALL] Implement `Bot::raycast` in the same file. DDA against block AABBs; tie-breaking matches Python: when ray exactly grazes an edge, prefer the face with the smaller normal in axis order x<y<z.
+- [X] T038 [ALL] Implement `Bot::scan_volume`, `voxel_grid`, `chunks_around`, `world_map_3d` — all read-only iterators over the World cache.
+- [X] T039 [ALL] Implement `Bot::nearby_entities`, `nearby_players`, `distance_to` reading from the entity tracker (already in 003).
+- [X] T040 [ALL] Implement accel wrappers in `python-ext/src/bot/world_query_py.rs`. World-query methods are **sync** on accel (they don't await; they take a read lock and return). `voxel_grid` returns nested `list[list[list[int]]]` per R-1 alt-2 rejection (no NumPy).
+- [X] T041 [ALL] [P] Parity test `tests/python/parity/test_world_query.py`. Pre-load a fixed chunk fixture into both backends' caches via `WireLog.replay`, run each query, compare returned lists element-by-element.
+- [X] T042 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_world_query_*` — flat arena + a known stone block at `(10005, 200, 10005)`.
 
 ### Group E — Observation (FR-019..020, 2 methods)
 

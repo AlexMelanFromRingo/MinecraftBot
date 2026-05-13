@@ -84,6 +84,48 @@ impl EntityTracker {
     pub fn clear(&self) {
         self.by_id.write().clear();
     }
+
+    /// All entities within Euclidean `radius` of `origin`, sorted
+    /// ascending by distance. Mirrors Python `entities.nearby_entities`.
+    pub fn nearby_entities(&self, origin: (f64, f64, f64), radius: f64) -> Vec<Entity> {
+        let r2 = radius * radius;
+        let (ox, oy, oz) = origin;
+        let mut out: Vec<(f64, Entity)> = self
+            .by_id
+            .read()
+            .values()
+            .filter_map(|e| {
+                let d2 = sq(e.x - ox) + sq(e.y - oy) + sq(e.z - oz);
+                if d2 <= r2 { Some((d2, e.clone())) } else { None }
+            })
+            .collect();
+        out.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        out.into_iter().map(|(_, e)| e).collect()
+    }
+
+    /// All player entities (`type_id == player_type_id`) within
+    /// `radius` of `origin`, sorted by distance. The player type
+    /// id is 124 in v763.
+    pub fn nearby_players(&self, origin: (f64, f64, f64), radius: f64) -> Vec<Entity> {
+        const PLAYER_TYPE_ID: i32 = 124;
+        self.nearby_entities(origin, radius)
+            .into_iter()
+            .filter(|e| e.type_id == PLAYER_TYPE_ID)
+            .collect()
+    }
+
+    /// Euclidean distance from `origin` to entity `id`. `None` iff
+    /// the entity is not tracked.
+    pub fn distance_to(&self, id: i32, origin: (f64, f64, f64)) -> Option<f64> {
+        let e = self.by_id.read().get(&id).cloned()?;
+        let (ox, oy, oz) = origin;
+        Some((sq(e.x - ox) + sq(e.y - oy) + sq(e.z - oz)).sqrt())
+    }
+}
+
+#[inline]
+fn sq(v: f64) -> f64 {
+    v * v
 }
 
 impl Default for EntityTracker {

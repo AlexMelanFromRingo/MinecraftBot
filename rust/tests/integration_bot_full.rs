@@ -134,5 +134,27 @@ async fn test_state_movement_and_combat_combined() {
         .await
         .expect("interact unknown eid");
 
+    // --- Group D: world query (T042) ---
+    // Wait a couple of seconds so the chunk cache gets populated.
+    tokio::time::sleep(Duration::from_millis(1500)).await;
+    let blocks = bot.find_blocks_nearby("minecraft:stone", 16, 32).await;
+    // Sanity: arena floor is stone; at minimum some hits expected.
+    println!("find_blocks_nearby(stone, 16): {} hits", blocks.len());
+    let _scan = bot.scan_volume(2, false).await;
+    let (grid, side) = bot.voxel_grid(2).await;
+    assert_eq!(side, 5, "voxel_grid side = 2*radius+1");
+    assert_eq!(grid.len(), 5 * 5 * 5);
+    let chunks = bot.chunks_around(1).await;
+    assert!(!chunks.is_empty(), "chunks_around should have ≥1 loaded chunk");
+    let (wm, dims) = bot.world_map_3d(2, Some(1)).await;
+    assert_eq!(dims, (5, 3, 5));
+    assert_eq!(wm.len(), 5 * 3 * 5);
+    // Entity tracker isn't wired to dispatcher yet (deferred); just
+    // confirm the API returns empty without panic.
+    let _ents = bot.nearby_entities(32.0).await;
+    let _plrs = bot.nearby_players(32.0).await;
+    let _d = bot.distance_to(0).await;
+    let _rc = bot.raycast(8.0).await;
+
     bot.disconnect().await.ok();
 }

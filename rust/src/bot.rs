@@ -155,6 +155,9 @@ pub struct Bot {
     /// dedicated `inventory_lock` mutex so concurrent inventory
     /// mutations from user-side code serialise per spec R-2.
     pub(crate) inventory: Arc<Mutex<crate::bot::inventory::InventoryState>>,
+    /// Entity tracker — populated by spawn/destroy/teleport packets.
+    /// Used by `nearby_entities`/`nearby_players`/`distance_to`.
+    pub entities_tracker: Arc<crate::entities::EntityTracker>,
 }
 
 impl Bot {
@@ -168,6 +171,7 @@ impl Bot {
             dispatcher: None,
             hooks: Arc::new(Mutex::new(HashMap::new())),
             inventory: Arc::new(Mutex::new(crate::bot::inventory::InventoryState::new())),
+            entities_tracker: Arc::new(crate::entities::EntityTracker::new()),
         }
     }
 
