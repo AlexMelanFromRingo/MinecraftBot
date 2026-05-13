@@ -30,14 +30,11 @@ pytestmark = pytest.mark.xfail(
 
 
 def test_accel_signature_is_subset_of_python():
-    """Accel must expose at least the leading positional parameters
-    of the Python reference. Extra Python-only optional kwargs
-    (wait_for_slot, face, cursor, type_filter, max_fall, ...) are
-    fine — accel just doesn't accept them.
+    """Accel arity must be <= Python's.
 
-    This is the user-facing contract: any call that works on the
-    Python ref using only its primary positional + standard kwargs
-    must also work on accel. v0.3.1 polish item to align the rest.
+    Accel may accept fewer optional kwargs than Python; it must never
+    require more. Param names are not asserted here — they're
+    cross-tested by `test_accel_param_names_compatible` below.
     """
     py = collect_public_methods(PyBot)
     accel = collect_public_methods(minecraft_bot_accel.Bot)
@@ -50,7 +47,6 @@ def test_accel_signature_is_subset_of_python():
             continue
         if a.arity == 0 and not a.param_names:
             continue
-        # Accel arity must be <= Python arity.
         if a.arity > p.arity:
             diffs.append(
                 f"  {name}: accel exposes MORE params than Python "
@@ -59,3 +55,28 @@ def test_accel_signature_is_subset_of_python():
                 f"      accel: {a.param_names}"
             )
     assert not diffs, "Accel signatures wider than Python:\n" + "\n".join(diffs)
+
+
+def test_accel_param_names_compatible():
+    """Every accel parameter name must exist on the Python side.
+
+    Accel may have fewer params; the ones it has must match Python's
+    naming (or the user's keyword call breaks on import swap).
+    """
+    py = collect_public_methods(PyBot)
+    accel = collect_public_methods(minecraft_bot_accel.Bot)
+
+    shared = set(py.keys()) & set(accel.keys())
+    diffs: list[str] = []
+    for name in sorted(shared):
+        p, a = py[name], accel[name]
+        if not a.param_names or not p.param_names:
+            continue
+        unknown = set(a.param_names) - set(p.param_names)
+        if unknown:
+            diffs.append(
+                f"  {name}: accel has params Python doesn't: {sorted(unknown)}\n"
+                f"      py:    {p.param_names}\n"
+                f"      accel: {a.param_names}"
+            )
+    assert not diffs, "Accel param names not in Python:\n" + "\n".join(diffs)

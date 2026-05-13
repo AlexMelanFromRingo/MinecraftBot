@@ -42,9 +42,20 @@ impl Bot {
                 sequence: 0,
             })
             .await?;
-        // Naive break-time: 500 ms. Hardness-based timing is a
-        // backlog polish item.
-        tokio::time::sleep(Duration::from_millis(500)).await;
+        // Hardness-based break-time (v0.3.1). Look up the block's
+        // hardness via the World cache and the hardness table.
+        let block_id = self.world.query_guard().get_block_id(x, y, z);
+        // block_table maps state -> block; for hand-only digging the
+        // formula is `hardness * 5.0` seconds (Mojang wiki). Add a
+        // small safety margin so finish_dig isn't sent before the
+        // server has registered the break.
+        let secs = crate::world::hardness::hardness_table()
+            .break_time_seconds(block_id);
+        // Clamp to a sensible minimum (50 ms for instant-break
+        // blocks) and maximum (5 s — anything slower means the wrong
+        // tool, fall back to retry-on-next-call).
+        let secs = secs.clamp(0.05, 5.0);
+        tokio::time::sleep(Duration::from_secs_f64(secs)).await;
         // finish_dig
         self.connection
             .send(&BlockDig {
@@ -93,8 +104,12 @@ impl Bot {
         Ok(())
     }
 
-    /// Track entity `eid` keeping `distance` blocks behind it. MVP:
-    /// look_at + walk_to in a loop until within range or timeout.
+    /// Track entity `eid` keeping `distance` blocks behind it.
+    ///
+    /// v0.3.1 polish — path re-planning: re-evaluate the target's
+    /// position before every `walk_to` and abort the in-flight walk
+    /// early if the target has moved more than `re_path_radius`
+    /// blocks since the last plan.
     pub async fn follow(
         &mut self,
         eid: i32,
@@ -102,6 +117,8 @@ impl Bot {
         timeout: Duration,
     ) -> Result<(), ProtocolError> {
         let deadline = Instant::now() + timeout;
+        const RE_PATH_RADIUS: f64 = 2.0;
+        let mut last_target_xz: Option<(f64, f64)> = None;
         loop {
             if Instant::now() >= deadline {
                 return Ok(());
@@ -118,14 +135,27 @@ impl Bot {
             if dist <= distance {
                 return Ok(());
             }
-            self.look_at(t.x, t.y, t.z).await?;
-            // Walk to a point `distance` blocks short of the target.
-            let scale = (dist - distance) / dist;
-            let wx = bx + dx * scale;
-            let wz = bz + dz * scale;
-            // walk_to is bounded by its own internal timeout.
-            self.walk_to(wx, t.y, wz, 5.0).await?;
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            // Re-plan only if the target has moved meaningfully since
+            // the previous plan — otherwise the current walk_to
+            // already heads toward roughly the right point.
+            let should_replan = match last_target_xz {
+                Some((lx, lz)) => {
+                    let dxp = t.x - lx;
+                    let dzp = t.z - lz;
+                    (dxp * dxp + dzp * dzp).sqrt() > RE_PATH_RADIUS
+                }
+                None => true,
+            };
+            if should_replan {
+                self.look_at(t.x, t.y, t.z).await?;
+                let scale = (dist - distance) / dist;
+                let wx = bx + dx * scale;
+                let wz = bz + dz * scale;
+                self.walk_to(wx, t.y, wz, 5.0).await?;
+                last_target_xz = Some((t.x, t.z));
+            } else {
+                tokio::time::sleep(Duration::from_millis(200)).await;
+            }
         }
     }
 

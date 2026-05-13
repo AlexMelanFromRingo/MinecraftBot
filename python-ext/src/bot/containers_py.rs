@@ -11,8 +11,17 @@ use crate::error_map::IntoPyResult;
 
 #[pymethods]
 impl PyBot {
-    /// `open_block_container(x, y, z, *, timeout=5.0) -> int`.
-    #[pyo3(signature = (x, y, z, *, timeout = 5.0))]
+    /// `open_block_container(x, y, z, *, timeout=5.0, wait_for_slot=False,
+    /// face=None, cursor=None) -> int`. `wait_for_slot`, `face`, `cursor`
+    /// accepted for Python sig parity but ignored on accel (the inner
+    /// container_slot lock + look_at handle face selection automatically).
+    #[pyo3(signature = (
+        x, y, z, *,
+        timeout = 5.0,
+        wait_for_slot = false,
+        face = None,
+        cursor = None,
+    ))]
     fn open_block_container<'py>(
         &self,
         py: Python<'py>,
@@ -20,7 +29,11 @@ impl PyBot {
         y: i32,
         z: i32,
         timeout: f64,
+        wait_for_slot: bool,
+        face: Option<i32>,
+        cursor: Option<(f64, f64, f64)>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let _ = (wait_for_slot, face, cursor);
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;

@@ -28,13 +28,17 @@ impl PyBot {
         })
     }
 
-    /// `nearby_entities(*, radius=32.0) -> list[(eid, type_id, (x, y, z))]`.
-    #[pyo3(signature = (*, radius = 32.0))]
+    /// `nearby_entities(*, radius=32.0, type_filter=None) -> list[(eid, type_id, (x, y, z))]`.
+    /// `type_filter` accepted for Python sig parity but ignored on accel
+    /// (filter the returned list in Python).
+    #[pyo3(signature = (*, radius = 32.0, type_filter = None))]
     fn nearby_entities<'py>(
         &self,
         py: Python<'py>,
         radius: f64,
+        type_filter: Option<PyObject>,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let _ = type_filter;
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;

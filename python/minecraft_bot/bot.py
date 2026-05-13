@@ -1089,14 +1089,20 @@ class Bot:
                     break
             return opened.window_id
 
-    async def open_chest(self, x: int, y: int, z: int, **kw) -> int:
-        return await self.open_block_container(x, y, z, **kw)
+    async def open_chest(
+        self, x: int, y: int, z: int, *, timeout: float = 5.0,
+    ) -> int:
+        return await self.open_block_container(x, y, z, timeout=timeout)
 
-    async def open_furnace(self, x: int, y: int, z: int, **kw) -> int:
-        return await self.open_block_container(x, y, z, **kw)
+    async def open_furnace(
+        self, x: int, y: int, z: int, *, timeout: float = 5.0,
+    ) -> int:
+        return await self.open_block_container(x, y, z, timeout=timeout)
 
-    async def open_crafting_table(self, x: int, y: int, z: int, **kw) -> int:
-        return await self.open_block_container(x, y, z, **kw)
+    async def open_crafting_table(
+        self, x: int, y: int, z: int, *, timeout: float = 5.0,
+    ) -> int:
+        return await self.open_block_container(x, y, z, timeout=timeout)
 
     async def close_container(self) -> None:
         """Close the currently-open container (container slot)."""

@@ -94,7 +94,13 @@ def _signature_shape(obj: object, kind: str) -> tuple[int, tuple[str, ...]]:
         sig = inspect.signature(obj)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return 0, ()
+    # Skip self/cls and the special **kwargs / *args markers — those
+    # are open-ended on Python side and would always show up as a single
+    # name (`kw`, `kwargs`, …) that accel can't mirror by definition.
     params = [
-        p for p in sig.parameters.values() if p.name not in ("self", "cls")
+        p
+        for p in sig.parameters.values()
+        if p.name not in ("self", "cls")
+        and p.kind not in (inspect.Parameter.VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL)
     ]
     return len(params), tuple(p.name for p in params)

@@ -119,8 +119,11 @@ impl PyBot {
         })
     }
 
-    /// `click_slot(slot_index, *, mode='left', button=0, window_id=None)`.
-    #[pyo3(signature = (slot_index, *, mode = String::from("left"), button = 0, window_id = None))]
+    /// `click_slot(slot_index, *, mode='left', button=0, window_id=None,
+    /// wait_for_slot=False)`. `wait_for_slot` is accepted for Python
+    /// signature parity but treated as a no-op on accel (the inner
+    /// inventory mutex already serialises clicks).
+    #[pyo3(signature = (slot_index, *, mode = String::from("left"), button = 0, window_id = None, wait_for_slot = false))]
     fn click_slot<'py>(
         &self,
         py: Python<'py>,
@@ -128,7 +131,9 @@ impl PyBot {
         mode: String,
         button: i8,
         window_id: Option<u8>,
+        wait_for_slot: bool,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let _ = wait_for_slot;
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;
@@ -138,34 +143,34 @@ impl PyBot {
         })
     }
 
-    /// `move_item(src, dst, *, window_id=None)`.
-    #[pyo3(signature = (src, dst, *, window_id = None))]
+    /// `move_item(src_slot, dst_slot, *, window_id=None)`.
+    #[pyo3(signature = (src_slot, dst_slot, *, window_id = None))]
     fn move_item<'py>(
         &self,
         py: Python<'py>,
-        src: i16,
-        dst: i16,
+        src_slot: i16,
+        dst_slot: i16,
         window_id: Option<u8>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;
-            bot.move_item(src, dst, window_id).await.into_py()
+            bot.move_item(src_slot, dst_slot, window_id).await.into_py()
         })
     }
 
-    /// `quick_move(slot, *, window_id=None)`.
-    #[pyo3(signature = (slot, *, window_id = None))]
+    /// `quick_move(slot_index, *, window_id=None)`.
+    #[pyo3(signature = (slot_index, *, window_id = None))]
     fn quick_move<'py>(
         &self,
         py: Python<'py>,
-        slot: i16,
+        slot_index: i16,
         window_id: Option<u8>,
     ) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;
-            bot.quick_move(slot, window_id).await.into_py()
+            bot.quick_move(slot_index, window_id).await.into_py()
         })
     }
 

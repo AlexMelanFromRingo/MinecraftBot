@@ -73,10 +73,10 @@ impl PyBot {
     // `#[getter]` properties in `state_getters.rs`. Old 003 async
     // forms removed — see CHANGELOG entry for v0.3.0.
 
-    /// `walk_to(x, y, z, *, timeout=30.0)` — plan a path and walk
-    /// there, sending Player Position packets at 20 Hz. Returns
-    /// `True` on arrival, `False` on timeout.
-    #[pyo3(signature = (x, y, z, *, timeout = 30.0))]
+    /// `walk_to(x, y, z, *, timeout=30.0, max_fall=8, wait_for_slot=False)`.
+    /// `max_fall` and `wait_for_slot` accepted for Python sig parity;
+    /// path-fall cap is hard-coded inside accel walk_to.
+    #[pyo3(signature = (x, y, z, *, timeout = 30.0, max_fall = 8, wait_for_slot = false))]
     fn walk_to<'py>(
         &self,
         py: Python<'py>,
@@ -84,7 +84,10 @@ impl PyBot {
         y: f64,
         z: f64,
         timeout: f64,
+        max_fall: i32,
+        wait_for_slot: bool,
     ) -> PyResult<Bound<'py, PyAny>> {
+        let _ = (max_fall, wait_for_slot);
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;

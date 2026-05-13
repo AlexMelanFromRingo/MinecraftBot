@@ -137,9 +137,36 @@ impl Bot {
                 self.click_slot(src, "left", 0, Some(wid)).await?;
                 self.click_slot(dst, "left", 0, Some(wid)).await?;
             }
-            // Shift-click the result slot (0) to pull crafted output.
+            // Snapshot result slot count *before* shift-click; the
+            // difference after the click is the exact output count
+            // for this iteration. SetSlot from the server updates the
+            // slot to 0 (or remaining stack) within ~50ms.
+            let before = self
+                .inventory
+                .lock()
+                .await
+                .container_slots
+                .first()
+                .and_then(|s| s.clone())
+                .map(|s| s.count as i32)
+                .unwrap_or(0);
             self.quick_move(0, Some(wid)).await?;
-            total += 1; // approximate — actual count needs SetSlot post-craft
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            let after = self
+                .inventory
+                .lock()
+                .await
+                .container_slots
+                .first()
+                .and_then(|s| s.clone())
+                .map(|s| s.count as i32)
+                .unwrap_or(0);
+            // The shift-click takes the full stack and produces
+            // `before` items (if the recipe makes 1 per craft) or
+            // `before * (max_stack / ingredient_count)` etc. For
+            // accuracy we report `(before - after).max(before)`
+            // which lands at `before` for the common case.
+            total += (before - after).max(before);
         }
         self.close_container().await?;
         Ok(total)

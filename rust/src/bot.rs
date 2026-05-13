@@ -36,10 +36,12 @@ use crate::errors::ProtocolError;
 use crate::pathfinding::{find_path, Pos};
 use crate::physics::{self as rphys, PhysicsIntent, PhysicsState};
 use crate::protocol::v763::packets::play::clientbound::{
-    block_change::BlockChange, experience::Experience as CbExperience,
+    block_change::BlockChange, entity_destroy::EntityDestroy,
+    entity_teleport::EntityTeleport, experience::Experience as CbExperience,
     game_state_change::GameStateChange, held_item_slot::HeldItemSlot as CbHeldItemSlot,
     login::Login as CbLogin, map_chunk::MapChunk, multi_block_change::MultiBlockChange,
-    position::Position as CbPosition, respawn::Respawn as CbRespawn, unload_chunk::UnloadChunk,
+    named_entity_spawn::NamedEntitySpawn, position::Position as CbPosition,
+    respawn::Respawn as CbRespawn, spawn_entity::SpawnEntity, unload_chunk::UnloadChunk,
     update_health::UpdateHealth,
 };
 use crate::protocol::v763::packets::play::serverbound::block_dig::BlockDig;
@@ -66,6 +68,12 @@ const ID_RESPAWN: i32 = 0x41;
 const ID_HELD_ITEM_SLOT: i32 = 0x4D;
 const ID_GAME_STATE_CHANGE: i32 = 0x20;
 const ID_EXPERIENCE: i32 = 0x56;
+const ID_SPAWN_ENTITY: i32 = 0x01;
+const ID_NAMED_ENTITY_SPAWN: i32 = 0x03;
+const ID_ENTITY_DESTROY: i32 = 0x3E;
+const ID_ENTITY_TELEPORT: i32 = 0x68;
+/// Mojang entity type id for `minecraft:player`.
+const ENTITY_TYPE_PLAYER: i32 = 124;
 const ID_BLOCK_CHANGE: i32 = 0x0A;
 const ID_UNLOAD_CHUNK: i32 = 0x1E;
 const ID_MAP_CHUNK: i32 = 0x24;
@@ -218,6 +226,7 @@ impl Bot {
         let effects = Arc::clone(&self.effects);
         let state = Arc::clone(&self.state);
         let hooks = Arc::clone(&self.hooks);
+        let entities = Arc::clone(&self.entities_tracker);
 
         let handle = tokio::spawn(async move {
             while let Some((id, body)) = rx.recv().await {
@@ -339,6 +348,65 @@ impl Bot {
                             let mut s = state.lock().await;
                             s.xp_level = pkt.level;
                             s.xp_total = pkt.total_experience;
+                        }
+                        Ok(())
+                    }
+                    ID_SPAWN_ENTITY => {
+                        if let Ok(pkt) = SpawnEntity::decode(&mut br) {
+                            entities.add(crate::entities::Entity {
+                                entity_id: pkt.entity_id,
+                                uuid: pkt.object_uuid,
+                                type_id: pkt.entity_type,
+                                x: pkt.x,
+                                y: pkt.y,
+                                z: pkt.z,
+                                yaw: pkt.yaw as f32,
+                                pitch: pkt.pitch as f32,
+                                vx: pkt.vx,
+                                vy: pkt.vy,
+                                vz: pkt.vz,
+                                health: None,
+                            });
+                        }
+                        Ok(())
+                    }
+                    ID_NAMED_ENTITY_SPAWN => {
+                        if let Ok(pkt) = NamedEntitySpawn::decode(&mut br) {
+                            entities.add(crate::entities::Entity {
+                                entity_id: pkt.entity_id,
+                                uuid: pkt.player_uuid,
+                                type_id: ENTITY_TYPE_PLAYER,
+                                x: pkt.x,
+                                y: pkt.y,
+                                z: pkt.z,
+                                yaw: pkt.yaw as f32,
+                                pitch: pkt.pitch as f32,
+                                vx: 0,
+                                vy: 0,
+                                vz: 0,
+                                health: None,
+                            });
+                        }
+                        Ok(())
+                    }
+                    ID_ENTITY_DESTROY => {
+                        if let Ok(pkt) = EntityDestroy::decode(&mut br) {
+                            for eid in pkt.entity_ids {
+                                entities.remove(eid);
+                            }
+                        }
+                        Ok(())
+                    }
+                    ID_ENTITY_TELEPORT => {
+                        if let Ok(pkt) = EntityTeleport::decode(&mut br) {
+                            if let Some(mut e) = entities.get(pkt.entity_id) {
+                                e.x = pkt.x;
+                                e.y = pkt.y;
+                                e.z = pkt.z;
+                                e.yaw = pkt.yaw as f32;
+                                e.pitch = pkt.pitch as f32;
+                                entities.add(e);
+                            }
                         }
                         Ok(())
                     }

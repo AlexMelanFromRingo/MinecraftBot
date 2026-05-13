@@ -164,8 +164,8 @@ description: "Task list for 004 full bot parity across three backends"
 - [X] T082 Update `CHANGELOG.md` with v0.3.0 entry listing every newly-ported method group (use `contracts/api-surface.md` as source).
 - [X] T083 Update `README.md`: remove "subset" language, restate that all three artefacts share the same Bot API surface. Refresh the artefact table (Surface column for Rust crate + accel now reads "Full Bot surface — see [api-surface.md]"). Add link to `docs/migration_to_accel.md` and update that doc too if it still says subset.
 - [X] T084 Run lint pass: `cargo fmt --all && cargo clippy --all-targets --no-deps -p minecraft_bot -p minecraft_bot_accel || true` (clippy is informational per 003); `ruff check python/ python-ext/ tests/python/ --fix`. Commit any auto-fixes.
-- [ ] T085 Merge `004-full-bot-parity` -> `main` (fast-forward). Tag `v0.3.0` on the merge HEAD. `git push origin main && git push origin v0.3.0`. Verify Wheels (003) workflow publishes 6-artefact release (3 accel wheels + 1 py wheel + 1 sdist + 1 .crate).
-- [ ] T086 Update `MEMORY.md` (`project_milestone_status.md`): mark 004 done, note v0.3.0 published.
+- [X] T085 Merge `004-full-bot-parity` -> `main` (fast-forward). Tag `v0.3.0` on the merge HEAD. `git push origin main && git push origin v0.3.0`. Verify Wheels (003) workflow publishes 6-artefact release (3 accel wheels + 1 py wheel + 1 sdist + 1 .crate).
+- [X] T086 Update `MEMORY.md` (`project_milestone_status.md`): mark 004 done, note v0.3.0 published.
 
 ---
 
