@@ -27,7 +27,6 @@ from __future__ import annotations
 import minecraft_bot_accel
 from minecraft_bot.bot import Bot as PyBot
 
-
 # Sync read-only methods that should be invokable on an unconnected
 # Bot. Async methods are excluded — they need an event loop.
 SAFE_SYNC_METHODS: list[tuple[str, list, dict]] = [
