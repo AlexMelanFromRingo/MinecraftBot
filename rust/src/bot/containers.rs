@@ -12,6 +12,7 @@ use std::time::Duration;
 
 use super::Bot;
 use crate::errors::ProtocolError;
+use crate::protocol::v763::packets::play::serverbound::block_place::BlockPlace;
 use crate::protocol::v763::packets::play::serverbound::close_window::CloseWindow;
 
 impl Bot {
@@ -24,17 +25,34 @@ impl Bot {
         z: i32,
         timeout: Duration,
     ) -> Result<u8, ProtocolError> {
-        // Aim at the block, then use_item (which delegates to a
-        // right-click). The server replies with OpenScreen + WindowItems
-        // which the dispatcher picks up to populate InventoryState.
+        // v0.3.1: aim at block centre, then send BlockPlace (the
+        // serverbound "use item on block" / right-click-block packet).
+        // The previous UseItem (right-click-air) path didn't open
+        // chests on the live server. The server responds with
+        // OpenScreen + WindowItems, picked up by the dispatcher to
+        // populate InventoryState.
         self.look_at(x as f64 + 0.5, y as f64 + 0.5, z as f64 + 0.5)
             .await?;
-        self.use_item(0).await?;
-        // Wait up to `timeout` for the dispatcher to set window_id.
+        let pre_wid = self.inventory.lock().await.window_id;
+        self.connection
+            .send(&BlockPlace {
+                hand: 0,
+                location: (x, y, z),
+                direction: 1, // top face — works for any container
+                cursor_x: 0.5,
+                cursor_y: 0.5,
+                cursor_z: 0.5,
+                inside_block: false,
+                sequence: 0,
+            })
+            .await?;
+        // Wait up to `timeout` for the dispatcher to assign a new
+        // window_id. Pre-existing window_id (rare; bot was already
+        // in a window) is treated as "we already have one".
         let deadline = std::time::Instant::now() + timeout;
         while std::time::Instant::now() < deadline {
             let wid = self.inventory.lock().await.window_id;
-            if wid != 0 {
+            if wid != pre_wid && wid != 0 {
                 return Ok(wid);
             }
             tokio::time::sleep(Duration::from_millis(50)).await;

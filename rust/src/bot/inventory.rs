@@ -297,7 +297,21 @@ impl Bot {
                 changed_slots: Vec::new(),
                 carried_item: None,
             })
-            .await
+            .await?;
+        // v0.3.1: wait briefly (<= 200 ms) for SetSlot/WindowItems to
+        // bump state_id. 1.20.1 has no WindowConfirmation packet; the
+        // state_id field on every click serves that role. Paper's
+        // anti-cheat rejects clicks whose state_id is stale, so
+        // pacing rapid clicks against the server echo prevents
+        // desync.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(200);
+        while std::time::Instant::now() < deadline {
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            if self.inventory.lock().await.state_id != state_id {
+                break;
+            }
+        }
+        Ok(())
     }
 
     /// Move the entire stack at `src` to `dst` via pick-up + put-down

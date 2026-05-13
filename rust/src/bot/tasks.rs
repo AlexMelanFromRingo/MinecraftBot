@@ -68,11 +68,12 @@ impl Bot {
         self.swing_arm(0).await
     }
 
-    /// Eat the first food item in the hotbar. MVP: select food slot,
-    /// send use_item, wait ~1.5s for eating animation, return.
+    /// Eat the first food item in the hotbar. v0.3.1: subscribe to
+    /// `EntityStatus(status=9)` (player finished using item) via
+    /// the packet-hook mechanism, send `use_item`, await the status,
+    /// fall back to the timeout if the server is slow.
     pub async fn eat(&self, timeout: Duration) -> Result<(), ProtocolError> {
         let foods = food_table();
-        // Find a food item in player_slots.
         let mut food_slot: Option<u8> = None;
         {
             let inv = self.inventory.lock().await;
@@ -91,11 +92,48 @@ impl Bot {
                 return Err(ProtocolError::DecodeError("eat: no food in hotbar".into()));
             }
         };
+        let bot_eid = self.state.lock().await.entity_id.unwrap_or(0);
         self.select_slot(slot).await?;
+
+        // Register EntityStatus listener before sending use_item.
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+        let tx_arc = std::sync::Arc::new(std::sync::Mutex::new(Some(tx)));
+        let tx_clone = tx_arc.clone();
+        self.on_packet(
+            0x1C,
+            Box::new(move |_id, body| {
+                // EntityStatus body: VarInt(entity_id), i8(status).
+                let mut val: i32 = 0;
+                let mut bits = 0;
+                let mut idx = 0;
+                while idx < 5.min(body.len()) {
+                    let b = body[idx];
+                    val |= ((b & 0x7F) as i32) << bits;
+                    idx += 1;
+                    if (b & 0x80) == 0 {
+                        break;
+                    }
+                    bits += 7;
+                }
+                if val != bot_eid || idx >= body.len() {
+                    return;
+                }
+                let status = body[idx] as i8;
+                // Mojang status code 9 = "player finished using item".
+                if status == 9 {
+                    if let Ok(mut g) = tx_clone.lock() {
+                        if let Some(tx) = g.take() {
+                            let _ = tx.send(());
+                        }
+                    }
+                }
+            }),
+        )
+        .await;
+
         self.use_item(0).await?;
-        // Eating animation is ~1.6s for most foods. Wait up to `timeout`.
-        let dt = timeout.min(Duration::from_millis(1600));
-        tokio::time::sleep(dt).await;
+        // Await EntityStatus(9) or fall back to `timeout`.
+        let _ = tokio::time::timeout(timeout, rx).await;
         Ok(())
     }
 

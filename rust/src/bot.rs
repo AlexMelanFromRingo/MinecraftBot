@@ -40,8 +40,9 @@ use crate::protocol::v763::packets::play::clientbound::{
     experience::Experience as CbExperience, game_state_change::GameStateChange,
     held_item_slot::HeldItemSlot as CbHeldItemSlot, login::Login as CbLogin, map_chunk::MapChunk,
     multi_block_change::MultiBlockChange, named_entity_spawn::NamedEntitySpawn,
-    position::Position as CbPosition, respawn::Respawn as CbRespawn, spawn_entity::SpawnEntity,
-    unload_chunk::UnloadChunk, update_health::UpdateHealth,
+    open_window::OpenWindow, position::Position as CbPosition, respawn::Respawn as CbRespawn,
+    set_slot::SetSlot, spawn_entity::SpawnEntity, unload_chunk::UnloadChunk,
+    update_health::UpdateHealth, window_items::WindowItems,
 };
 use crate::protocol::v763::packets::play::serverbound::block_dig::BlockDig;
 use crate::protocol::v763::packets::play::serverbound::position::Position as SbPosition;
@@ -71,6 +72,10 @@ const ID_SPAWN_ENTITY: i32 = 0x01;
 const ID_NAMED_ENTITY_SPAWN: i32 = 0x03;
 const ID_ENTITY_DESTROY: i32 = 0x3E;
 const ID_ENTITY_TELEPORT: i32 = 0x68;
+const ID_SET_SLOT: i32 = 0x14;
+const ID_WINDOW_ITEMS: i32 = 0x12;
+const ID_OPEN_WINDOW: i32 = 0x30;
+const ID_CLOSE_WINDOW: i32 = 0x10;
 /// Mojang entity type id for `minecraft:player`.
 const ENTITY_TYPE_PLAYER: i32 = 124;
 const ID_BLOCK_CHANGE: i32 = 0x0A;
@@ -226,6 +231,7 @@ impl Bot {
         let state = Arc::clone(&self.state);
         let hooks = Arc::clone(&self.hooks);
         let entities = Arc::clone(&self.entities_tracker);
+        let inventory = Arc::clone(&self.inventory);
 
         let handle = tokio::spawn(async move {
             while let Some((id, body)) = rx.recv().await {
@@ -407,6 +413,72 @@ impl Bot {
                                 entities.add(e);
                             }
                         }
+                        Ok(())
+                    }
+                    ID_SET_SLOT => {
+                        if let Ok(pkt) = SetSlot::decode(&mut br) {
+                            let mut inv = inventory.lock().await;
+                            inv.state_id = pkt.state_id;
+                            let item = pkt.item.as_ref().map(|s| {
+                                crate::inventory::ItemSlot::new(
+                                    s.item_id as u32,
+                                    s.count as u8,
+                                    None, // NBT bytes — decoded later
+                                )
+                            });
+                            inv.apply_set_slot(pkt.window_id as u8, pkt.slot_index, item);
+                        }
+                        Ok(())
+                    }
+                    ID_WINDOW_ITEMS => {
+                        if let Ok(pkt) = WindowItems::decode(&mut br) {
+                            let mut inv = inventory.lock().await;
+                            inv.state_id = pkt.state_id;
+                            let items: Vec<Option<crate::inventory::ItemSlot>> = pkt
+                                .items
+                                .iter()
+                                .map(|opt| {
+                                    opt.as_ref().map(|s| {
+                                        crate::inventory::ItemSlot::new(
+                                            s.item_id as u32,
+                                            s.count as u8,
+                                            None,
+                                        )
+                                    })
+                                })
+                                .collect();
+                            inv.apply_window_items(pkt.window_id, items);
+                        }
+                        Ok(())
+                    }
+                    ID_OPEN_WINDOW => {
+                        if let Ok(pkt) = OpenWindow::decode(&mut br) {
+                            // Inventory type -> rough slot count.
+                            // Mojang inventory_type values: 0..5 = generic
+                            // chests (9..54), 6=hopper(5), 13=furnace(3),
+                            // 14=crafting(10), etc. Use a coarse fallback
+                            // table — the next WindowItems wholesale
+                            // overwrites the size anyway.
+                            let container_size = match pkt.inventory_type {
+                                0 => 9,
+                                1 => 18,
+                                2 => 27,
+                                3 => 36,
+                                4 => 45,
+                                5 => 54,
+                                6 => 5,
+                                13 => 3,
+                                14 => 10,
+                                _ => 27,
+                            };
+                            let mut inv = inventory.lock().await;
+                            inv.apply_open_screen(pkt.window_id as u8, container_size);
+                        }
+                        Ok(())
+                    }
+                    ID_CLOSE_WINDOW => {
+                        let mut inv = inventory.lock().await;
+                        inv.apply_close_window();
                         Ok(())
                     }
                     ID_SYNC_PLAYER_POSITION => {
