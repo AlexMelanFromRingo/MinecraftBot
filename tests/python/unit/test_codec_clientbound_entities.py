@@ -27,7 +27,9 @@ def test_every_entity_packet_module_imports() -> None:
 
 def test_entity_destroy_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.entity_destroy import (
-        EntityDestroy, decode, encode,
+        EntityDestroy,
+        decode,
+        encode,
     )
     pkt = EntityDestroy(entity_ids=(1, 2, 100, -5))
     w = Writer(); encode(pkt, w)
@@ -36,7 +38,9 @@ def test_entity_destroy_round_trip() -> None:
 
 def test_entity_velocity_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.entity_velocity import (
-        EntityVelocity, decode, encode,
+        EntityVelocity,
+        decode,
+        encode,
     )
     pkt = EntityVelocity(entity_id=42, vx=100, vy=-50, vz=200)
     w = Writer(); encode(pkt, w)
@@ -45,7 +49,9 @@ def test_entity_velocity_round_trip() -> None:
 
 def test_rel_entity_move_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.rel_entity_move import (
-        RelEntityMove, decode, encode,
+        RelEntityMove,
+        decode,
+        encode,
     )
     pkt = RelEntityMove(entity_id=7, dx=10, dy=20, dz=-30, on_ground=True)
     w = Writer(); encode(pkt, w)

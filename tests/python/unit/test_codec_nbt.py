@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from minecraft_bot.codec import Reader, Writer, nbt
 from minecraft_bot.errors import MalformedNbt, ValueOutOfRange
 

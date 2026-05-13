@@ -60,7 +60,6 @@ def test_v763_classes_have_no_v764_counterpart_unless_overridden() -> None:
     every other v763 packet would resolve through v763 unchanged in a
     future multi-version dispatcher. This test asserts the directory
     layout matches that expectation."""
-    import os
     from pathlib import Path
 
     v764_root = Path(v764_ka.__file__).parent

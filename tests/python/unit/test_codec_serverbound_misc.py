@@ -39,7 +39,9 @@ def test_every_misc_serverbound_module_imports_or_absent() -> None:
 
 def test_arm_animation_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.arm_animation import (
-        ArmAnimation, decode, encode,
+        ArmAnimation,
+        decode,
+        encode,
     )
     for hand in (0, 1):
         pkt = ArmAnimation(hand=hand)
@@ -49,7 +51,9 @@ def test_arm_animation_round_trip() -> None:
 
 def test_keep_alive_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.keep_alive import (
-        KeepAlive, decode, encode,
+        KeepAlive,
+        decode,
+        encode,
     )
     pkt = KeepAlive(keep_alive_id=0x123456789ABCDEF0)
     w = Writer(); encode(pkt, w)
@@ -58,7 +62,9 @@ def test_keep_alive_round_trip() -> None:
 
 def test_teleport_confirm_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.teleport_confirm import (
-        TeleportConfirm, decode, encode,
+        TeleportConfirm,
+        decode,
+        encode,
     )
     pkt = TeleportConfirm(teleport_id=42)
     w = Writer(); encode(pkt, w)
@@ -67,7 +73,9 @@ def test_teleport_confirm_round_trip() -> None:
 
 def test_held_item_slot_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.held_item_slot import (
-        HeldItemSlot, decode, encode,
+        HeldItemSlot,
+        decode,
+        encode,
     )
     pkt = HeldItemSlot(slot_id=4)
     w = Writer(); encode(pkt, w)
@@ -76,7 +84,9 @@ def test_held_item_slot_round_trip() -> None:
 
 def test_use_item_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.use_item import (
-        UseItem, decode, encode,
+        UseItem,
+        decode,
+        encode,
     )
     pkt = UseItem(hand=0, sequence=7)
     w = Writer(); encode(pkt, w)

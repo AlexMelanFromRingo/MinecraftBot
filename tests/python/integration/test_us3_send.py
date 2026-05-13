@@ -19,17 +19,16 @@ import asyncio
 import time
 
 import pytest
-
 from minecraft_bot.connection import Connection
 from minecraft_bot.protocol.v763.packets.play.serverbound import arm_animation as p_sb_arm
 from minecraft_bot.protocol.v763.packets.play.serverbound import (
     chat_message as p_sb_chat,
 )
 from minecraft_bot.protocol.v763.packets.play.serverbound import (
-    held_item_slot as p_sb_hotbar,
+    entity_action as p_sb_eact,
 )
 from minecraft_bot.protocol.v763.packets.play.serverbound import (
-    entity_action as p_sb_eact,
+    held_item_slot as p_sb_hotbar,
 )
 from minecraft_bot.protocol.v763.packets.play.serverbound import (
     position_look as p_sb_poslook,

@@ -55,7 +55,9 @@ def test_every_misc_packet_module_imports() -> None:
 
 def test_close_window_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.close_window import (
-        CloseWindow, decode, encode,
+        CloseWindow,
+        decode,
+        encode,
     )
     pkt = CloseWindow(window_id=7)
     w = Writer(); encode(pkt, w)
@@ -64,7 +66,9 @@ def test_close_window_round_trip() -> None:
 
 def test_set_slot_round_trip_empty() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.set_slot import (
-        SetSlot, decode, encode,
+        SetSlot,
+        decode,
+        encode,
     )
     pkt = SetSlot(window_id=0, state_id=5, slot_index=10, item=None)
     w = Writer(); encode(pkt, w)
@@ -73,7 +77,9 @@ def test_set_slot_round_trip_empty() -> None:
 
 def test_kick_disconnect_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.kick_disconnect import (
-        KickDisconnect, decode, encode,
+        KickDisconnect,
+        decode,
+        encode,
     )
     pkt = KickDisconnect(reason='{"text":"banned"}')
     w = Writer(); encode(pkt, w)

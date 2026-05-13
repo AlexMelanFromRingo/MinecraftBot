@@ -93,4 +93,4 @@ def decode_one(
     return decoder(reader)  # type: ignore[operator]
 
 
-__all__ = ["RawPacket", "split_body", "decode_one"]
+__all__ = ["RawPacket", "decode_one", "split_body"]

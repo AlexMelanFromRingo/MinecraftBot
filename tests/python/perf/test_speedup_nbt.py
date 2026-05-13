@@ -16,7 +16,6 @@ import json
 import time
 from pathlib import Path
 
-
 REPO = Path(__file__).resolve().parents[3]
 CHUNK_FIXTURE = REPO / "protocol-data/v763/golden_bytes/packets/clientbound/map_chunk.json"
 

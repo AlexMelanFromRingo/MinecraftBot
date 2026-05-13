@@ -20,9 +20,9 @@ import importlib
 import os
 import socket
 import warnings
+from collections.abc import Iterator
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Iterator
 
 import pytest
 
@@ -44,7 +44,7 @@ def _probe(host: str, port: int, timeout: float = PROBE_TIMEOUT) -> bool:
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return True
-    except (OSError, socket.timeout):
+    except (TimeoutError, OSError):
         return False
 
 

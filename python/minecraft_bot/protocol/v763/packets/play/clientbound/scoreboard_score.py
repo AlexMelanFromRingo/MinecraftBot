@@ -7,7 +7,6 @@ otherwise ``value`` is a varint.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 
@@ -19,7 +18,7 @@ class ScoreboardScore:
     item_name: str          # entity / player name
     action: int             # varint: 0=update/create, 1=remove
     score_name: str         # objective name
-    value: Optional[int]    # varint, present when action != 1
+    value: int | None    # varint, present when action != 1
 
 
 def decode(reader: Reader) -> ScoreboardScore:
@@ -27,7 +26,7 @@ def decode(reader: Reader) -> ScoreboardScore:
     act = varint.read(reader)
     sn = string.read(reader)
     if act == 1:
-        val: Optional[int] = None
+        val: int | None = None
     else:
         val = varint.read(reader)
     return ScoreboardScore(item_name=item, action=act, score_name=sn, value=val)

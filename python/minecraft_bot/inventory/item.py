@@ -11,10 +11,8 @@ Item-name resolution uses ``protocol-data/v763/item_table.json``
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
-from functools import cached_property
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from minecraft_bot.codec import nbt as _nbt
 from minecraft_bot.codec.slot import SlotData
@@ -29,13 +27,13 @@ _BY_ID: dict[int, dict] = {int(k): v for k, v in _ITEMS.items()}
 _BY_NAME: dict[str, int] = {v["name"]: int(k) for k, v in _ITEMS.items()}
 
 
-def item_name(item_id: int) -> Optional[str]:
+def item_name(item_id: int) -> str | None:
     """``42`` → ``'minecraft:iron_block'``, or ``None`` if unknown."""
     entry = _BY_ID.get(item_id)
     return entry["name"] if entry else None
 
 
-def item_id(name: str) -> Optional[int]:
+def item_id(name: str) -> int | None:
     """``'iron_block'`` or ``'minecraft:iron_block'`` → numeric id."""
     if ":" not in name:
         name = "minecraft:" + name
@@ -53,7 +51,7 @@ class Enchantment:
     level: int
 
 
-def _nbt_get(comp: Optional[_nbt.NbtCompound], name: str):
+def _nbt_get(comp: _nbt.NbtCompound | None, name: str):
     """Helper to read a tag from a compound (or None if absent)."""
     if comp is None:
         return None
@@ -79,12 +77,12 @@ class ItemSlot:
 
     item_id: int
     count: int
-    tag: Optional[_nbt.NbtCompound] = None
+    tag: _nbt.NbtCompound | None = None
 
     # --- naming --------------------------------------------------------
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         return item_name(self.item_id)
 
     @property
@@ -106,12 +104,12 @@ class ItemSlot:
         return bool(v) if v is not None else False
 
     @property
-    def custom_model_data(self) -> Optional[int]:
+    def custom_model_data(self) -> int | None:
         v = _nbt_value(_nbt_get(self.tag, "CustomModelData"))
         return int(v) if v is not None else None
 
     @property
-    def display_name(self) -> Optional[str]:
+    def display_name(self) -> str | None:
         """Returns the raw JSON chat component string from
         ``display.Name``, or ``None`` if no custom name is set."""
         display = _nbt_get(self.tag, "display")
@@ -141,7 +139,7 @@ class ItemSlot:
     # --- conversions ---------------------------------------------------
 
     @classmethod
-    def from_slot_data(cls, slot: Optional[SlotData]) -> Optional["ItemSlot"]:
+    def from_slot_data(cls, slot: SlotData | None) -> ItemSlot | None:
         """Build an ItemSlot from a wire-level SlotData (or None)."""
         if slot is None:
             return None
@@ -152,6 +150,8 @@ class ItemSlot:
 
 
 __all__ = [
-    "ItemSlot", "Enchantment",
-    "item_name", "item_id",
+    "Enchantment",
+    "ItemSlot",
+    "item_id",
+    "item_name",
 ]

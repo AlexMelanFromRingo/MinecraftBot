@@ -8,7 +8,6 @@ target had none.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, nbt, varint
 
@@ -18,7 +17,7 @@ PACKET_ID = 0x66
 @dataclass(frozen=True, slots=True)
 class NbtQueryResponse:
     transaction_id: int            # varint, matches the request
-    nbt: Optional[nbt.NbtTag]
+    nbt: nbt.NbtTag | None
 
 
 def decode(reader: Reader) -> NbtQueryResponse:

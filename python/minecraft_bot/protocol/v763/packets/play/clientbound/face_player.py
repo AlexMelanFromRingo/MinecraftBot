@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -26,8 +25,8 @@ class FacePlayer:
     y: float
     z: float
     is_entity: bool
-    entity_id: Optional[int]
-    entity_feet_eyes: Optional[str]  # "feet" or "eyes" string
+    entity_id: int | None
+    entity_feet_eyes: str | None  # "feet" or "eyes" string
 
 
 def decode(reader: Reader) -> FacePlayer:
@@ -36,8 +35,8 @@ def decode(reader: Reader) -> FacePlayer:
     ie = reader.read(1)[0]
     if ie not in (0, 1):
         raise ValueOutOfRange("face_player.is_entity", ie)
-    eid: Optional[int] = None
-    efe: Optional[str] = None
+    eid: int | None = None
+    efe: str | None = None
     if ie == 1:
         eid = varint.read(reader)
         efe = string.read(reader)

@@ -5,8 +5,10 @@ from __future__ import annotations
 from minecraft_bot.codec.slot import SlotData
 from minecraft_bot.inventory.item import item_id
 from minecraft_bot.inventory.tracker import (
-    InventoryTracker, PLAYER_INVENTORY_SIZE,
-    SLOT_HOTBAR_FIRST, SLOT_OFFHAND,
+    PLAYER_INVENTORY_SIZE,
+    SLOT_HOTBAR_FIRST,
+    SLOT_OFFHAND,
+    InventoryTracker,
 )
 from minecraft_bot.protocol.v763.packets.play.clientbound.close_window import (
     CloseWindow,

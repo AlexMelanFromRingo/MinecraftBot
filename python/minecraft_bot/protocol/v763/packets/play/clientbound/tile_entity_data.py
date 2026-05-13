@@ -7,7 +7,6 @@ is the block-entity-update event code.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, nbt, position, varint
 
@@ -18,7 +17,7 @@ PACKET_ID = 0x08
 class TileEntityData:
     location: tuple[int, int, int]
     action: int                     # varint
-    nbt_data: Optional[nbt.NbtTag]  # may be None (single TAG_End byte)
+    nbt_data: nbt.NbtTag | None  # may be None (single TAG_End byte)
 
 
 def decode(reader: Reader) -> TileEntityData:

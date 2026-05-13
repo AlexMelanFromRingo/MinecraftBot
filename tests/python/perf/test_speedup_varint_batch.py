@@ -13,14 +13,12 @@ from __future__ import annotations
 
 import time
 
-
 N_VALUES = 1000
 
 
 def _build_encoded_block(values: list[int]) -> bytes:
     """Pure-Python encoding of N varints concatenated."""
-    from minecraft_bot.codec import Writer
-    from minecraft_bot.codec import varint
+    from minecraft_bot.codec import Writer, varint
 
     w = Writer()
     for v in values:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from minecraft_bot import inventory_click as click
 from minecraft_bot.protocol.v763.packets.play.serverbound.window_click import (
     WindowClick,

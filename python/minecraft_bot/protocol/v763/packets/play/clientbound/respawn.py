@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, position, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -32,7 +31,7 @@ class Respawn:
     is_debug: bool
     is_flat: bool
     copy_metadata: bool
-    death: Optional[DeathLocation]
+    death: DeathLocation | None
     portal_cooldown: int        # varint
 
 

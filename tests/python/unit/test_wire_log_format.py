@@ -10,7 +10,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from minecraft_bot.protocol.v763.states import ConnectionState, Direction
 from minecraft_bot.wire_log import (
     InMemory,

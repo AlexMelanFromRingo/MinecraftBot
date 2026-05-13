@@ -5,7 +5,7 @@ from __future__ import annotations
 import pickle
 
 from minecraft_bot.bot import Bot
-from minecraft_bot.snapshot import BotSnapshot, EntityRef
+from minecraft_bot.snapshot import BotSnapshot
 
 
 def test_snapshot_default_state() -> None:

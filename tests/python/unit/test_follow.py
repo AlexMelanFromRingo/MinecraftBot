@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import math
 from uuid import uuid4
 
 from minecraft_bot.bot import Bot
@@ -64,7 +63,7 @@ def test_follow_close_target_stops_intent() -> None:
         from minecraft_bot.errors import WalkTimeout
         try:
             await asyncio.wait_for(bot.follow(5, distance=3.0, timeout=1.5), timeout=3.0)
-        except (WalkTimeout, asyncio.TimeoutError):
+        except (TimeoutError, WalkTimeout):
             pass
         # After running close-to-target loop, intent should be zero (or whatever).
         # Most importantly the bot didn't try to walk away.

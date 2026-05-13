@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from minecraft_bot.connection import ReconnectPolicy
 from minecraft_bot.protocol import V_1_20_1, ProtocolVersion
 from minecraft_bot.protocol.v763.states import ConnectionState, Direction

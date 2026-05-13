@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import asyncio
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
-
 from minecraft_bot.bot import Bot
 from minecraft_bot.protocol.v763.packets.play.serverbound.held_item_slot import (
     HeldItemSlot,

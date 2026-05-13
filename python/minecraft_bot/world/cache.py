@@ -18,7 +18,7 @@ pathfinder (``is_solid`` / ``is_water`` / ``is_navigable_obstacle``).
 
 from __future__ import annotations
 
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 from minecraft_bot.world import block_table
 from minecraft_bot.world.chunk import Chunk
@@ -29,7 +29,7 @@ class World:
     """The bot's voxel-world snapshot. Mutable; updated in place by
     Bot's clientbound packet handlers."""
 
-    __slots__ = ("chunks", "min_y", "section_count", "dimension")
+    __slots__ = ("chunks", "dimension", "min_y", "section_count")
 
     def __init__(self, *, dimension: str = "minecraft:overworld",
                  min_y: int = -64, section_count: int = 24) -> None:
@@ -40,7 +40,7 @@ class World:
 
     # --- query ----------------------------------------------------------
 
-    def get_chunk(self, cx: int, cz: int) -> Optional[Chunk]:
+    def get_chunk(self, cx: int, cz: int) -> Chunk | None:
         return self.chunks.get((cx, cz))
 
     def get_block(self, x: int, y: int, z: int) -> int:
@@ -52,7 +52,7 @@ class World:
             return 0
         return chunk.get_block(x & 0xF, y, z & 0xF)
 
-    def get_block_name(self, x: int, y: int, z: int) -> Optional[str]:
+    def get_block_name(self, x: int, y: int, z: int) -> str | None:
         return block_table.get_name(self.get_block(x, y, z))
 
     def is_solid(self, x: int, y: int, z: int) -> bool:
@@ -114,9 +114,9 @@ class World:
         """Drop a chunk that the server is unloading."""
         self.chunks.pop((packet.chunk_x, packet.chunk_z), None)
 
-    def reset(self, *, dimension: Optional[str] = None,
-              min_y: Optional[int] = None,
-              section_count: Optional[int] = None) -> None:
+    def reset(self, *, dimension: str | None = None,
+              min_y: int | None = None,
+              section_count: int | None = None) -> None:
         """Wipe the cache (called on ``respawn`` / dimension change)."""
         self.chunks.clear()
         if dimension is not None:

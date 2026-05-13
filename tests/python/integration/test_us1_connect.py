@@ -16,7 +16,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from minecraft_bot.connection import Connection
 from minecraft_bot.errors import ConnectionClosed
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
@@ -57,7 +56,7 @@ async def test_keepalive_cycle_keeps_us_alive(live_server) -> None:
         assert bot.is_connected, "connection died during 60s idle window"
         # Paper sends keep-alive every ~15 s by default; we should see >= 1.
         assert len(keep_alives) >= 1, (
-            f"no KeepAlives received in 60s window; auto-reply may have failed"
+            "no KeepAlives received in 60s window; auto-reply may have failed"
         )
     finally:
         await bot.disconnect()

@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, nbt, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -30,10 +29,10 @@ class SlotData:
 
     item_id: int           # numeric item registry ID for the protocol version
     count: int             # i8; protocol allows -1..127, but typical range is 0..64
-    tag: Optional[nbt.NbtTag] = None  # item NBT, e.g. enchantments, custom name
+    tag: nbt.NbtTag | None = None  # item NBT, e.g. enchantments, custom name
 
 
-def read(reader: Reader) -> Optional[SlotData]:
+def read(reader: Reader) -> SlotData | None:
     """Decode a slot. Returns ``None`` if the slot is empty (present=false)."""
     present = reader.read(1)[0]
     if present == 0:
@@ -47,7 +46,7 @@ def read(reader: Reader) -> Optional[SlotData]:
     return SlotData(item_id=item_id, count=count, tag=tag)
 
 
-def write(value: Optional[SlotData], writer: Writer) -> None:
+def write(value: SlotData | None, writer: Writer) -> None:
     """Encode a slot. ``None`` writes a single ``0x00`` byte."""
     if value is None:
         writer.write(b"\x00")

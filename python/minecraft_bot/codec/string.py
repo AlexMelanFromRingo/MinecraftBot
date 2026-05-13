@@ -35,4 +35,4 @@ def write(value: str, writer: Writer, *, max_length: int = MAX_LENGTH) -> None:
     writer.write(raw)
 
 
-__all__ = ["read", "write", "MAX_LENGTH"]
+__all__ = ["MAX_LENGTH", "read", "write"]

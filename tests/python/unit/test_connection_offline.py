@@ -12,7 +12,6 @@ import asyncio
 import uuid as _uuid
 
 import pytest
-
 from minecraft_bot.connection import (
     Connection,
     Reconnected,
@@ -22,7 +21,6 @@ from minecraft_bot.connection import (
 from minecraft_bot.errors import ConnectionClosed
 from minecraft_bot.protocol import V_1_20_1, ProtocolVersion
 from minecraft_bot.protocol.v763.packets.play.clientbound import keep_alive as p_ka
-
 
 # --- construction ----------------------------------------------------------
 

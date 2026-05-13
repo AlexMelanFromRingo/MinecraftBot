@@ -37,8 +37,10 @@ VARLONG_TEST_VALUES = VARINT_TEST_VALUES + [
 
 @pytest.mark.parametrize("value", VARINT_TEST_VALUES)
 def test_varint_write_byte_parity(value: int) -> None:
-    from minecraft_bot.codec import varint as py_varint, Writer as PyWriter
-    from minecraft_bot_accel.codec import varint as ac_varint, Writer as AcWriter
+    from minecraft_bot.codec import Writer as PyWriter
+    from minecraft_bot.codec import varint as py_varint
+    from minecraft_bot_accel.codec import Writer as AcWriter
+    from minecraft_bot_accel.codec import varint as ac_varint
 
     pw = PyWriter()
     py_varint.write(value, pw)
@@ -56,8 +58,10 @@ def test_varint_write_byte_parity(value: int) -> None:
 @pytest.mark.parametrize("value", VARINT_TEST_VALUES)
 def test_varint_read_value_parity(value: int) -> None:
     """Encode in Python, decode in accel: same value back."""
-    from minecraft_bot.codec import varint as py_varint, Writer as PyWriter
-    from minecraft_bot_accel.codec import varint as ac_varint, Reader as AcReader
+    from minecraft_bot.codec import Writer as PyWriter
+    from minecraft_bot.codec import varint as py_varint
+    from minecraft_bot_accel.codec import Reader as AcReader
+    from minecraft_bot_accel.codec import varint as ac_varint
 
     pw = PyWriter()
     py_varint.write(value, pw)
@@ -70,8 +74,10 @@ def test_varint_read_value_parity(value: int) -> None:
 
 @pytest.mark.parametrize("value", VARLONG_TEST_VALUES)
 def test_varlong_write_byte_parity(value: int) -> None:
-    from minecraft_bot.codec import varlong as py_varlong, Writer as PyWriter
-    from minecraft_bot_accel.codec import varlong as ac_varlong, Writer as AcWriter
+    from minecraft_bot.codec import Writer as PyWriter
+    from minecraft_bot.codec import varlong as py_varlong
+    from minecraft_bot_accel.codec import Writer as AcWriter
+    from minecraft_bot_accel.codec import varlong as ac_varlong
 
     pw = PyWriter()
     py_varlong.write(value, pw)

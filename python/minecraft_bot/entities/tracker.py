@@ -21,7 +21,7 @@ Subscribes to:
 from __future__ import annotations
 
 import math
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 from minecraft_bot.codec import Reader as _Reader
 from minecraft_bot.codec import metadata as _metadata
@@ -51,20 +51,20 @@ class EntityTracker:
 
     def __init__(self) -> None:
         self._entities: dict[int, Entity] = {}
-        self.bot_eid: Optional[int] = None
+        self.bot_eid: int | None = None
 
     # --- access ---------------------------------------------------------
 
     def __len__(self) -> int:
         return len(self._entities)
 
-    def __iter__(self) -> "Iterable[Entity]":
+    def __iter__(self) -> Iterable[Entity]:
         return iter(self._entities.values())
 
     def __contains__(self, eid: int) -> bool:
         return eid in self._entities
 
-    def find_by_id(self, eid: int) -> Optional[Entity]:
+    def find_by_id(self, eid: int) -> Entity | None:
         return self._entities.get(eid)
 
     def all(self) -> list[Entity]:
@@ -75,7 +75,7 @@ class EntityTracker:
         origin: tuple[float, float, float],
         *,
         radius: float = 32.0,
-        type_filter: Optional[type] = None,
+        type_filter: type | None = None,
     ) -> list[Entity]:
         """Return entities within ``radius`` of ``origin``, sorted ascending
         by distance. ``type_filter`` matches against ``isinstance``."""
@@ -99,7 +99,7 @@ class EntityTracker:
     ) -> list[Player]:
         return [e for e in self.nearby_entities(origin, radius=radius, type_filter=Player)]
 
-    def distance_to(self, eid: int, origin: tuple[float, float, float]) -> Optional[float]:
+    def distance_to(self, eid: int, origin: tuple[float, float, float]) -> float | None:
         e = self._entities.get(eid)
         if e is None:
             return None
@@ -138,7 +138,7 @@ class EntityTracker:
         self._entities[p.entity_id] = ent
         return ent
 
-    def on_spawn_experience_orb(self, p) -> Optional[Entity]:
+    def on_spawn_experience_orb(self, p) -> Entity | None:
         # XP orbs are rarely useful for the bot; we just stash a generic Entity.
         ent = Entity(
             eid=p.entity_id,
@@ -223,6 +223,7 @@ class EntityTracker:
 # doesn't carry one. We use the all-zero UUID since it never collides
 # with a real Mojang UUID.
 from uuid import UUID as _UUID
+
 _ZERO_UUID = _UUID("00000000-0000-0000-0000-000000000000")
 
 

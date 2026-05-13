@@ -11,7 +11,6 @@ import asyncio
 import time
 
 import pytest
-
 from minecraft_bot.connection import Connection
 from minecraft_bot.protocol.v763.states import ConnectionState
 

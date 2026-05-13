@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -13,11 +12,11 @@ PACKET_ID = 0x27
 
 @dataclass(frozen=True, slots=True)
 class SetBeaconEffect:
-    primary_effect: Optional[int]    # varint, registry id; None = clear
-    secondary_effect: Optional[int]
+    primary_effect: int | None    # varint, registry id; None = clear
+    secondary_effect: int | None
 
 
-def _opt_varint(reader: Reader, name: str) -> Optional[int]:
+def _opt_varint(reader: Reader, name: str) -> int | None:
     present = reader.read(1)[0]
     if present == 1:
         return varint.read(reader)
@@ -32,7 +31,7 @@ def decode(reader: Reader) -> SetBeaconEffect:
     return SetBeaconEffect(primary_effect=p, secondary_effect=s)
 
 
-def _write_opt_varint(value: Optional[int], writer: Writer) -> None:
+def _write_opt_varint(value: int | None, writer: Writer) -> None:
     if value is None:
         writer.write(b"\x00")
     else:

@@ -24,7 +24,7 @@ import time
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from minecraft_bot.protocol.v763.states import ConnectionState, Direction
 
@@ -43,8 +43,8 @@ class WireLogEntry:
     direction: Direction
     state: ConnectionState
     packet_id: int
-    name: Optional[str]             # snake_case packet name, informational
-    fields: Optional[dict[str, Any]]  # best-effort JSON of decoded fields; None on decode failure
+    name: str | None             # snake_case packet name, informational
+    fields: dict[str, Any] | None  # best-effort JSON of decoded fields; None on decode failure
     raw: bytes                      # lossless payload bytes
 
     def to_json_line(self) -> dict[str, Any]:
@@ -83,9 +83,9 @@ class InMemory(WireLogSink):
     set, the oldest entries are evicted FIFO.
     """
 
-    def __init__(self, capacity: Optional[int] = None) -> None:
+    def __init__(self, capacity: int | None = None) -> None:
         self.capacity = capacity
-        self._header: Optional[dict[str, Any]] = None
+        self._header: dict[str, Any] | None = None
         self._entries: deque[WireLogEntry] = deque(maxlen=capacity)
 
     def write_header(self, header: dict[str, Any]) -> None:
@@ -97,7 +97,7 @@ class InMemory(WireLogSink):
     def entries(self) -> list[WireLogEntry]:
         return list(self._entries)
 
-    def header(self) -> Optional[dict[str, Any]]:
+    def header(self) -> dict[str, Any] | None:
         return None if self._header is None else dict(self._header)
 
 
@@ -172,15 +172,15 @@ class WireLog:
     _header_written: bool = False
 
     @classmethod
-    def to_jsonl(cls, path: str | Path) -> "WireLog":
+    def to_jsonl(cls, path: str | Path) -> WireLog:
         return cls(sink=JsonlFile(path))
 
     @classmethod
-    def to_logger(cls, logger: logging.Logger | None = None) -> "WireLog":
+    def to_logger(cls, logger: logging.Logger | None = None) -> WireLog:
         return cls(sink=LoggerSink(logger))
 
     @classmethod
-    def in_memory(cls, capacity: Optional[int] = None) -> "WireLog":
+    def in_memory(cls, capacity: int | None = None) -> WireLog:
         return cls(sink=InMemory(capacity))
 
     def start_session(
@@ -211,8 +211,8 @@ class WireLog:
         state: ConnectionState,
         packet_id: int,
         raw: bytes,
-        name: Optional[str] = None,
-        fields: Optional[dict[str, Any]] = None,
+        name: str | None = None,
+        fields: dict[str, Any] | None = None,
     ) -> None:
         """Record one packet event."""
         entry = WireLogEntry(
@@ -239,8 +239,8 @@ class WireLog:
         cls,
         path: str | Path,
         *,
-        version: Optional[int] = None,
-    ) -> "ReplayedConnection":
+        version: int | None = None,
+    ) -> ReplayedConnection:
         """Replay a captured ``.jsonl`` file offline.
 
         Reads every line, decodes each packet via the appropriate
@@ -257,11 +257,10 @@ class WireLog:
         """
         # Local import keeps `wire_log` independent of `protocol.v763` at
         # module-import time (avoids circular imports during package init).
+        from minecraft_bot.codec import Reader as CodecReader
         from minecraft_bot.errors import DecodeError, UnknownPacketId
         from minecraft_bot.protocol.v763.registry import CodecRegistry
         from minecraft_bot.protocol.v763.states import ConnectionState, Direction
-        from minecraft_bot.codec import Reader as CodecReader
-        from minecraft_bot.codec import varint as varint_codec
 
         registry = CodecRegistry.build()
         path = Path(path)
@@ -285,7 +284,7 @@ class WireLog:
                 meta = first_obj["meta"]
                 fmt = meta.get("format")
                 if fmt is None or not isinstance(fmt, int):
-                    raise DecodeError(f"replay: missing meta.format")
+                    raise DecodeError("replay: missing meta.format")
                 if fmt > _FORMAT_VERSION:
                     raise DecodeError(
                         f"replay: unsupported format version {fmt}; "
@@ -294,7 +293,7 @@ class WireLog:
                 if version is None:
                     version = meta.get("version")
                 replay.meta = dict(meta)
-                first_data_line: Optional[str] = None
+                first_data_line: str | None = None
             else:
                 # No meta header — treat the first line as a packet entry.
                 first_data_line = first_line
@@ -387,30 +386,30 @@ class ReplayedConnection:
     :meth:`WireLog.replay`.
     """
 
-    protocol_version: Optional[int] = None
+    protocol_version: int | None = None
     meta: dict[str, Any] = field(default_factory=dict)
     entries: list[WireLogEntry] = field(default_factory=list)
 
     # Per-session state mirrored from a live Connection.
     state: Any = None  # ConnectionState; Any to avoid forward-import dance
     compression_threshold: int = -1
-    entity_id: Optional[int] = None
-    game_mode: Optional[int] = None
-    world_name: Optional[str] = None
-    final_position: Optional[tuple[float, float, float]] = None
+    entity_id: int | None = None
+    game_mode: int | None = None
+    world_name: str | None = None
+    final_position: tuple[float, float, float] | None = None
 
     @property
     def entry_count(self) -> int:
         return len(self.entries)
 
 
-def _apply_state(replay: "ReplayedConnection", state: Any, direction: Any, packet: Any) -> None:
+def _apply_state(replay: ReplayedConnection, state: Any, direction: Any, packet: Any) -> None:
     """Mirror a subset of live-Connection state derivations from a decoded packet."""
-    from minecraft_bot.protocol.v763.states import ConnectionState, Direction
     from minecraft_bot.protocol.v763.packets.login.clientbound import compress as p_l_cb_compress
     from minecraft_bot.protocol.v763.packets.login.clientbound import success as p_l_cb_success
     from minecraft_bot.protocol.v763.packets.play.clientbound import login as p_p_cb_login
     from minecraft_bot.protocol.v763.packets.play.clientbound import position as p_p_cb_pos
+    from minecraft_bot.protocol.v763.states import ConnectionState, Direction
 
     if direction != Direction.CLIENTBOUND:
         return
@@ -428,7 +427,12 @@ def _apply_state(replay: "ReplayedConnection", state: Any, direction: Any, packe
 
 
 __all__ = [
-    "WireLog", "WireLogEntry", "WireLogSink",
-    "InMemory", "JsonlFile", "LoggerSink", "Tee",
+    "InMemory",
+    "JsonlFile",
+    "LoggerSink",
     "ReplayedConnection",
+    "Tee",
+    "WireLog",
+    "WireLogEntry",
+    "WireLogSink",
 ]

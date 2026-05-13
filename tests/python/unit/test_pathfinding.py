@@ -14,7 +14,6 @@ column ``x``, row ``z`` represents a column of blocks::
 from __future__ import annotations
 
 import pytest
-
 from minecraft_bot.errors import NoPathFound
 from minecraft_bot.pathfinding import Path, find_path
 

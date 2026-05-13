@@ -20,6 +20,9 @@ from minecraft_bot.llm_agent.observation_summary import describe_observation
 from minecraft_bot.llm_agent.tools import Tool, Toolset, default_toolset, run_step
 
 __all__ = [
-    "Tool", "Toolset", "default_toolset", "run_step",
+    "Tool",
+    "Toolset",
+    "default_toolset",
     "describe_observation",
+    "run_step",
 ]

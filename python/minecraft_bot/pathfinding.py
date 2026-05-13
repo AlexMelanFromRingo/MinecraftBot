@@ -208,4 +208,4 @@ def find_path(
     raise NoPathFound(goal, expansions)
 
 
-__all__ = ["Path", "find_path", "NavWorld"]
+__all__ = ["NavWorld", "Path", "find_path"]

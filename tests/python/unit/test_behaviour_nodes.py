@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
-
 from minecraft_bot.behaviour.nodes import (
-    Action, AlwaysSucceed, BehaviourRunner, Condition, Inverter,
-    NodeStatus, Repeat, RepeatUntilFail, Selector, Sequence, Wait,
+    Action,
+    AlwaysSucceed,
+    BehaviourRunner,
+    Condition,
+    Inverter,
+    NodeStatus,
+    Repeat,
+    Selector,
+    Sequence,
+    Wait,
 )
-
 
 # --- Condition / Action ----------------------------------------------------
 

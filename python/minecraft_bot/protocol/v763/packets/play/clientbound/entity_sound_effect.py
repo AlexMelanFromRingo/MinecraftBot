@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -20,8 +19,8 @@ PACKET_ID = 0x61
 @dataclass(frozen=True, slots=True)
 class EntitySoundEffect:
     sound_id: int                     # 0 = custom, 1+ = registry id
-    custom_sound: Optional[str]
-    custom_range: Optional[float]
+    custom_sound: str | None
+    custom_range: float | None
     sound_category: int               # varint enum
     entity_id: int                    # varint
     volume: float                     # f32
@@ -32,10 +31,10 @@ class EntitySoundEffect:
 def decode(reader: Reader) -> EntitySoundEffect:
     sid = varint.read(reader)
     if sid == 0:
-        cs: Optional[str] = string.read(reader)
+        cs: str | None = string.read(reader)
         present = reader.read(1)[0]
         if present == 1:
-            cr: Optional[float] = struct.unpack(">f", reader.read(4))[0]
+            cr: float | None = struct.unpack(">f", reader.read(4))[0]
         elif present == 0:
             cr = None
         else:

@@ -9,17 +9,14 @@ intent without needing the network.
 from __future__ import annotations
 
 import asyncio
-import math
 import struct
 
 import pytest
-
 from minecraft_bot.bot import Bot
 from minecraft_bot.codec import Writer, nbt, varint
-from minecraft_bot.errors import NoPathFound, WalkTimeout
+from minecraft_bot.errors import NoPathFound
 from minecraft_bot.events import ChatMessageEvent
-from minecraft_bot.physics import PhysicsIntent, PhysicsState
-from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import MapChunk
+from minecraft_bot.physics import PhysicsState
 from minecraft_bot.protocol.v763.packets.play.clientbound.position import Position
 from minecraft_bot.protocol.v763.packets.play.clientbound.update_health import UpdateHealth
 from minecraft_bot.slots import BotBusy

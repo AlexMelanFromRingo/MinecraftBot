@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import uuid as _uuid_stdlib
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, uuid, varint
 from minecraft_bot.errors import ValueOutOfRange
-
 
 PACKET_ID = 0x02
 
@@ -21,7 +19,7 @@ PACKET_ID = 0x02
 class Property:
     name: str
     value: str
-    signature: Optional[str]  # None when absent
+    signature: str | None  # None when absent
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,7 +39,7 @@ def decode(reader: Reader) -> Success:
         prop_value = string.read(reader)
         signed = reader.read(1)[0]
         if signed == 1:
-            signature: Optional[str] = string.read(reader)
+            signature: str | None = string.read(reader)
         elif signed == 0:
             signature = None
         else:

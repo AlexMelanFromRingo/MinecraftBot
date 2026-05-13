@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Union
 
 from minecraft_bot.codec import Reader, Writer
 from minecraft_bot.errors import MalformedNbt, ValueOutOfRange
@@ -125,22 +125,22 @@ class NbtList:
     representation."""
 
     element_type: int
-    items: tuple["NbtTag", ...] = field(default_factory=tuple)
+    items: tuple[NbtTag, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)
 class NbtCompound:
     """A mapping from name to tag. Order is preserved on round-trip."""
 
-    items: tuple[tuple[str, "NbtTag"], ...] = field(default_factory=tuple)
+    items: tuple[tuple[str, NbtTag], ...] = field(default_factory=tuple)
 
-    def get(self, name: str) -> Optional["NbtTag"]:
+    def get(self, name: str) -> NbtTag | None:
         for n, v in self.items:
             if n == name:
                 return v
         return None
 
-    def to_dict(self) -> dict[str, "NbtTag"]:
+    def to_dict(self) -> dict[str, NbtTag]:
         return dict(self.items)
 
 
@@ -215,7 +215,7 @@ _CLASS_TO_TAG: dict[type, int] = {
 # --- payload-only readers/writers (no type byte, no name) ------------------
 
 
-def _read_payload(tag_type: int, reader: Reader) -> NbtTag:  # noqa: PLR0911, PLR0912
+def _read_payload(tag_type: int, reader: Reader) -> NbtTag:
     if tag_type == TAG_BYTE:
         return NbtByte(struct.unpack(">b", reader.read(1))[0])
     if tag_type == TAG_SHORT:
@@ -268,7 +268,7 @@ def _read_payload(tag_type: int, reader: Reader) -> NbtTag:  # noqa: PLR0911, PL
     raise MalformedNbt(f"unknown tag type: {tag_type}")
 
 
-def _write_payload(tag: NbtTag, writer: Writer) -> None:  # noqa: PLR0912
+def _write_payload(tag: NbtTag, writer: Writer) -> None:
     if isinstance(tag, NbtByte):
         writer.write(struct.pack(">b", tag.value))
     elif isinstance(tag, NbtShort):
@@ -315,7 +315,7 @@ def _write_payload(tag: NbtTag, writer: Writer) -> None:  # noqa: PLR0912
 # --- public API ------------------------------------------------------------
 
 
-def read(reader: Reader, *, nameless_root: bool = False) -> Optional[NbtTag]:
+def read(reader: Reader, *, nameless_root: bool = False) -> NbtTag | None:
     """Decode a complete NBT document from ``reader``.
 
     Returns ``None`` if the first byte is :data:`TAG_END` (canonical
@@ -336,7 +336,7 @@ def read(reader: Reader, *, nameless_root: bool = False) -> Optional[NbtTag]:
     return _read_payload(tag_type, reader)
 
 
-def write(value: Optional[NbtTag], writer: Writer, *, nameless_root: bool = False,
+def write(value: NbtTag | None, writer: Writer, *, nameless_root: bool = False,
           root_name: str = "") -> None:
     """Encode a complete NBT document into ``writer``.
 
@@ -353,11 +353,32 @@ def write(value: Optional[NbtTag], writer: Writer, *, nameless_root: bool = Fals
 
 
 __all__ = [
-    "TAG_END", "TAG_BYTE", "TAG_SHORT", "TAG_INT", "TAG_LONG", "TAG_FLOAT",
-    "TAG_DOUBLE", "TAG_BYTE_ARRAY", "TAG_STRING", "TAG_LIST", "TAG_COMPOUND",
-    "TAG_INT_ARRAY", "TAG_LONG_ARRAY",
-    "NbtByte", "NbtShort", "NbtInt", "NbtLong", "NbtFloat", "NbtDouble",
-    "NbtByteArray", "NbtString", "NbtList", "NbtCompound",
-    "NbtIntArray", "NbtLongArray", "NbtTag",
-    "read", "write",
+    "TAG_BYTE",
+    "TAG_BYTE_ARRAY",
+    "TAG_COMPOUND",
+    "TAG_DOUBLE",
+    "TAG_END",
+    "TAG_FLOAT",
+    "TAG_INT",
+    "TAG_INT_ARRAY",
+    "TAG_LIST",
+    "TAG_LONG",
+    "TAG_LONG_ARRAY",
+    "TAG_SHORT",
+    "TAG_STRING",
+    "NbtByte",
+    "NbtByteArray",
+    "NbtCompound",
+    "NbtDouble",
+    "NbtFloat",
+    "NbtInt",
+    "NbtIntArray",
+    "NbtList",
+    "NbtLong",
+    "NbtLongArray",
+    "NbtShort",
+    "NbtString",
+    "NbtTag",
+    "read",
+    "write",
 ]

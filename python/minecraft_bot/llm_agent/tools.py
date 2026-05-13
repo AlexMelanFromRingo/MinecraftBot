@@ -18,10 +18,9 @@ Example::
 
 from __future__ import annotations
 
-import inspect
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Optional
-
+from typing import Any
 
 # A tool implementation gets (bot, **kwargs) and returns a string.
 ToolFn = Callable[..., Awaitable[Any]]
@@ -67,7 +66,7 @@ class Toolset:
     def add(self, tool: Tool) -> None:
         self.tools[tool.name] = tool
 
-    def get(self, name: str) -> Optional[Tool]:
+    def get(self, name: str) -> Tool | None:
         return self.tools.get(name)
 
     def anthropic_schemas(self) -> list[dict[str, Any]]:

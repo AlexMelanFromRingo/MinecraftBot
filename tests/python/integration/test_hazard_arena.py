@@ -23,10 +23,8 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from minecraft_bot.bot import Bot
 from minecraft_bot.errors import NoPathFound, WalkTimeout
-from minecraft_bot.world import block_table
 
 pytestmark = pytest.mark.live
 

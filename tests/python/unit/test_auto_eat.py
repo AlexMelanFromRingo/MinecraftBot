@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from minecraft_bot.foods import (
-    FoodInfo, pick_highest_saturation, pick_minimum_waste, pick_most_food_points,
+    FoodInfo,
+    pick_highest_saturation,
+    pick_minimum_waste,
+    pick_most_food_points,
 )
 
 

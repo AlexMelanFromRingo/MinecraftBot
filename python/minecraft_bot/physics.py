@@ -252,9 +252,20 @@ def tick(
 
 
 __all__ = [
-    "GRAVITY", "AIR_DRAG", "GROUND_FRICTION", "WATER_DRAG",
-    "WALK_CAP", "SPRINT_CAP", "SNEAK_CAP", "JUMP_VELOCITY", "STEP_HEIGHT",
-    "BBOX_W", "BBOX_H", "TERMINAL_VELOCITY",
-    "PhysicsState", "PhysicsIntent", "CollisionWorld",
+    "AIR_DRAG",
+    "BBOX_H",
+    "BBOX_W",
+    "GRAVITY",
+    "GROUND_FRICTION",
+    "JUMP_VELOCITY",
+    "SNEAK_CAP",
+    "SPRINT_CAP",
+    "STEP_HEIGHT",
+    "TERMINAL_VELOCITY",
+    "WALK_CAP",
+    "WATER_DRAG",
+    "CollisionWorld",
+    "PhysicsIntent",
+    "PhysicsState",
     "tick",
 ]

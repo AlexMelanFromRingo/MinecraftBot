@@ -13,9 +13,7 @@ Usage::
 
 from __future__ import annotations
 
-import uuid as _uuid
 from dataclasses import dataclass
-from typing import Any, Optional
 
 # Re-export the Reconnected event from 001 so the public surface is unified.
 from minecraft_bot.connection import Reconnected
@@ -29,7 +27,7 @@ class Event:
 class ChatMessageEvent(Event):
     """Incoming chat message (player, system, or profileless)."""
 
-    sender: Optional[str]   # player display name, or None for system messages
+    sender: str | None   # player display name, or None for system messages
     message: str            # human-readable message text
     chat_type: str          # "player" | "system" | "profileless"
     raw: str                # JSON chat-component / raw text as received
@@ -41,7 +39,7 @@ class EntityDamageEvent(Event):
 
     entity_id: int
     damage: float
-    source_entity_id: Optional[int]    # may be None for environmental damage
+    source_entity_id: int | None    # may be None for environmental damage
     source_type_id: int                # damage-type registry id
 
 
@@ -50,7 +48,7 @@ class EntityDeathEvent(Event):
     """Entity died."""
 
     entity_id: int
-    death_message: Optional[str]
+    death_message: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,8 +65,8 @@ class InventoryChangeEvent(Event):
     """A slot in the bot's inventory changed."""
 
     slot_index: int
-    old_item_id: Optional[int]
-    new_item_id: Optional[int]
+    old_item_id: int | None
+    new_item_id: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,7 +76,7 @@ class BlockBreakEvent(Event):
     x: int
     y: int
     z: int
-    by_entity_id: Optional[int]
+    by_entity_id: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,7 +115,7 @@ class InLavaEvent(Event):
 class DimensionChangedEvent(Event):
     """Dimension change via ``respawn`` packet (e.g., Nether portal)."""
 
-    old_dimension: Optional[str]
+    old_dimension: str | None
     new_dimension: str
 
 
@@ -129,11 +127,18 @@ class RespawnEvent(Event):
 
 
 __all__ = [
+    "BlockBreakEvent",
+    "ChatMessageEvent",
+    "ContainerCloseEvent",
+    "ContainerOpenEvent",
+    "DimensionChangedEvent",
+    "EntityDamageEvent",
+    "EntityDeathEvent",
     "Event",
-    "ChatMessageEvent", "EntityDamageEvent", "EntityDeathEvent",
-    "ItemPickupEvent", "InventoryChangeEvent", "BlockBreakEvent",
-    "ContainerOpenEvent", "ContainerCloseEvent",
-    "TeleportedEvent", "InLavaEvent", "DimensionChangedEvent",
-    "RespawnEvent",
+    "InLavaEvent",
+    "InventoryChangeEvent",
+    "ItemPickupEvent",
     "Reconnected",  # re-exported from 001
+    "RespawnEvent",
+    "TeleportedEvent",
 ]

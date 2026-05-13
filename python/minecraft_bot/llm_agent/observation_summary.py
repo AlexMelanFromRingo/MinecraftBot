@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 _FACE_NAMES = {0: "bottom", 1: "top", 2: "north", 3: "south", 4: "west", 5: "east"}
 
 
-def describe_observation(obs: "Observation") -> dict[str, Any]:
+def describe_observation(obs: Observation) -> dict[str, Any]:
     """Return a JSON-serialisable summary of ``obs`` suited for LLM use."""
     # Count block types in the voxel grid.
     block_counts: Counter[str] = Counter()
@@ -100,7 +100,7 @@ def describe_observation(obs: "Observation") -> dict[str, Any]:
     }
 
 
-def describe_observation_text(obs: "Observation") -> str:
+def describe_observation_text(obs: Observation) -> str:
     """A short *prose* summary of ``obs`` — good for prompts that don't
     want JSON, or as a "scene description" prefix.
     """
@@ -146,13 +146,13 @@ def describe_observation_text(obs: "Observation") -> str:
     return "\n".join(lines)
 
 
-def describe_observation_json(obs: "Observation") -> str:
+def describe_observation_json(obs: Observation) -> str:
     """Pretty-printed JSON form."""
     return json.dumps(describe_observation(obs), indent=2, ensure_ascii=False)
 
 
 __all__ = [
     "describe_observation",
-    "describe_observation_text",
     "describe_observation_json",
+    "describe_observation_text",
 ]

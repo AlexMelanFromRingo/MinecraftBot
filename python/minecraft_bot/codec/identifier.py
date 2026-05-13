@@ -31,4 +31,4 @@ def write(value: str, writer: Writer) -> None:
     string.write(value, writer)
 
 
-__all__ = ["read", "write", "DEFAULT_NAMESPACE"]
+__all__ = ["DEFAULT_NAMESPACE", "read", "write"]

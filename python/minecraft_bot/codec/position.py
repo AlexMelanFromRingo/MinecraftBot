@@ -50,4 +50,4 @@ def write(value: tuple[int, int, int], writer: Writer) -> None:
     writer.write(struct.pack(">Q", val))
 
 
-__all__ = ["read", "write", "X_MIN", "X_MAX", "Y_MIN", "Y_MAX", "Z_MIN", "Z_MAX"]
+__all__ = ["X_MAX", "X_MIN", "Y_MAX", "Y_MIN", "Z_MAX", "Z_MIN", "read", "write"]

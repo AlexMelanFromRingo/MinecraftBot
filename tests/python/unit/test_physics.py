@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from minecraft_bot.physics import (
-    GRAVITY, JUMP_VELOCITY, STEP_HEIGHT, TERMINAL_VELOCITY, WALK_CAP,
-    PhysicsIntent, PhysicsState, tick,
+    TERMINAL_VELOCITY,
+    WALK_CAP,
+    PhysicsIntent,
+    PhysicsState,
+    tick,
 )
 
 

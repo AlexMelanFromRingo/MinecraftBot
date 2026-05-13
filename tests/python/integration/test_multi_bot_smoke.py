@@ -13,7 +13,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from minecraft_bot.connection import Connection
 from minecraft_bot.protocol.v763.states import ConnectionState
 from minecraft_bot.wire_log import WireLog

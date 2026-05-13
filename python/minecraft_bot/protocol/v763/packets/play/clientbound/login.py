@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, nbt, position, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -36,7 +35,7 @@ class Login:
     game_mode: int               # u8
     previous_game_mode: int      # i8
     world_names: tuple[str, ...]
-    dimension_codec: Optional[nbt.NbtTag]
+    dimension_codec: nbt.NbtTag | None
     world_type: str              # current dimension type identifier
     world_name: str              # current dimension/world identifier
     hashed_seed: int             # i64
@@ -47,7 +46,7 @@ class Login:
     enable_respawn_screen: bool
     is_debug: bool
     is_flat: bool
-    death: Optional[DeathLocation]
+    death: DeathLocation | None
     portal_cooldown: int         # varint
 
 
@@ -58,7 +57,7 @@ def _read_bool(reader: Reader) -> bool:
     return b == 1
 
 
-def decode(reader: Reader) -> Login:  # noqa: PLR0915 — long but flat
+def decode(reader: Reader) -> Login:
     (entity_id,) = struct.unpack(">i", reader.read(4))
     is_hardcore = _read_bool(reader)
     (game_mode,) = struct.unpack(">B", reader.read(1))
@@ -97,7 +96,7 @@ def decode(reader: Reader) -> Login:  # noqa: PLR0915 — long but flat
     )
 
 
-def encode(packet: Login, writer: Writer) -> None:  # noqa: PLR0915
+def encode(packet: Login, writer: Writer) -> None:
     writer.write(struct.pack(">i", packet.entity_id))
     writer.write(b"\x01" if packet.is_hardcore else b"\x00")
     writer.write(struct.pack(">B", packet.game_mode))

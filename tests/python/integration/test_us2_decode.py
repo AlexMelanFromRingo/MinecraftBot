@@ -16,7 +16,6 @@ import logging
 from collections import Counter
 
 import pytest
-
 from minecraft_bot.connection import Connection
 from minecraft_bot.wire_log import WireLog
 

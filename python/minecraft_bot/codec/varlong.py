@@ -41,4 +41,4 @@ def write(value: int, writer: Writer) -> None:
     writer.write(bytes(out))
 
 
-__all__ = ["read", "write", "MAX_BYTES"]
+__all__ = ["MAX_BYTES", "read", "write"]

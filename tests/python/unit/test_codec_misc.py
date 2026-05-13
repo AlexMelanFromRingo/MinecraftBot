@@ -5,7 +5,6 @@ from __future__ import annotations
 import uuid as _uuid
 
 import pytest
-
 from minecraft_bot.codec import Reader, Writer, bitset, identifier, position, uuid
 from minecraft_bot.errors import ValueOutOfRange
 

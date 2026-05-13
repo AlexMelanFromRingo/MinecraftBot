@@ -36,7 +36,6 @@ import pkgutil
 from dataclasses import dataclass, fields, is_dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
 
 from minecraft_bot.errors import UnknownPacketId
 from minecraft_bot.protocol.v763.states import ConnectionState, Direction
@@ -84,7 +83,7 @@ class CodecRegistry:
             self._add(s)
 
     @classmethod
-    def build(cls) -> "CodecRegistry":
+    def build(cls) -> CodecRegistry:
         """Walk the ``packets/`` tree, build the registry."""
         reg = cls()
         reg._discover()
@@ -253,7 +252,7 @@ def _dir_segment(direction: Direction) -> str:
 
 def _slot_from_module(
     mod: ModuleType, state: ConnectionState, direction: Direction
-) -> Optional[_Slot]:
+) -> _Slot | None:
     """Inspect a packet module and pull out its declared packet class.
 
     A module is recognised as a packet definition iff it exports

@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from minecraft_bot.slots import BotBusy, Slot, guard
 
 

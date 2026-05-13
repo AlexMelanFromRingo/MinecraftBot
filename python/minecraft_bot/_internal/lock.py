@@ -35,7 +35,7 @@ class WriteLock:
         self._lock = asyncio.Lock()
         self._owner = owner_repr
 
-    async def __aenter__(self) -> "WriteLock":
+    async def __aenter__(self) -> WriteLock:
         await self._lock.acquire()
         return self
 

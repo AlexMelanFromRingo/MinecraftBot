@@ -8,7 +8,6 @@ Removes a previously-displayed signed chat message from the client.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, varint
 
@@ -18,13 +17,13 @@ PACKET_ID = 0x19
 @dataclass(frozen=True, slots=True)
 class HideMessage:
     id: int                  # varint
-    signature: Optional[bytes]  # exactly 256 bytes if id == 0; else None
+    signature: bytes | None  # exactly 256 bytes if id == 0; else None
 
 
 def decode(reader: Reader) -> HideMessage:
     mid = varint.read(reader)
     if mid == 0:
-        sig: Optional[bytes] = reader.read(256)
+        sig: bytes | None = reader.read(256)
     else:
         sig = None
     return HideMessage(id=mid, signature=sig)

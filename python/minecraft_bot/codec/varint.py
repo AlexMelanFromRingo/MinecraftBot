@@ -69,4 +69,4 @@ def encoded_size(value: int) -> int:
     return 5
 
 
-__all__ = ["read", "write", "encoded_size", "MAX_BYTES"]
+__all__ = ["MAX_BYTES", "encoded_size", "read", "write"]

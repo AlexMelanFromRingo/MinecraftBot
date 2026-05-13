@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 
@@ -22,16 +21,16 @@ PACKET_ID = 0x58
 class ScoreboardObjective:
     name: str                       # max 16
     action: int                     # i8: 0/1/2
-    display_text: Optional[str]     # JSON chat, only when action != 1
-    objective_type: Optional[int]   # varint, only when action != 1
+    display_text: str | None     # JSON chat, only when action != 1
+    objective_type: int | None   # varint, only when action != 1
 
 
 def decode(reader: Reader) -> ScoreboardObjective:
     nm = string.read(reader)
     act, = struct.unpack(">b", reader.read(1))
     if act in (0, 2):
-        dt: Optional[str] = string.read(reader)
-        ot: Optional[int] = varint.read(reader)
+        dt: str | None = string.read(reader)
+        ot: int | None = varint.read(reader)
     else:
         dt, ot = None, None
     return ScoreboardObjective(name=nm, action=act, display_text=dt, objective_type=ot)

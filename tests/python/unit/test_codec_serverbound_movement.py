@@ -28,7 +28,9 @@ def test_every_movement_module_imports() -> None:
 
 def test_position_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.position import (
-        Position, decode, encode,
+        Position,
+        decode,
+        encode,
     )
     pkt = Position(x=100.5, y=64.0, z=-200.25, on_ground=True)
     w = Writer(); encode(pkt, w)
@@ -37,7 +39,9 @@ def test_position_round_trip() -> None:
 
 def test_position_look_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.position_look import (
-        PositionLook, decode, encode,
+        PositionLook,
+        decode,
+        encode,
     )
     pkt = PositionLook(x=10.0, y=70.0, z=-30.0, yaw=180.0, pitch=15.5, on_ground=False)
     w = Writer(); encode(pkt, w)
@@ -46,7 +50,9 @@ def test_position_look_round_trip() -> None:
 
 def test_flying_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.serverbound.flying import (
-        Flying, decode, encode,
+        Flying,
+        decode,
+        encode,
     )
     pkt = Flying(on_ground=True)
     w = Writer(); encode(pkt, w)

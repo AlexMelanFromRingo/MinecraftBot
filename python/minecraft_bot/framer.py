@@ -29,10 +29,9 @@ from __future__ import annotations
 
 import logging
 import zlib
-from typing import Optional
 
-from minecraft_bot.codec import Reader, Writer, varint
-from minecraft_bot.errors import DecodeError, OversizedVarInt, ValueOutOfRange
+from minecraft_bot.codec import Writer, varint
+from minecraft_bot.errors import DecodeError, OversizedVarInt
 
 _log = logging.getLogger("minecraft_bot.protocol.framer")
 
@@ -71,7 +70,7 @@ class Framer:
     def buffered_bytes(self) -> int:
         return len(self._buf)
 
-    def try_extract(self) -> Optional[bytes]:
+    def try_extract(self) -> bytes | None:
         """Extract one complete packet body or return ``None``.
 
         The body returned is the byte sequence ``id_varint + payload``;
@@ -161,7 +160,7 @@ class Framer:
         return outer_w.bytes() + inner
 
 
-def _try_read_varint(buf: bytes) -> Optional[tuple[int, int]]:
+def _try_read_varint(buf: bytes) -> tuple[int, int] | None:
     """Try to peel a VarInt off the front of ``buf``.
 
     Returns ``(value, bytes_consumed)`` if a complete varint is present,
@@ -184,4 +183,4 @@ def _try_read_varint(buf: bytes) -> Optional[tuple[int, int]]:
     raise OversizedVarInt(byte_count=6)
 
 
-__all__ = ["Framer", "MAX_PACKET_SIZE"]
+__all__ = ["MAX_PACKET_SIZE", "Framer"]

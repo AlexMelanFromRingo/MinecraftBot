@@ -9,22 +9,15 @@ T106: format version regression — synthetic files; offline only.
 from __future__ import annotations
 
 import json
-import tempfile
-import time
 from pathlib import Path
 
 import pytest
-
-from minecraft_bot.errors import DecodeError, ProtocolError
+from minecraft_bot.errors import DecodeError
 from minecraft_bot.protocol.v763.states import ConnectionState
 from minecraft_bot.wire_log import (
-    InMemory,
-    JsonlFile,
     ReplayedConnection,
     WireLog,
-    WireLogEntry,
 )
-
 
 # --- T106: format-version conformance --------------------------------------
 
@@ -109,7 +102,7 @@ def test_capture_then_replay_in_memory(tmp_path: Path) -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound import (
         position as p_cb_pos,
     )
-    from minecraft_bot.protocol.v763.states import ConnectionState, Direction
+    from minecraft_bot.protocol.v763.states import Direction
 
     out = tmp_path / "synth.jsonl"
     log = WireLog.to_jsonl(out)

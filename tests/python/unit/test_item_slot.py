@@ -5,7 +5,10 @@ from __future__ import annotations
 from minecraft_bot.codec import nbt as _nbt
 from minecraft_bot.codec.slot import SlotData
 from minecraft_bot.inventory.item import (
-    Enchantment, ItemSlot, item_id, item_name,
+    Enchantment,
+    ItemSlot,
+    item_id,
+    item_name,
 )
 
 

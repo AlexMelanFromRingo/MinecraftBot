@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from minecraft_bot.bot import Bot
 from minecraft_bot.physics import PhysicsIntent, PhysicsState
 from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
@@ -13,6 +12,7 @@ from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
 def _bot_with_one_loaded_chunk() -> Bot:
     """Bot with initial position set + a tiny synthetic chunk under feet."""
     import struct
+
     from minecraft_bot.codec import Writer, nbt, varint
 
     bot = Bot.offline("h", 25565, "t")

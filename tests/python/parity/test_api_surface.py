@@ -129,6 +129,7 @@ def test_accel_python_compat_matches_minecraft_bot_version() -> None:
     """SC-007: accel.python_compat MUST cover minecraft_bot.__version__'s
     MAJOR.MINOR line."""
     import re
+
     import minecraft_bot
     import minecraft_bot_accel as mb_accel
 

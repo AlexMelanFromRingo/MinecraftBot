@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -17,12 +16,12 @@ PACKET_ID = 0x25
 @dataclass(frozen=True, slots=True)
 class AdvancementTab:
     action: int                # varint
-    tab_id: Optional[str]
+    tab_id: str | None
 
 
 def decode(reader: Reader) -> AdvancementTab:
     act = varint.read(reader)
-    tab_id: Optional[str] = None
+    tab_id: str | None = None
     if act == 0:
         tab_id = string.read(reader)
     return AdvancementTab(action=act, tab_id=tab_id)

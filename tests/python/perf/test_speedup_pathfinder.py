@@ -51,6 +51,7 @@ def _build_python_flat_world(radius: int = GRID_RADIUS):
 def _build_accel_flat_world(radius: int = GRID_RADIUS):
     import json
     from pathlib import Path
+
     from minecraft_bot.codec import Reader
     from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
         decode as pkt_decode,

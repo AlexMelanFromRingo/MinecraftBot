@@ -8,9 +8,7 @@ codes 0-5 are: main hand, off hand, boots, leggings, chestplate, helmet.
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, slot, varint
 
@@ -20,7 +18,7 @@ PACKET_ID = 0x55
 @dataclass(frozen=True, slots=True)
 class EquipmentEntry:
     slot: int                       # i8 (0..5); top bit reserved for stream
-    item: Optional[slot.SlotData]
+    item: slot.SlotData | None
 
 
 @dataclass(frozen=True, slots=True)

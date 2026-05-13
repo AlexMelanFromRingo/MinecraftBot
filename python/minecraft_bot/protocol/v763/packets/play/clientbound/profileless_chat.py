@@ -7,7 +7,6 @@ through the chat type registry.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -20,7 +19,7 @@ class ProfilelessChat:
     message: str       # JSON chat component
     chat_type: int     # varint registry id
     name: str          # JSON chat component (sender display name)
-    target: Optional[str]  # JSON chat component (e.g., for /msg target)
+    target: str | None  # JSON chat component (e.g., for /msg target)
 
 
 def decode(reader: Reader) -> ProfilelessChat:
@@ -29,7 +28,7 @@ def decode(reader: Reader) -> ProfilelessChat:
     nm = string.read(reader)
     present = reader.read(1)[0]
     if present == 1:
-        tg: Optional[str] = string.read(reader)
+        tg: str | None = string.read(reader)
     elif present == 0:
         tg = None
     else:

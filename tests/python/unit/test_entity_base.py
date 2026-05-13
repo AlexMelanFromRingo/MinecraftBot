@@ -6,12 +6,15 @@ from uuid import uuid4
 
 from minecraft_bot.codec import metadata as md
 from minecraft_bot.entities.base import (
-    Entity, ItemEntity, LivingEntity, Mob, Player, Projectile,
+    Entity,
+    LivingEntity,
+    Mob,
+    Player,
 )
 from minecraft_bot.entities.types import LOOKUP, lookup_class
 
 
-def _u() -> "UUID":  # type: ignore[name-defined]
+def _u() -> UUID:  # type: ignore[name-defined]
     return uuid4()
 
 

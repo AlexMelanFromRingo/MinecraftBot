@@ -23,8 +23,6 @@ hotbar.
 
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Optional
-
 from minecraft_bot.inventory.item import ItemSlot, item_id
 
 PLAYER_INVENTORY_SIZE = 46
@@ -47,20 +45,24 @@ class InventoryTracker:
     """Per-bot inventory state, source-of-truth for inventory queries."""
 
     __slots__ = (
-        "player_slots", "cursor", "state_id",
-        "container_window_id", "container_type", "container_title",
         "container_slots",
+        "container_title",
+        "container_type",
+        "container_window_id",
+        "cursor",
+        "player_slots",
+        "state_id",
     )
 
     def __init__(self) -> None:
-        self.player_slots: list[Optional[ItemSlot]] = [None] * PLAYER_INVENTORY_SIZE
-        self.cursor: Optional[ItemSlot] = None
+        self.player_slots: list[ItemSlot | None] = [None] * PLAYER_INVENTORY_SIZE
+        self.cursor: ItemSlot | None = None
         self.state_id: int = 0
         # Container state (None when no container is open).
-        self.container_window_id: Optional[int] = None
-        self.container_type: Optional[int] = None
-        self.container_title: Optional[str] = None
-        self.container_slots: list[Optional[ItemSlot]] = []
+        self.container_window_id: int | None = None
+        self.container_type: int | None = None
+        self.container_title: str | None = None
+        self.container_slots: list[ItemSlot | None] = []
 
     # --- packet handlers ----------------------------------------------
 
@@ -117,15 +119,15 @@ class InventoryTracker:
 
     # --- public query API (FR-060..FR-070) ----------------------------
 
-    def items(self) -> list[Optional[ItemSlot]]:
+    def items(self) -> list[ItemSlot | None]:
         """The entire player inventory snapshot (length 46)."""
         return list(self.player_slots)
 
-    def hotbar_items(self) -> list[Optional[ItemSlot]]:
+    def hotbar_items(self) -> list[ItemSlot | None]:
         """Just the 9 hotbar slots (key 1 = index 0)."""
         return self.player_slots[SLOT_HOTBAR_FIRST:SLOT_HOTBAR_LAST + 1]
 
-    def armor_items(self) -> dict[str, Optional[ItemSlot]]:
+    def armor_items(self) -> dict[str, ItemSlot | None]:
         return {
             "head": self.player_slots[SLOT_ARMOR_HEAD],
             "chest": self.player_slots[SLOT_ARMOR_CHEST],
@@ -133,13 +135,13 @@ class InventoryTracker:
             "feet": self.player_slots[SLOT_ARMOR_FEET],
         }
 
-    def offhand_item(self) -> Optional[ItemSlot]:
+    def offhand_item(self) -> ItemSlot | None:
         return self.player_slots[SLOT_OFFHAND]
 
-    def container_items(self) -> list[Optional[ItemSlot]]:
+    def container_items(self) -> list[ItemSlot | None]:
         return list(self.container_slots)
 
-    def find_item(self, name: str) -> Optional[int]:
+    def find_item(self, name: str) -> int | None:
         """Return the first slot index where the named item appears, or None."""
         target = item_id(name)
         if target is None:
@@ -159,7 +161,7 @@ class InventoryTracker:
             if slot is not None and slot.item_id == target
         )
 
-    def find_in_container(self, name: str) -> Optional[int]:
+    def find_in_container(self, name: str) -> int | None:
         target = item_id(name)
         if target is None:
             return None
@@ -170,9 +172,16 @@ class InventoryTracker:
 
 
 __all__ = [
-    "InventoryTracker", "PLAYER_INVENTORY_SIZE",
-    "SLOT_CRAFT_RESULT", "SLOT_ARMOR_HEAD", "SLOT_ARMOR_CHEST",
-    "SLOT_ARMOR_LEGS", "SLOT_ARMOR_FEET",
-    "SLOT_MAIN_FIRST", "SLOT_MAIN_LAST",
-    "SLOT_HOTBAR_FIRST", "SLOT_HOTBAR_LAST", "SLOT_OFFHAND",
+    "PLAYER_INVENTORY_SIZE",
+    "SLOT_ARMOR_CHEST",
+    "SLOT_ARMOR_FEET",
+    "SLOT_ARMOR_HEAD",
+    "SLOT_ARMOR_LEGS",
+    "SLOT_CRAFT_RESULT",
+    "SLOT_HOTBAR_FIRST",
+    "SLOT_HOTBAR_LAST",
+    "SLOT_MAIN_FIRST",
+    "SLOT_MAIN_LAST",
+    "SLOT_OFFHAND",
+    "InventoryTracker",
 ]

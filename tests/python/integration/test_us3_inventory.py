@@ -13,7 +13,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from minecraft_bot.bot import Bot
 
 pytestmark = pytest.mark.live

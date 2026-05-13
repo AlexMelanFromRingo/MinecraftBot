@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import struct
-from dataclasses import dataclass
-
-import pytest
 
 from minecraft_bot.codec import Writer, nbt, varint
 from minecraft_bot.protocol.v763.packets.play.clientbound.block_change import (

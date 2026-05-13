@@ -12,8 +12,6 @@ for ergonomic lookup; unknown IDs are kept as numbers.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Optional
-
 
 # Subset of 1.20.1 effect registry — the rest still works numerically.
 EFFECT_NAMES: dict[int, str] = {
@@ -88,7 +86,7 @@ class StatusEffects:
 
     __slots__ = ("_effects", "bot_eid")
 
-    def __init__(self, *, bot_eid: Optional[int] = None) -> None:
+    def __init__(self, *, bot_eid: int | None = None) -> None:
         self._effects: dict[int, EffectEntry] = {}
         self.bot_eid = bot_eid
 
@@ -130,7 +128,7 @@ class StatusEffects:
     def has_effect(self, key: int | str) -> bool:
         return key in self
 
-    def get(self, key: int | str) -> Optional[EffectEntry]:
+    def get(self, key: int | str) -> EffectEntry | None:
         if isinstance(key, str):
             eid = EFFECT_IDS.get(key)
             if eid is None:
@@ -146,7 +144,11 @@ class StatusEffects:
 
 
 __all__ = [
-    "EffectEntry", "StatusEffects",
-    "EFFECT_NAMES", "EFFECT_IDS",
-    "FLAG_AMBIENT", "FLAG_SHOW_PARTICLES", "FLAG_SHOW_ICON",
+    "EFFECT_IDS",
+    "EFFECT_NAMES",
+    "FLAG_AMBIENT",
+    "FLAG_SHOW_ICON",
+    "FLAG_SHOW_PARTICLES",
+    "EffectEntry",
+    "StatusEffects",
 ]

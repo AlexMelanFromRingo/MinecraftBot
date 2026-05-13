@@ -25,14 +25,13 @@ decoded-value). Encoders accept the same shape.
 from __future__ import annotations
 
 import struct
-from typing import Any, Optional
+from typing import Any
 
 from minecraft_bot.codec import Reader, Writer, identifier, nbt, position, slot, varint
 from minecraft_bot.codec import chat_component as chat_codec
 from minecraft_bot.codec import string as string_codec
 from minecraft_bot.codec import uuid as uuid_codec
 from minecraft_bot.errors import ValueOutOfRange
-
 
 # Type tags as documented at https://minecraft.wiki/w/Java_Edition_protocol/Entity_metadata
 T_BYTE = 0
@@ -263,4 +262,4 @@ def write(values: dict[int, tuple[int, Any]], writer: Writer) -> None:
     writer.write(bytes([TERMINATOR]))
 
 
-__all__ = ["read", "write", "TERMINATOR"]
+__all__ = ["TERMINATOR", "read", "write"]

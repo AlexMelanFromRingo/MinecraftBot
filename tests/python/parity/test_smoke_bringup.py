@@ -101,8 +101,7 @@ def test_accel_errors_submodule_classes() -> None:
 
 def test_accel_codec_smoke() -> None:
     """varint round-trip via the native codec."""
-    from minecraft_bot_accel.codec import Reader, Writer
-    from minecraft_bot_accel.codec import varint
+    from minecraft_bot_accel.codec import Reader, Writer, varint
 
     w = Writer()
     varint.write(300, w)

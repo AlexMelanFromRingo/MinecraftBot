@@ -14,7 +14,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
 from minecraft_bot.connection import Connection
 from minecraft_bot.protocol.v763.packets.play.serverbound import arm_animation as sb_arm
 from minecraft_bot.wire_log import WireLog

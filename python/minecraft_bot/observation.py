@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from minecraft_bot.world import block_table
 
@@ -48,13 +48,13 @@ def _face_id(nx: float, ny: float, nz: float) -> int:
 
 
 def raycast(
-    world: "World",
+    world: World,
     origin: tuple[float, float, float],
     direction: tuple[float, float, float],
     *,
     max_distance: float = 32.0,
     step: float = 0.1,
-) -> Optional[RayHit]:
+) -> RayHit | None:
     """Cast a ray from ``origin`` along (normalised) ``direction`` and
     return the first solid block it hits, or None if max_distance is
     exhausted.
@@ -80,7 +80,7 @@ def raycast(
     if abs(dz) < _EPS:
         dz = 0.0
     t = 0.0
-    last_block: Optional[tuple[int, int, int]] = None
+    last_block: tuple[int, int, int] | None = None
     while t <= max_distance:
         px, py, pz = ox + dx * t, oy + dy * t, oz + dz * t
         bx, by, bz = math.floor(px), math.floor(py), math.floor(pz)
@@ -103,7 +103,7 @@ def raycast(
 
 
 def scan_volume(
-    world: "World",
+    world: World,
     centre: tuple[float, float, float],
     *,
     radius: int = 8,
@@ -135,7 +135,7 @@ def scan_volume(
 
 
 def voxel_grid(
-    world: "World",
+    world: World,
     centre: tuple[float, float, float],
     *,
     radius: int = 8,
@@ -180,7 +180,7 @@ class ChunkView:
 
 
 def chunks_around(
-    world: "World",
+    world: World,
     centre: tuple[float, float, float],
     *,
     radius_chunks: int = 2,
@@ -210,11 +210,11 @@ def chunks_around(
 
 
 def world_map_3d(
-    world: "World",
+    world: World,
     centre: tuple[float, float, float],
     *,
     radius_xz: int = 16,
-    radius_y: Optional[int] = None,
+    radius_y: int | None = None,
 ) -> tuple[list[list[list[int]]], tuple[int, int, int]]:
     """Wider variant of :func:`voxel_grid`: rectangular box of block-state
     IDs (``[y][z][x]``) centred on the bot.
@@ -268,7 +268,7 @@ class Observation:
     held_slot: int
 
     # Look target
-    look_hit: Optional[RayHit]
+    look_hit: RayHit | None
 
     # Voxel grid around the bot (state IDs)
     voxel_radius: int
@@ -343,7 +343,13 @@ def make_observation(
 
 
 __all__ = [
-    "RayHit", "ChunkView", "Observation",
-    "raycast", "scan_volume", "voxel_grid", "world_map_3d",
-    "chunks_around", "make_observation",
+    "ChunkView",
+    "Observation",
+    "RayHit",
+    "chunks_around",
+    "make_observation",
+    "raycast",
+    "scan_volume",
+    "voxel_grid",
+    "world_map_3d",
 ]

@@ -10,8 +10,8 @@ Python WireLog when called directly.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 
 def test_accel_wirelog_writes_session_header() -> None:

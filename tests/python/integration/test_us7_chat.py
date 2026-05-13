@@ -11,7 +11,6 @@ import asyncio
 import time
 
 import pytest
-
 from minecraft_bot.bot import Bot
 from minecraft_bot.events import ChatMessageEvent
 

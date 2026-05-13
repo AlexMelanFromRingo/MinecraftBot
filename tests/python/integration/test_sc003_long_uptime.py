@@ -19,7 +19,6 @@ import os
 import time
 
 import pytest
-
 from minecraft_bot.bot import Bot
 
 pytestmark = [pytest.mark.live, pytest.mark.slow]

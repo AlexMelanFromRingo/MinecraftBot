@@ -7,7 +7,6 @@ matches, each with an optional tooltip.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -18,7 +17,7 @@ PACKET_ID = 0x0F
 @dataclass(frozen=True, slots=True)
 class TabCompleteMatch:
     match: str
-    tooltip: Optional[str]  # JSON chat component, may be None
+    tooltip: str | None  # JSON chat component, may be None
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,7 +38,7 @@ def decode(reader: Reader) -> TabComplete:
         m = string.read(reader)
         present = reader.read(1)[0]
         if present == 1:
-            tip: Optional[str] = string.read(reader)
+            tip: str | None = string.read(reader)
         elif present == 0:
             tip = None
         else:

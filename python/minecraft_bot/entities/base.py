@@ -22,7 +22,7 @@ is the source of truth; properties are thin readers.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 
@@ -96,7 +96,7 @@ class Entity:
         return v if v is not None else 300
 
     @property
-    def custom_name(self) -> Optional[Any]:
+    def custom_name(self) -> Any | None:
         return self._md(2)
 
     @property
@@ -239,5 +239,10 @@ class Projectile(Entity):
 
 
 __all__ = [
-    "Entity", "LivingEntity", "Mob", "Player", "ItemEntity", "Projectile",
+    "Entity",
+    "ItemEntity",
+    "LivingEntity",
+    "Mob",
+    "Player",
+    "Projectile",
 ]

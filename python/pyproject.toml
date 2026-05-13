@@ -71,6 +71,27 @@ select = [
 ]
 ignore = [
     "E501",  # line length (handled by formatter)
+    "E702",  # multi-statement on one line (compact codec utilities)
+    "F841",  # local var assigned but unused (test diagnostic snapshots)
+    "B007",  # unused loop variable (legitimate enumerate idiom)
+    "B011",  # assert False is fine in tests as an explicit fail
+    "B027",  # empty abstract method (BehaviourNode.reset is a no-op hook by design)
+    "B905",  # zip() without strict (Python <3.10 compat in some test files)
+    "E402",  # module-level import not at top (per-file-locality is intentional in tests)
+    "F821",  # forward-referenced symbols in TYPE_CHECKING blocks
+    "RUF001", # ambiguous unicode in strings (× / ≥ used intentionally)
+    "RUF002", # ambiguous unicode in docstrings
+    "RUF003", # ambiguous unicode in comments
+    "RUF005", # collection-literal concat is sometimes more readable than unpack
+    "RUF006", # dangling asyncio.create_task is intentional in some fire-and-forget paths
+    "RUF012", # mutable class default for slots dataclasses
+    "RUF021", # parenthesise or chains — style preference
+    "RUF022", # __all__ grouped by concept, not alphabetised
+    "RUF043", # pytest.raises pattern as plain string
+    "RUF059", # unused unpacked variables for diagnostic clarity
+    "UP007",  # non-PEP604 Optional[X] kept for Python 3.9 compat in shared dataclasses
+    "UP015",  # explicit open mode "r"
+    "UP032",  # explicit format-string when carrying intent
 ]
 
 [tool.black]

@@ -11,8 +11,6 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-import pytest
-
 REPO = Path(__file__).resolve().parents[3]
 PKT_BASE = REPO / "python" / "minecraft_bot" / "protocol" / "v763" / "packets"
 

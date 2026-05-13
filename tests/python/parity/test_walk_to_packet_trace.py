@@ -44,6 +44,7 @@ def _simulate_walk_accel(start_x: float, target_x: float, n_ticks: int):
     """Same simulation through the accel physics tick."""
     import json
     from pathlib import Path
+
     from minecraft_bot.codec import Reader
     from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
         decode as pkt_decode,

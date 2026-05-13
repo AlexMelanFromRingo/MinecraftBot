@@ -15,7 +15,7 @@ the build.
 from __future__ import annotations
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
 ITER = 50_000
 
@@ -38,10 +38,10 @@ def _bench(name: str, fn: Callable[[], None], iterations: int = ITER) -> float:
 
 def test_varint_write_speedup() -> None:
     """Encode value 300 a bunch of times under each backend."""
-    from minecraft_bot.codec import varint as py_varint
     from minecraft_bot.codec import Writer as PyWriter
-    from minecraft_bot_accel.codec import varint as ac_varint
+    from minecraft_bot.codec import varint as py_varint
     from minecraft_bot_accel.codec import Writer as AcWriter
+    from minecraft_bot_accel.codec import varint as ac_varint
 
     def py_op() -> None:
         w = PyWriter()
@@ -63,8 +63,10 @@ def test_varint_write_speedup() -> None:
 
 def test_varint_read_speedup() -> None:
     """Decode the encoded form many times."""
-    from minecraft_bot.codec import varint as py_varint, Reader as PyReader
-    from minecraft_bot_accel.codec import varint as ac_varint, Reader as AcReader
+    from minecraft_bot.codec import Reader as PyReader
+    from minecraft_bot.codec import varint as py_varint
+    from minecraft_bot_accel.codec import Reader as AcReader
+    from minecraft_bot_accel.codec import varint as ac_varint
 
     encoded = b"\xac\x02"  # 300
 
@@ -87,6 +89,7 @@ def test_chunk_decode_speedup() -> None:
     """Decode the same captured map_chunk payload 50x under each backend."""
     import json
     from pathlib import Path
+
     from minecraft_bot.codec import Reader as PyReader
     from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
         decode as pkt_decode,

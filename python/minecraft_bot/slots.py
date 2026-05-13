@@ -19,7 +19,6 @@ A contending caller raises :class:`BotBusy` unless invoked with
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
 
 from minecraft_bot.errors import ProtocolError
 
@@ -36,12 +35,12 @@ class BotBusy(ProtocolError):
 class Slot:
     """An asyncio.Lock-backed slot with friendly ``BotBusy`` semantics."""
 
-    __slots__ = ("name", "_lock", "_owner_task")
+    __slots__ = ("_lock", "_owner_task", "name")
 
     def __init__(self, name: str) -> None:
         self.name = name
         self._lock = asyncio.Lock()
-        self._owner_task: Optional[asyncio.Task] = None
+        self._owner_task: asyncio.Task | None = None
 
     @property
     def held(self) -> bool:

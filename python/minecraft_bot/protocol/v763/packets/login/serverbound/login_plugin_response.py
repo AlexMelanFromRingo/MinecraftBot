@@ -7,7 +7,6 @@ Client's reply to a clientbound :class:`LoginPluginRequest`.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -18,14 +17,14 @@ PACKET_ID = 0x02
 @dataclass(frozen=True, slots=True)
 class LoginPluginResponse:
     message_id: int
-    data: Optional[bytes]  # None = client did not understand the channel
+    data: bytes | None  # None = client did not understand the channel
 
 
 def decode(reader: Reader) -> LoginPluginResponse:
     message_id = varint.read(reader)
     present = reader.read(1)[0]
     if present == 1:
-        data: Optional[bytes] = reader.read(reader.remaining())
+        data: bytes | None = reader.read(reader.remaining())
     elif present == 0:
         data = None
     else:

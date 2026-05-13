@@ -21,9 +21,9 @@ A food info entry is::
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FOOD_PATH = REPO_ROOT / "protocol-data" / "v763" / "food_table.json"
@@ -62,11 +62,11 @@ def is_food(item_id: int) -> bool:
     return item_id in BY_ID
 
 
-def get(item_id: int) -> Optional[FoodInfo]:
+def get(item_id: int) -> FoodInfo | None:
     return BY_ID.get(item_id)
 
 
-def get_by_name(name: str) -> Optional[FoodInfo]:
+def get_by_name(name: str) -> FoodInfo | None:
     if ":" not in name:
         name = "minecraft:" + name
     return BY_NAME.get(name)
@@ -75,7 +75,7 @@ def get_by_name(name: str) -> Optional[FoodInfo]:
 # --- selectors -----------------------------------------------------------
 
 
-def pick_highest_saturation(candidates: Iterable[FoodInfo]) -> Optional[FoodInfo]:
+def pick_highest_saturation(candidates: Iterable[FoodInfo]) -> FoodInfo | None:
     """Return the candidate with the highest saturation gain.
 
     Ties broken by food_points (higher first), then name (alphabetical
@@ -89,7 +89,7 @@ def pick_highest_saturation(candidates: Iterable[FoodInfo]) -> Optional[FoodInfo
     )
 
 
-def pick_most_food_points(candidates: Iterable[FoodInfo]) -> Optional[FoodInfo]:
+def pick_most_food_points(candidates: Iterable[FoodInfo]) -> FoodInfo | None:
     """Return the candidate that restores the most hunger bars."""
     pool = list(candidates)
     if not pool:
@@ -99,7 +99,7 @@ def pick_most_food_points(candidates: Iterable[FoodInfo]) -> Optional[FoodInfo]:
 
 def pick_minimum_waste(
     candidates: Iterable[FoodInfo], *, missing_food_points: int
-) -> Optional[FoodInfo]:
+) -> FoodInfo | None:
     """Pick the smallest food that *still* fills the hunger bar.
 
     "Minimum waste" = smallest ``food_points >= missing_food_points``.
@@ -126,8 +126,14 @@ def filter_eatable(items: Iterable[tuple[int, int]]) -> list[tuple[int, FoodInfo
 
 
 __all__ = [
-    "FoodInfo", "BY_ID", "BY_NAME",
-    "is_food", "get", "get_by_name",
-    "pick_highest_saturation", "pick_most_food_points",
-    "pick_minimum_waste", "filter_eatable",
+    "BY_ID",
+    "BY_NAME",
+    "FoodInfo",
+    "filter_eatable",
+    "get",
+    "get_by_name",
+    "is_food",
+    "pick_highest_saturation",
+    "pick_minimum_waste",
+    "pick_most_food_points",
 ]

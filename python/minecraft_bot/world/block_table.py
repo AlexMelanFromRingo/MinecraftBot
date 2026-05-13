@@ -202,7 +202,13 @@ def step_height(state_id: int) -> float:
 
 
 __all__ = [
-    "get_name", "get_block_info", "get_block_info_by_name",
-    "is_solid", "is_water", "is_lava",
-    "is_navigable_obstacle", "is_passthrough", "step_height",
+    "get_block_info",
+    "get_block_info_by_name",
+    "get_name",
+    "is_lava",
+    "is_navigable_obstacle",
+    "is_passthrough",
+    "is_solid",
+    "is_water",
+    "step_height",
 ]

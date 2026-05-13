@@ -34,11 +34,12 @@ layers will fill these in based on the local inventory snapshot.
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from minecraft_bot.codec import slot as slot_codec
 from minecraft_bot.protocol.v763.packets.play.serverbound.window_click import (
-    ChangedSlot, WindowClick,
+    ChangedSlot,
+    WindowClick,
 )
 
 
@@ -50,7 +51,7 @@ def _build(
     mouse_button: int,
     mode: int,
     changed_slots: Sequence[ChangedSlot] = (),
-    carried_item: Optional[slot_codec.SlotData] = None,
+    carried_item: slot_codec.SlotData | None = None,
 ) -> WindowClick:
     return WindowClick(
         window_id=window_id,
@@ -69,7 +70,7 @@ def _build(
 def left_click(
     *, window_id: int, state_id: int, slot_index: int,
     changed_slots: Sequence[ChangedSlot] = (),
-    carried_item: Optional[slot_codec.SlotData] = None,
+    carried_item: slot_codec.SlotData | None = None,
 ) -> WindowClick:
     """Pick up / drop the full stack at ``slot_index``."""
     return _build(
@@ -82,7 +83,7 @@ def left_click(
 def right_click(
     *, window_id: int, state_id: int, slot_index: int,
     changed_slots: Sequence[ChangedSlot] = (),
-    carried_item: Optional[slot_codec.SlotData] = None,
+    carried_item: slot_codec.SlotData | None = None,
 ) -> WindowClick:
     """Pick up half-stack / drop one item."""
     return _build(
@@ -107,7 +108,7 @@ def shift_click(
 def middle_click(
     *, window_id: int, state_id: int, slot_index: int,
     changed_slots: Sequence[ChangedSlot] = (),
-    carried_item: Optional[slot_codec.SlotData] = None,
+    carried_item: slot_codec.SlotData | None = None,
 ) -> WindowClick:
     """Creative-mode clone of the stack."""
     return _build(
@@ -172,7 +173,7 @@ def swap_with_offhand(
 def double_click(
     *, window_id: int, state_id: int, slot_index: int,
     changed_slots: Sequence[ChangedSlot] = (),
-    carried_item: Optional[slot_codec.SlotData] = None,
+    carried_item: slot_codec.SlotData | None = None,
 ) -> WindowClick:
     """Double-click: collect all matching items into the cursor."""
     return _build(
@@ -212,9 +213,16 @@ def drag_end(*, window_id: int, state_id: int, button: int = 2) -> WindowClick:
 
 
 __all__ = [
-    "left_click", "right_click", "shift_click", "middle_click",
-    "drop_one", "drop_stack",
-    "swap_with_hotbar", "swap_with_offhand",
     "double_click",
-    "drag_begin", "drag_add", "drag_end",
+    "drag_add",
+    "drag_begin",
+    "drag_end",
+    "drop_one",
+    "drop_stack",
+    "left_click",
+    "middle_click",
+    "right_click",
+    "shift_click",
+    "swap_with_hotbar",
+    "swap_with_offhand",
 ]

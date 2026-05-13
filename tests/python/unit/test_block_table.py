@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-import pytest
-
 from minecraft_bot.world.block_table import (
-    get_block_info, get_block_info_by_name, get_name,
-    is_lava, is_navigable_obstacle, is_passthrough, is_solid, is_water,
+    get_block_info,
+    get_block_info_by_name,
+    get_name,
+    is_lava,
+    is_navigable_obstacle,
+    is_passthrough,
+    is_solid,
+    is_water,
     step_height,
 )
 

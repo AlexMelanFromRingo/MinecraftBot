@@ -5,10 +5,8 @@ from __future__ import annotations
 import zlib
 
 import pytest
-
-from minecraft_bot.framer import Framer, MAX_PACKET_SIZE
 from minecraft_bot.errors import DecodeError, OversizedVarInt
-
+from minecraft_bot.framer import MAX_PACKET_SIZE, Framer
 
 # -------------------- compression disabled (threshold = -1) ----------------
 

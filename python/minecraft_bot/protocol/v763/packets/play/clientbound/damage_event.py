@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -25,7 +24,7 @@ class DamageEvent:
     source_type_id: int        # damage-type registry id
     source_cause_id: int       # entity id of the cause + 1 (0 = no cause)
     source_direct_id: int      # entity id of the direct dealer + 1 (0 = no direct)
-    source_position: Optional[tuple[float, float, float]]
+    source_position: tuple[float, float, float] | None
 
 
 def decode(reader: Reader) -> DamageEvent:
@@ -36,7 +35,7 @@ def decode(reader: Reader) -> DamageEvent:
     present = reader.read(1)[0]
     if present == 1:
         x, y, z = struct.unpack(">ddd", reader.read(24))
-        sp: Optional[tuple[float, float, float]] = (x, y, z)
+        sp: tuple[float, float, float] | None = (x, y, z)
     elif present == 0:
         sp = None
     else:

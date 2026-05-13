@@ -9,9 +9,12 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from minecraft_bot.behaviour import (
-    BehaviourRunner, Condition, EatWhenHungry, NodeStatus, Selector, WalkTo,
+    BehaviourRunner,
+    EatWhenHungry,
+    NodeStatus,
+    Selector,
+    WalkTo,
 )
 from minecraft_bot.bot import Bot
 

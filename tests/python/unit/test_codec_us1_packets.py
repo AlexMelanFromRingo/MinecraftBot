@@ -10,7 +10,6 @@ from __future__ import annotations
 import uuid as _uuid
 
 import pytest
-
 from minecraft_bot.codec import Reader, Writer, nbt
 from minecraft_bot.errors import ValueOutOfRange
 from minecraft_bot.protocol.v763.packets.handshaking.serverbound import (
@@ -26,14 +25,14 @@ from minecraft_bot.protocol.v763.packets.login.clientbound import (
 )
 from minecraft_bot.protocol.v763.packets.login.clientbound import (
     login_plugin_request,
+    success,
 )
-from minecraft_bot.protocol.v763.packets.login.clientbound import success
 from minecraft_bot.protocol.v763.packets.login.serverbound import (
     encryption_begin as l_enc_sb,
 )
-from minecraft_bot.protocol.v763.packets.login.serverbound import login_start
 from minecraft_bot.protocol.v763.packets.login.serverbound import (
     login_plugin_response,
+    login_start,
 )
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
     custom_payload as p_cb_cp,

@@ -8,7 +8,8 @@ import json
 from minecraft_bot.bot import Bot
 from minecraft_bot.llm_agent import default_toolset, describe_observation, run_step
 from minecraft_bot.llm_agent.observation_summary import (
-    describe_observation_json, describe_observation_text,
+    describe_observation_json,
+    describe_observation_text,
 )
 from minecraft_bot.observation import Observation, RayHit
 

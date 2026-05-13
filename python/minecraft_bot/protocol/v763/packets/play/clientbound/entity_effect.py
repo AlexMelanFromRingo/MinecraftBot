@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, nbt, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -31,7 +30,7 @@ class EntityEffect:
     amplifier: int            # i8
     duration: int             # varint, ticks; -1 = infinite
     flags: int                # i8 bitfield
-    factor_codec: Optional[nbt.NbtTag]
+    factor_codec: nbt.NbtTag | None
 
 
 def decode(reader: Reader) -> EntityEffect:
@@ -42,7 +41,7 @@ def decode(reader: Reader) -> EntityEffect:
     flags, = struct.unpack(">b", reader.read(1))
     present = reader.read(1)[0]
     if present == 1:
-        fc: Optional[nbt.NbtTag] = nbt.read(reader)
+        fc: nbt.NbtTag | None = nbt.read(reader)
     elif present == 0:
         fc = None
     else:

@@ -59,8 +59,6 @@ def _build_floor_python(extents=(-5, 5)):
 
 def _build_floor_accel(extents=(-5, 5)):
     """Same world in the accel backend, using direct apply_block_change."""
-    from minecraft_bot_accel.world import World as AccelWorld
-
     # The accel World needs a chunk loaded before set_block has effect.
     # We synthesise a minimal map_chunk payload that loads air-only
     # chunks, then call apply_block_change to put stone blocks down.
@@ -69,9 +67,10 @@ def _build_floor_accel(extents=(-5, 5)):
     # a payload buffer. We don't have a synthetic chunk-payload builder
     # here. As a quick workaround: just load one chunk via the same
     # captured fixture and overwrite its blocks via apply_block_change.
-
     import json
     from pathlib import Path
+
+    from minecraft_bot_accel.world import World as AccelWorld
 
     REPO = Path(__file__).resolve().parents[3]
     raw_hex = json.loads(

@@ -14,7 +14,8 @@ from __future__ import annotations
 import uuid as _uuid_stdlib
 from dataclasses import dataclass
 
-from minecraft_bot.codec import Reader, Writer, uuid as uuid_codec
+from minecraft_bot.codec import Reader, Writer
+from minecraft_bot.codec import uuid as uuid_codec
 
 PACKET_ID = 0x35
 

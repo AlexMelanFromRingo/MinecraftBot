@@ -9,7 +9,8 @@ from minecraft_bot.protocol.v763.packets.play.clientbound.remove_entity_effect i
     RemoveEntityEffect,
 )
 from minecraft_bot.status_effects import (
-    EFFECT_IDS, FLAG_AMBIENT, FLAG_SHOW_ICON, FLAG_SHOW_PARTICLES,
+    FLAG_AMBIENT,
+    FLAG_SHOW_ICON,
     StatusEffects,
 )
 

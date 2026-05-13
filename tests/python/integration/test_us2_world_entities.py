@@ -19,7 +19,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from minecraft_bot.bot import Bot
 from minecraft_bot.entities.types import LOOKUP
 
@@ -74,7 +73,7 @@ async def test_nearby_entities_picks_up_summoned_sheep(live_server) -> None:
         sheep_filtered = bot.nearby_entities(radius=10.0, type_filter=sheep_cls)
         assert len(sheep_filtered) == len(sheep)
         # Clean up — kill the sheep so subsequent test runs don't pile up.
-        await bot.command(f"kill @e[type=minecraft:sheep,distance=..15]")
+        await bot.command("kill @e[type=minecraft:sheep,distance=..15]")
         await asyncio.sleep(1.0)
     finally:
         await bot.disconnect()
@@ -98,7 +97,7 @@ async def test_attack_packet_routes_to_summoned_target(live_server) -> None:
         await asyncio.sleep(0.5)
         # Bot should still be connected after the attack packet.
         assert bot.is_connected
-        await bot.command(f"kill @e[type=minecraft:sheep,distance=..15]")
+        await bot.command("kill @e[type=minecraft:sheep,distance=..15]")
         await asyncio.sleep(1.0)
     finally:
         await bot.disconnect()

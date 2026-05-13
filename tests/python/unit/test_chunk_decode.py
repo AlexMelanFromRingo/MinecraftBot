@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import struct
 
-import pytest
-
 from minecraft_bot.world.chunk import (
-    BlockEntityRecord, Chunk, ChunkSection, PalettedContainer,
+    BlockEntityRecord,
+    Chunk,
+    ChunkSection,
+    PalettedContainer,
 )
-
 
 # --- PalettedContainer modes -----------------------------------------------
 

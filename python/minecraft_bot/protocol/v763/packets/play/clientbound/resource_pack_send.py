@@ -8,7 +8,6 @@ shown-to-user explanation (JSON chat component) when prompting.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string
 from minecraft_bot.errors import ValueOutOfRange
@@ -21,7 +20,7 @@ class ResourcePackSend:
     url: str
     hash: str            # sha-1 hex
     forced: bool
-    prompt_message: Optional[str]  # JSON chat component, may be None
+    prompt_message: str | None  # JSON chat component, may be None
 
 
 def decode(reader: Reader) -> ResourcePackSend:
@@ -32,7 +31,7 @@ def decode(reader: Reader) -> ResourcePackSend:
         raise ValueOutOfRange("resource_pack_send.forced", f)
     p = reader.read(1)[0]
     if p == 1:
-        prompt: Optional[str] = string.read(reader)
+        prompt: str | None = string.read(reader)
     elif p == 0:
         prompt = None
     else:

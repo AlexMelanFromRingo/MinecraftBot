@@ -25,8 +25,6 @@ the small deviations from skipped multipliers.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from minecraft_bot.world import block_table as _bt
 
 # Tool material → speed multiplier on its preferred block group.
@@ -51,7 +49,7 @@ _TOOL_TO_MATERIAL: dict[str, str] = {
 }
 
 
-def _tool_speed(tool_name: Optional[str], block_material: str) -> tuple[float, bool]:
+def _tool_speed(tool_name: str | None, block_material: str) -> tuple[float, bool]:
     """Return ``(speed_multiplier, is_correct_tool)`` for ``tool_name`` on
     a block of ``block_material`` ("mineable/pickaxe" etc.).
 
@@ -80,7 +78,7 @@ def _tool_speed(tool_name: Optional[str], block_material: str) -> tuple[float, b
     return speed, is_correct
 
 
-def break_ticks(block_name: str, tool_name: Optional[str] = None) -> int:
+def break_ticks(block_name: str, tool_name: str | None = None) -> int:
     """Return ticks to break ``block_name`` with ``tool_name`` in the
     common case (on ground, not in water, no haste/fatigue/eff)."""
     name = block_name if ":" in block_name else "minecraft:" + block_name
@@ -105,10 +103,10 @@ def break_ticks(block_name: str, tool_name: Optional[str] = None) -> int:
     return max(1, ticks)
 
 
-def break_seconds(block_name: str, tool_name: Optional[str] = None) -> float:
+def break_seconds(block_name: str, tool_name: str | None = None) -> float:
     """Break time in seconds (ticks / 20)."""
     t = break_ticks(block_name, tool_name)
     return -1.0 if t < 0 else t / 20.0
 
 
-__all__ = ["break_ticks", "break_seconds"]
+__all__ = ["break_seconds", "break_ticks"]

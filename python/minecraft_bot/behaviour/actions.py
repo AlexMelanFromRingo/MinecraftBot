@@ -19,10 +19,12 @@ Example::
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any
 
 from minecraft_bot.behaviour.nodes import (
-    Action, BehaviourNode, Condition, NodeStatus, Selector, Sequence,
+    Action,
+    Condition,
+    NodeStatus,
 )
 from minecraft_bot.errors import NoPathFound, TargetLost, WalkTimeout
 
@@ -70,7 +72,7 @@ def FollowPlayer(name: str, *, distance: float = 3.0, max_seconds: float = 10.0)
     return Action(fn)
 
 
-def AttackNearest(type_filter: Optional[type] = None, *, radius: float = 8.0) -> Action:
+def AttackNearest(type_filter: type | None = None, *, radius: float = 8.0) -> Action:
     """Attack the closest entity matching ``type_filter`` (or any
     entity if None) within ``radius``. Success on hit; Failure if
     nothing to attack."""
@@ -93,7 +95,8 @@ def EatWhenHungry(*, threshold: int = 15) -> Action:
     async def fn(bot: Any, ctx: dict) -> NodeStatus:
         if bot.food >= threshold:
             return NodeStatus.SUCCESS
-        from minecraft_bot.foods import BY_ID as FOOD_BY_ID, pick_highest_saturation
+        from minecraft_bot.foods import BY_ID as FOOD_BY_ID
+        from minecraft_bot.foods import pick_highest_saturation
         hotbar = [
             (i, slot) for i, slot in enumerate(bot.inventory.hotbar_items())
             if slot is not None and slot.item_id in FOOD_BY_ID
@@ -153,7 +156,14 @@ def HasItem(name: str) -> Condition:
 
 
 __all__ = [
-    "WalkTo", "FollowPlayer", "AttackNearest", "EatWhenHungry",
-    "DropItem", "Say", "Command",
-    "IsHungryBelow", "IsHealthBelow", "HasItem",
+    "AttackNearest",
+    "Command",
+    "DropItem",
+    "EatWhenHungry",
+    "FollowPlayer",
+    "HasItem",
+    "IsHealthBelow",
+    "IsHungryBelow",
+    "Say",
+    "WalkTo",
 ]

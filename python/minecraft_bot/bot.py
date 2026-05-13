@@ -27,72 +27,157 @@ import asyncio
 import math
 import time
 from collections import deque
-from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Deque, Optional, Union
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from typing import Any
 
 from minecraft_bot.connection import Connection, Reconnected
-from minecraft_bot.errors import ConnectionClosed, NoPathFound, WalkTimeout
-from minecraft_bot.events import (
-    ChatMessageEvent, Event, TeleportedEvent, DimensionChangedEvent, RespawnEvent,
-)
-from minecraft_bot.pathfinding import find_path
-from minecraft_bot.physics import (
-    PhysicsIntent, PhysicsState, tick as physics_tick,
-)
 from minecraft_bot.dig import break_seconds
 from minecraft_bot.entities.base import Entity, Player
 from minecraft_bot.entities.tracker import EntityTracker
-from minecraft_bot.errors import DigFailed
-from minecraft_bot.foods import (
-    BY_ID as _FOOD_BY_ID, FoodInfo, pick_highest_saturation,
+from minecraft_bot.errors import ConnectionClosed, DigFailed, NoPathFound, WalkTimeout
+from minecraft_bot.events import (
+    ChatMessageEvent,
+    DimensionChangedEvent,
+    Event,
+    RespawnEvent,
+    TeleportedEvent,
 )
-from minecraft_bot.inventory.item import ItemSlot, item_name as _item_name
+from minecraft_bot.foods import (
+    BY_ID as _FOOD_BY_ID,
+)
+from minecraft_bot.foods import (
+    pick_highest_saturation,
+)
+from minecraft_bot.inventory.item import ItemSlot
 from minecraft_bot.inventory.tracker import InventoryTracker
-from minecraft_bot.status_effects import StatusEffects
+from minecraft_bot.pathfinding import find_path
+from minecraft_bot.physics import (
+    PhysicsIntent,
+    PhysicsState,
+)
+from minecraft_bot.physics import (
+    tick as physics_tick,
+)
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
     block_change as cb_block_change,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     close_window as cb_close_window,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     collect as cb_collect,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_destroy as cb_entity_destroy,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_effect as cb_entity_effect,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_look as cb_entity_look,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_metadata as cb_entity_metadata,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_move_look as cb_entity_move_look,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_teleport as cb_entity_teleport,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_velocity as cb_entity_velocity,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     experience as cb_experience,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     game_state_change as cb_game_state,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     held_item_slot as cb_held,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     login as cb_login,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     map_chunk as cb_map_chunk,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     multi_block_change as cb_mbc,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     named_entity_spawn as cb_named_spawn,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     open_window as cb_open_window,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     player_chat as cb_player_chat,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     position as cb_position,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     profileless_chat as cb_profileless_chat,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     rel_entity_move as cb_rel_move,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     remove_entity_effect as cb_remove_effect,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     respawn as cb_respawn,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     set_slot as cb_set_slot,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     spawn_entity as cb_spawn_entity,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     system_chat as cb_system_chat,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     unload_chunk as cb_unload,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     update_health as cb_update_health,
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     window_items as cb_window_items,
 )
 from minecraft_bot.protocol.v763.packets.play.serverbound import (
     arm_animation as sb_arm,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     chat_command as sb_command,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     chat_message as sb_chat,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     close_window as sb_close_window,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     held_item_slot as sb_held,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     position as sb_position,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     position_look as sb_position_look,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     use_entity as sb_use_entity,
+)
+from minecraft_bot.protocol.v763.packets.play.serverbound import (
     use_item as sb_use_item,
 )
 from minecraft_bot.slots import BotBusy, Slot, guard
+from minecraft_bot.status_effects import StatusEffects
 from minecraft_bot.world.cache import World
 
 PHYSICS_TICK_DT = 0.05  # seconds = 20 Hz
@@ -105,7 +190,7 @@ WALK_TARGET_RADIUS = 1.5   # blocks; close enough to call it "arrived"
 MAX_PREDICTION_RADIUS = 5.0   # blocks from server's last-known position
 
 
-HandlerFn = Callable[[Event], Union[None, Awaitable[None]]]
+HandlerFn = Callable[[Event], None | Awaitable[None]]
 
 
 @dataclass(slots=True)
@@ -137,15 +222,15 @@ class Bot:
         self._xp_level: int = 0
         self._xp_total: int = 0
         self._xp_bar: float = 0.0
-        self._game_mode: Optional[int] = None
+        self._game_mode: int | None = None
         self._held_slot: int = 0
-        self._entity_id: Optional[int] = None
-        self._world_name: Optional[str] = None
-        self._dimension: Optional[str] = None
-        self._spawn_position: Optional[tuple[int, int, int]] = None
+        self._entity_id: int | None = None
+        self._world_name: str | None = None
+        self._dimension: str | None = None
+        self._spawn_position: tuple[int, int, int] | None = None
         self._has_initial_position = False
-        self._server_position: Optional[tuple[float, float, float]] = None
-        self._auto_eat_task: Optional[asyncio.Task] = None
+        self._server_position: tuple[float, float, float] | None = None
+        self._auto_eat_task: asyncio.Task | None = None
         # Monotonic chat timestamp — Paper kicks "out-of-order chat" when
         # two say/command packets share or invert their wall-clock
         # millisecond stamp, which happens easily in tight loops.
@@ -162,11 +247,11 @@ class Bot:
 
         # Event hooks.
         self._hooks: list[_HookEntry] = []
-        self._event_queue: Deque[Event] = deque(maxlen=4096)
+        self._event_queue: deque[Event] = deque(maxlen=4096)
         self._event_waiters: list[asyncio.Future[Event]] = []
 
         # Internal tasks + subscription handles.
-        self._tick_task: Optional[asyncio.Task] = None
+        self._tick_task: asyncio.Task | None = None
         self._subscriptions: list = []
 
     # --- factory / lifecycle -------------------------------------------
@@ -174,7 +259,7 @@ class Bot:
     @classmethod
     def offline(
         cls, host: str, port: int, username: str, **conn_kwargs: Any,
-    ) -> "Bot":
+    ) -> Bot:
         """Build a Bot around an offline-mode Connection (FR-017b)."""
         conn = Connection.offline(host, port, username, **conn_kwargs)
         return cls(conn)
@@ -187,7 +272,7 @@ class Bot:
     def is_connected(self) -> bool:
         return self._conn.is_connected
 
-    async def __aenter__(self) -> "Bot":
+    async def __aenter__(self) -> Bot:
         await self.connect()
         return self
 
@@ -206,7 +291,7 @@ class Bot:
                 break
             await asyncio.sleep(0.05)
 
-    async def disconnect(self, reason: Optional[str] = None) -> None:
+    async def disconnect(self, reason: str | None = None) -> None:
         eat = self._auto_eat_task
         self._auto_eat_task = None
         if eat is not None:
@@ -261,15 +346,15 @@ class Bot:
     @property
     def xp_total(self) -> int: return self._xp_total
     @property
-    def game_mode(self) -> Optional[int]: return self._game_mode
+    def game_mode(self) -> int | None: return self._game_mode
     @property
     def held_slot(self) -> int: return self._held_slot
     @property
-    def entity_id(self) -> Optional[int]: return self._entity_id
+    def entity_id(self) -> int | None: return self._entity_id
     @property
-    def world_name(self) -> Optional[str]: return self._world_name
+    def world_name(self) -> str | None: return self._world_name
     @property
-    def dimension(self) -> Optional[str]: return self._dimension
+    def dimension(self) -> str | None: return self._dimension
 
     # --- subscription wiring ------------------------------------------
 
@@ -634,7 +719,7 @@ class Bot:
         )
 
     def nearby_entities(
-        self, *, radius: float = 32.0, type_filter: Optional[type] = None,
+        self, *, radius: float = 32.0, type_filter: type | None = None,
     ) -> list[Entity]:
         """Entities within ``radius`` of the bot, sorted by distance."""
         return self.entities.nearby_entities(
@@ -644,19 +729,19 @@ class Bot:
     def nearby_players(self, *, radius: float = 32.0) -> list[Player]:
         return self.entities.nearby_players(self.position, radius=radius)
 
-    def distance_to(self, eid: int) -> Optional[float]:
+    def distance_to(self, eid: int) -> float | None:
         return self.entities.distance_to(eid, self.position)
 
     # --- snapshot (T088, FR-130..FR-134) -------------------------------
 
-    def snapshot(self, *, nearby_radius: float = 32.0) -> "BotSnapshot":
+    def snapshot(self, *, nearby_radius: float = 32.0) -> BotSnapshot:
         """Capture a frozen, picklable view of the bot's full state.
 
         Useful for ML observation pipelines, replay-by-state tools, and
         deterministic test fixtures. The snapshot does not reference
         any live state — it's safe to compare or pickle.
         """
-        from minecraft_bot.snapshot import make_snapshot, BotSnapshot
+        from minecraft_bot.snapshot import make_snapshot
         return make_snapshot(self, nearby_radius=nearby_radius)
 
     # --- AI observation API --------------------------------------------
@@ -693,7 +778,7 @@ class Bot:
         from minecraft_bot.observation import chunks_around
         return chunks_around(self.world, self.position, radius_chunks=radius_chunks)
 
-    def world_map_3d(self, *, radius_xz: int = 16, radius_y: Optional[int] = None):
+    def world_map_3d(self, *, radius_xz: int = 16, radius_y: int | None = None):
         """A larger rectangular voxel map than :meth:`voxel_grid`.
 
         ``radius_xz`` is the horizontal Chebyshev radius (side =
@@ -726,13 +811,13 @@ class Bot:
     # --- inventory (FR-060..FR-073) ------------------------------------
 
     @property
-    def held_item(self) -> Optional[ItemSlot]:
+    def held_item(self) -> ItemSlot | None:
         """Currently held hotbar slot item (or None if empty)."""
         from minecraft_bot.inventory.tracker import SLOT_HOTBAR_FIRST
         idx = SLOT_HOTBAR_FIRST + self._held_slot
         return self.inventory.player_slots[idx]
 
-    def find_item(self, name: str) -> Optional[int]:
+    def find_item(self, name: str) -> int | None:
         """Slot index of the first stack matching ``name``, or None."""
         return self.inventory.find_item(name)
 
@@ -782,7 +867,7 @@ class Bot:
         self, slot_index: int, *,
         mode: str = "left",
         button: int = 0,
-        window_id: Optional[int] = None,
+        window_id: int | None = None,
         wait_for_slot: bool = False,
     ) -> None:
         """Send a single window-click packet.
@@ -819,7 +904,7 @@ class Bot:
             await self._conn.send(pkt)
 
     async def move_item(
-        self, src_slot: int, dst_slot: int, *, window_id: Optional[int] = None,
+        self, src_slot: int, dst_slot: int, *, window_id: int | None = None,
     ) -> None:
         """Move the entire stack at ``src_slot`` to ``dst_slot`` via
         pick-up + put-down (two left-clicks). Works in both player
@@ -829,7 +914,7 @@ class Bot:
         await self.click_slot(dst_slot, mode="left", window_id=window_id)
 
     async def quick_move(
-        self, slot_index: int, *, window_id: Optional[int] = None,
+        self, slot_index: int, *, window_id: int | None = None,
     ) -> None:
         """Shift-click — auto-shuffle stack between player and container."""
         await self.click_slot(slot_index, mode="shift_left", window_id=window_id)
@@ -838,7 +923,10 @@ class Bot:
         """Move an armor piece from ``src_slot`` to the appropriate armor
         slot. ``armor_slot`` ∈ {``head``, ``chest``, ``legs``, ``feet``}."""
         from minecraft_bot.inventory.tracker import (
-            SLOT_ARMOR_HEAD, SLOT_ARMOR_CHEST, SLOT_ARMOR_LEGS, SLOT_ARMOR_FEET,
+            SLOT_ARMOR_CHEST,
+            SLOT_ARMOR_FEET,
+            SLOT_ARMOR_HEAD,
+            SLOT_ARMOR_LEGS,
         )
         target = {
             "head": SLOT_ARMOR_HEAD, "chest": SLOT_ARMOR_CHEST,
@@ -851,7 +939,10 @@ class Bot:
     async def unequip_armor(self, armor_slot: str, dst_slot: int) -> None:
         """Move equipped armor back to ``dst_slot`` in main inventory."""
         from minecraft_bot.inventory.tracker import (
-            SLOT_ARMOR_HEAD, SLOT_ARMOR_CHEST, SLOT_ARMOR_LEGS, SLOT_ARMOR_FEET,
+            SLOT_ARMOR_CHEST,
+            SLOT_ARMOR_FEET,
+            SLOT_ARMOR_HEAD,
+            SLOT_ARMOR_LEGS,
         )
         src = {
             "head": SLOT_ARMOR_HEAD, "chest": SLOT_ARMOR_CHEST,
@@ -912,8 +1003,8 @@ class Bot:
     async def open_block_container(
         self, x: int, y: int, z: int, *,
         timeout: float = 5.0, wait_for_slot: bool = False,
-        face: Optional[int] = None,
-        cursor: Optional[tuple[float, float, float]] = None,
+        face: int | None = None,
+        cursor: tuple[float, float, float] | None = None,
     ) -> int:
         """Right-click the block at (x, y, z) to open its container UI
         (chest / furnace / crafting table / barrel / shulker / etc.)
@@ -998,7 +1089,7 @@ class Bot:
 
     async def craft(
         self,
-        recipe: list[Optional[str]],
+        recipe: list[str | None],
         x: int, y: int, z: int,
         *,
         repeat: int = 1,
@@ -1128,7 +1219,7 @@ class Bot:
         eid: int,
         *,
         distance: float = 3.0,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         wait_for_slot: bool = False,
         re_path_radius: float = 2.0,
     ) -> None:
@@ -1146,7 +1237,7 @@ class Bot:
         from minecraft_bot.errors import TargetLost
         async with guard(self.movement_slot, wait_for_slot=wait_for_slot):
             start_t = time.monotonic()
-            last_target_pos: Optional[tuple[float, float, float]] = None
+            last_target_pos: tuple[float, float, float] | None = None
             target_lost_count = 0
 
             while True:
@@ -1233,7 +1324,7 @@ class Bot:
         self,
         x: int, y: int, z: int,
         *,
-        tool: Optional[str] = None,
+        tool: str | None = None,
         timeout_multiplier: float = 2.0,
         wait_for_slot: bool = False,
     ) -> None:
@@ -1493,7 +1584,7 @@ class Bot:
         return out
 
     async def next_event(
-        self, event_type: Optional[type] = None, *, timeout: Optional[float] = None,
+        self, event_type: type | None = None, *, timeout: float | None = None,
     ) -> Event:
         """Await the next event (optionally of a specific type)."""
         end_t = None if timeout is None else time.monotonic() + timeout
@@ -1509,7 +1600,7 @@ class Bot:
                 if wait is None:
                     return await fut
                 return await asyncio.wait_for(fut, timeout=wait)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._event_waiters.remove(fut)
                 raise
 

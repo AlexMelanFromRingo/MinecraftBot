@@ -27,6 +27,7 @@ def _build_python_floor():
 def _build_accel_floor():
     import json
     from pathlib import Path
+
     from minecraft_bot.codec import Reader
     from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
         decode as pkt_decode,
@@ -61,12 +62,20 @@ def test_tick_speedup_informational() -> None:
     """
     from minecraft_bot.physics import (
         PhysicsIntent as PyIntent,
+    )
+    from minecraft_bot.physics import (
         PhysicsState as PyState,
+    )
+    from minecraft_bot.physics import (
         tick as py_tick,
     )
     from minecraft_bot_accel.physics import (
         PhysicsIntent as AcIntent,
+    )
+    from minecraft_bot_accel.physics import (
         PhysicsState as AcState,
+    )
+    from minecraft_bot_accel.physics import (
         tick as ac_tick,
     )
 

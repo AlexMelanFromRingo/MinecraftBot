@@ -31,7 +31,7 @@ def test_accel_installed_and_importable() -> None:
     assert res.returncode == 0, f"pip show failed: {res.stderr.strip()}"
     assert "Name: minecraft_bot_accel" in res.stdout
 
-    import minecraft_bot_accel  # noqa: F401
+    import minecraft_bot_accel
 
     assert minecraft_bot_accel.implementation == "rust"
 
@@ -40,8 +40,9 @@ def test_accel_native_lib_under_budget() -> None:
     """The compiled cdylib (the dominant size driver) must be under
     the 5 MiB budget. We measure the on-disk size of the .so / .pyd /
     .dll that maturin produced."""
-    import minecraft_bot_accel
     from pathlib import Path
+
+    import minecraft_bot_accel
 
     pkg_dir = Path(minecraft_bot_accel.__file__).parent
     candidates = (

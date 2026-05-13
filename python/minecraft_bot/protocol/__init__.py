@@ -40,4 +40,4 @@ V_1_20_1: ProtocolVersion = ProtocolVersion(number=763, display_name="1.20.1")
 V_1_20_2: ProtocolVersion = ProtocolVersion(number=764, display_name="1.20.2")
 
 
-__all__ = ["ProtocolVersion", "V_1_20_1", "V_1_20_2"]
+__all__ = ["V_1_20_1", "V_1_20_2", "ProtocolVersion"]

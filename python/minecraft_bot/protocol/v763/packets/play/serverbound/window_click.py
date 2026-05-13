@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, slot, varint
 
@@ -20,7 +19,7 @@ PACKET_ID = 0x0B
 @dataclass(frozen=True, slots=True)
 class ChangedSlot:
     slot_index: int                 # i16
-    item: Optional[slot.SlotData]
+    item: slot.SlotData | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,7 +30,7 @@ class WindowClick:
     mouse_button: int               # i8
     mode: int                       # varint
     changed_slots: tuple[ChangedSlot, ...]
-    carried_item: Optional[slot.SlotData]
+    carried_item: slot.SlotData | None
 
 
 def decode(reader: Reader) -> WindowClick:

@@ -27,7 +27,6 @@ will decode it).
 from __future__ import annotations
 
 import struct
-from typing import Optional
 
 from minecraft_bot.codec import Reader as ByteReader
 from minecraft_bot.codec import nbt as nbt_codec

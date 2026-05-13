@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import struct
-from dataclasses import dataclass
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from minecraft_bot.codec import Writer
 from minecraft_bot.codec import metadata as md
-from minecraft_bot.entities.base import Entity, Player
+from minecraft_bot.entities.base import Player
 from minecraft_bot.entities.tracker import EntityTracker
 from minecraft_bot.entities.types import lookup_class
 from minecraft_bot.protocol.v763.packets.play.clientbound.entity_destroy import (
@@ -16,9 +14,6 @@ from minecraft_bot.protocol.v763.packets.play.clientbound.entity_destroy import 
 )
 from minecraft_bot.protocol.v763.packets.play.clientbound.entity_metadata import (
     EntityMetadata,
-)
-from minecraft_bot.protocol.v763.packets.play.clientbound.entity_move_look import (
-    EntityMoveLook,
 )
 from minecraft_bot.protocol.v763.packets.play.clientbound.entity_teleport import (
     EntityTeleport,

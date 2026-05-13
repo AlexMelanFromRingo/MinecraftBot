@@ -20,9 +20,9 @@ from __future__ import annotations
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from collections.abc import Awaitable, Callable, Iterable
 from enum import Enum
-from typing import Any, Awaitable, Callable, Iterable, Optional
+from typing import Any
 
 
 class NodeStatus(Enum):
@@ -56,7 +56,7 @@ class Selector(BehaviourNode):
     """Run children in order, return Success on first success, Failure
     if all fail, Running if a child is still running."""
 
-    __slots__ = ("children", "_current")
+    __slots__ = ("_current", "children")
 
     def __init__(self, children: Iterable[BehaviourNode]) -> None:
         self.children: list[BehaviourNode] = list(children)
@@ -85,7 +85,7 @@ class Sequence(BehaviourNode):
     """Run children in order, return Failure on first failure, Success
     if all succeed, Running if a child is still running."""
 
-    __slots__ = ("children", "_current")
+    __slots__ = ("_current", "children")
 
     def __init__(self, children: Iterable[BehaviourNode]) -> None:
         self.children: list[BehaviourNode] = list(children)
@@ -175,7 +175,7 @@ class RepeatUntilFail(BehaviourNode):
 class Repeat(BehaviourNode):
     """Run child up to ``count`` times, succeeds when count reached."""
 
-    __slots__ = ("child", "count", "_remaining")
+    __slots__ = ("_remaining", "child", "count")
 
     def __init__(self, child: BehaviourNode, count: int) -> None:
         self.child = child
@@ -202,11 +202,11 @@ class Repeat(BehaviourNode):
 class Wait(BehaviourNode):
     """Return Running for ``duration`` seconds, then Success once."""
 
-    __slots__ = ("duration", "_started_at")
+    __slots__ = ("_started_at", "duration")
 
     def __init__(self, duration: float) -> None:
         self.duration = duration
-        self._started_at: Optional[float] = None
+        self._started_at: float | None = None
 
     def reset(self) -> None:
         self._started_at = None
@@ -267,8 +267,8 @@ class BehaviourRunner:
         root: BehaviourNode,
         bot: Any,
         *,
-        max_ticks: Optional[int] = None,
-        stop_when: Optional[ConditionFn] = None,
+        max_ticks: int | None = None,
+        stop_when: ConditionFn | None = None,
     ) -> NodeStatus:
         """Tick the tree until it returns SUCCESS or FAILURE (or
         ``max_ticks`` reached, or ``stop_when(bot, ctx)`` returns True).
@@ -289,9 +289,16 @@ class BehaviourRunner:
 
 
 __all__ = [
-    "NodeStatus", "BehaviourNode",
-    "Selector", "Sequence",
-    "Inverter", "AlwaysSucceed", "RepeatUntilFail", "Repeat", "Wait",
-    "Condition", "Action",
+    "Action",
+    "AlwaysSucceed",
+    "BehaviourNode",
     "BehaviourRunner",
+    "Condition",
+    "Inverter",
+    "NodeStatus",
+    "Repeat",
+    "RepeatUntilFail",
+    "Selector",
+    "Sequence",
+    "Wait",
 ]

@@ -47,7 +47,7 @@ class Direction(IntEnum):
         return "rx" if self == Direction.CLIENTBOUND else "tx"
 
     @classmethod
-    def from_label(cls, label: str) -> "Direction":
+    def from_label(cls, label: str) -> Direction:
         if label == "rx":
             return cls.CLIENTBOUND
         if label == "tx":

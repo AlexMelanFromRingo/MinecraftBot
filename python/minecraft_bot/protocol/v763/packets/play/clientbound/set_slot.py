@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, slot, varint
 
@@ -21,7 +20,7 @@ class SetSlot:
     window_id: int                # i8
     state_id: int                 # varint
     slot_index: int               # i16
-    item: Optional[slot.SlotData]
+    item: slot.SlotData | None
 
 
 def decode(reader: Reader) -> SetSlot:

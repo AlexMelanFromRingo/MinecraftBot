@@ -39,7 +39,9 @@ from minecraft_bot.entities.types.experience_bottle import ExperienceBottle
 from minecraft_bot.entities.types.experience_orb import ExperienceOrb
 from minecraft_bot.entities.types.eye_of_ender import EyeOfEnder
 from minecraft_bot.entities.types.falling_block import FallingBlock
+from minecraft_bot.entities.types.fireball import Fireball
 from minecraft_bot.entities.types.firework_rocket import FireworkRocket
+from minecraft_bot.entities.types.fishing_bobber import FishingBobber
 from minecraft_bot.entities.types.fox import Fox
 from minecraft_bot.entities.types.frog import Frog
 from minecraft_bot.entities.types.furnace_minecart import FurnaceMinecart
@@ -59,7 +61,6 @@ from minecraft_bot.entities.types.iron_golem import IronGolem
 from minecraft_bot.entities.types.item import Item
 from minecraft_bot.entities.types.item_display import ItemDisplay
 from minecraft_bot.entities.types.item_frame import ItemFrame
-from minecraft_bot.entities.types.fireball import Fireball
 from minecraft_bot.entities.types.leash_knot import LeashKnot
 from minecraft_bot.entities.types.lightning_bolt import LightningBolt
 from minecraft_bot.entities.types.llama import Llama
@@ -78,6 +79,7 @@ from minecraft_bot.entities.types.pig import Pig
 from minecraft_bot.entities.types.piglin import Piglin
 from minecraft_bot.entities.types.piglin_brute import PiglinBrute
 from minecraft_bot.entities.types.pillager import Pillager
+from minecraft_bot.entities.types.player import Player
 from minecraft_bot.entities.types.polar_bear import PolarBear
 from minecraft_bot.entities.types.potion import Potion
 from minecraft_bot.entities.types.pufferfish import Pufferfish
@@ -124,8 +126,6 @@ from minecraft_bot.entities.types.zombie import Zombie
 from minecraft_bot.entities.types.zombie_horse import ZombieHorse
 from minecraft_bot.entities.types.zombie_villager import ZombieVillager
 from minecraft_bot.entities.types.zombified_piglin import ZombifiedPiglin
-from minecraft_bot.entities.types.player import Player
-from minecraft_bot.entities.types.fishing_bobber import FishingBobber
 
 # type_id -> subclass (filled in here for fast lookup at runtime)
 LOOKUP: dict[int, type] = {

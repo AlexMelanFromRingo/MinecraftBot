@@ -27,6 +27,7 @@ def _build_floor_accel_world():
     """Build the same plane in the accel World."""
     import json
     from pathlib import Path
+
     from minecraft_bot.codec import Reader
     from minecraft_bot.protocol.v763.packets.play.clientbound.map_chunk import (
         decode as pkt_decode,
@@ -63,12 +64,20 @@ def test_gravity_parity_empty_world() -> None:
     """Gravity behaves identically with no floor."""
     from minecraft_bot.physics import (
         PhysicsIntent as PyIntent,
+    )
+    from minecraft_bot.physics import (
         PhysicsState as PyState,
+    )
+    from minecraft_bot.physics import (
         tick as py_tick,
     )
     from minecraft_bot_accel.physics import (
         PhysicsIntent as AcIntent,
+    )
+    from minecraft_bot_accel.physics import (
         PhysicsState as AcState,
+    )
+    from minecraft_bot_accel.physics import (
         tick as ac_tick,
     )
 
@@ -99,12 +108,20 @@ def test_landing_parity() -> None:
     """Falling bot lands on the floor; both backends converge to y≈1."""
     from minecraft_bot.physics import (
         PhysicsIntent as PyIntent,
+    )
+    from minecraft_bot.physics import (
         PhysicsState as PyState,
+    )
+    from minecraft_bot.physics import (
         tick as py_tick,
     )
     from minecraft_bot_accel.physics import (
         PhysicsIntent as AcIntent,
+    )
+    from minecraft_bot_accel.physics import (
         PhysicsState as AcState,
+    )
+    from minecraft_bot_accel.physics import (
         tick as ac_tick,
     )
 
@@ -130,12 +147,20 @@ def test_horizontal_walk_parity() -> None:
     """One-tick walk forward gives same x displacement."""
     from minecraft_bot.physics import (
         PhysicsIntent as PyIntent,
+    )
+    from minecraft_bot.physics import (
         PhysicsState as PyState,
+    )
+    from minecraft_bot.physics import (
         tick as py_tick,
     )
     from minecraft_bot_accel.physics import (
         PhysicsIntent as AcIntent,
+    )
+    from minecraft_bot_accel.physics import (
         PhysicsState as AcState,
+    )
+    from minecraft_bot_accel.physics import (
         tick as ac_tick,
     )
 

@@ -10,11 +10,7 @@ We test:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import pytest
-
-from minecraft_bot.codec import Reader, Writer
 from minecraft_bot.errors import UnknownPacketId
 from minecraft_bot.protocol.v763.registry import CodecRegistry
 from minecraft_bot.protocol.v763.states import ConnectionState, Direction

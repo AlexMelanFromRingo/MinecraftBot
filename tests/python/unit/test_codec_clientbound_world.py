@@ -9,7 +9,6 @@ returns an equal object.
 from __future__ import annotations
 
 import importlib
-import pkgutil
 
 from minecraft_bot.codec import Reader, Writer
 
@@ -55,7 +54,9 @@ def test_every_world_packet_declares_required_symbols() -> None:
 
 def test_unload_chunk_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.unload_chunk import (
-        UnloadChunk, decode, encode,
+        UnloadChunk,
+        decode,
+        encode,
     )
     pkt = UnloadChunk(chunk_x=12, chunk_z=-34)
     w = Writer(); encode(pkt, w)
@@ -64,7 +65,9 @@ def test_unload_chunk_round_trip() -> None:
 
 def test_block_change_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.block_change import (
-        BlockChange, decode, encode,
+        BlockChange,
+        decode,
+        encode,
     )
     pkt = BlockChange(location=(1, 64, -7), block_state_id=42)
     w = Writer(); encode(pkt, w)
@@ -73,7 +76,9 @@ def test_block_change_round_trip() -> None:
 
 def test_update_view_position_round_trip() -> None:
     from minecraft_bot.protocol.v763.packets.play.clientbound.update_view_position import (
-        UpdateViewPosition, decode, encode,
+        UpdateViewPosition,
+        decode,
+        encode,
     )
     pkt = UpdateViewPosition(chunk_x=625, chunk_z=625)
     w = Writer(); encode(pkt, w)

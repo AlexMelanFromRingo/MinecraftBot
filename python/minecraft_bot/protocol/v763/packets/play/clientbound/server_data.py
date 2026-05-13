@@ -7,7 +7,6 @@ MOTD + favicon + chat-security flag, sent on join and on
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -18,7 +17,7 @@ PACKET_ID = 0x45
 @dataclass(frozen=True, slots=True)
 class ServerData:
     motd: str                        # JSON chat component
-    icon_bytes: Optional[bytes]      # raw PNG bytes, may be None
+    icon_bytes: bytes | None      # raw PNG bytes, may be None
     enforces_secure_chat: bool
 
 
@@ -27,7 +26,7 @@ def decode(reader: Reader) -> ServerData:
     present = reader.read(1)[0]
     if present == 1:
         n = varint.read(reader)
-        icon: Optional[bytes] = reader.read(n)
+        icon: bytes | None = reader.read(n)
     elif present == 0:
         icon = None
     else:

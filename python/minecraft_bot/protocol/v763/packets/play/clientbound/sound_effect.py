@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -23,8 +22,8 @@ PACKET_ID = 0x62
 @dataclass(frozen=True, slots=True)
 class SoundEffect:
     sound_id: int                # 0 = custom; 1+ = registry id
-    custom_sound: Optional[str]  # identifier; only if sound_id == 0
-    custom_range: Optional[float]  # f32, only when sound_id == 0 and range present
+    custom_sound: str | None  # identifier; only if sound_id == 0
+    custom_range: float | None  # f32, only when sound_id == 0 and range present
     sound_category: int          # varint enum
     x: int                       # i32 (world * 8)
     y: int                       # i32
@@ -37,10 +36,10 @@ class SoundEffect:
 def decode(reader: Reader) -> SoundEffect:
     sid = varint.read(reader)
     if sid == 0:
-        cs: Optional[str] = string.read(reader)
+        cs: str | None = string.read(reader)
         present = reader.read(1)[0]
         if present == 1:
-            cr: Optional[float] = struct.unpack(">f", reader.read(4))[0]
+            cr: float | None = struct.unpack(">f", reader.read(4))[0]
         elif present == 0:
             cr = None
         else:

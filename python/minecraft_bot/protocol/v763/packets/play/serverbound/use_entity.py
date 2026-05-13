@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -21,10 +20,10 @@ PACKET_ID = 0x10
 class UseEntity:
     target: int                          # varint, target entity id
     mouse: int                           # varint, 0/1/2
-    x: Optional[float]                   # f32, only when mouse == 2
-    y: Optional[float]
-    z: Optional[float]
-    hand: Optional[int]                  # varint, only when mouse == 0 or 2
+    x: float | None                   # f32, only when mouse == 2
+    y: float | None
+    z: float | None
+    hand: int | None                  # varint, only when mouse == 0 or 2
     sneaking: bool
 
 
@@ -38,10 +37,10 @@ def _bool(reader: Reader, name: str) -> bool:
 def decode(reader: Reader) -> UseEntity:
     target = varint.read(reader)
     mouse = varint.read(reader)
-    x: Optional[float] = None
-    y: Optional[float] = None
-    z: Optional[float] = None
-    hand: Optional[int] = None
+    x: float | None = None
+    y: float | None = None
+    z: float | None = None
+    hand: int | None = None
     if mouse == 2:
         x, y, z = struct.unpack(">fff", reader.read(12))
     if mouse == 0 or mouse == 2:

@@ -20,7 +20,6 @@ For overworld in 1.20.1: ``min_y = -64``, height = 384, so
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass(slots=True)
@@ -38,9 +37,9 @@ class PalettedContainer:
     """
 
     bits_per_entry: int = 0
-    palette: Optional[list[int]] = None
-    data: Optional[list[int]] = None
-    single_value: Optional[int] = None
+    palette: list[int] | None = None
+    data: list[int] | None = None
+    single_value: int | None = None
 
     def get(self, index: int) -> int:
         """Read the value at flat ``index`` (0..cells-1 for the
@@ -193,5 +192,8 @@ class Chunk:
 
 
 __all__ = [
-    "PalettedContainer", "ChunkSection", "BlockEntityRecord", "Chunk",
+    "BlockEntityRecord",
+    "Chunk",
+    "ChunkSection",
+    "PalettedContainer",
 ]

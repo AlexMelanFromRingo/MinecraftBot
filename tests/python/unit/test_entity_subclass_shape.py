@@ -8,8 +8,6 @@ import json
 import re
 from pathlib import Path
 
-import pytest
-
 from minecraft_bot.entities.types import LOOKUP
 
 REPO = Path(__file__).resolve().parents[3]

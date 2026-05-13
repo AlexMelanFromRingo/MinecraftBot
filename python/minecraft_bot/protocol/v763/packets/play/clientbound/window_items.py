@@ -7,7 +7,6 @@ each server-pushed change so the client can detect lost packets.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, slot, varint
 
@@ -18,8 +17,8 @@ PACKET_ID = 0x12
 class WindowItems:
     window_id: int                # u8
     state_id: int                 # varint
-    items: tuple[Optional[slot.SlotData], ...]
-    carried_item: Optional[slot.SlotData]
+    items: tuple[slot.SlotData | None, ...]
+    carried_item: slot.SlotData | None
 
 
 def decode(reader: Reader) -> WindowItems:

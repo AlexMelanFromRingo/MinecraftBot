@@ -8,9 +8,7 @@ with ``bot.snapshot()``.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
-from minecraft_bot.entities.base import Entity
 from minecraft_bot.inventory.item import ItemSlot
 from minecraft_bot.status_effects import EffectEntry
 
@@ -54,15 +52,15 @@ class BotSnapshot:
     xp_total: int
 
     # Identity
-    entity_id: Optional[int]
-    game_mode: Optional[int]
+    entity_id: int | None
+    game_mode: int | None
     held_slot: int
-    world_name: Optional[str]
-    dimension: Optional[str]
+    world_name: str | None
+    dimension: str | None
     is_connected: bool
 
     # Aggregates (tuples for hashability)
-    inventory: tuple[Optional[ItemSlot], ...] = field(default_factory=tuple)
+    inventory: tuple[ItemSlot | None, ...] = field(default_factory=tuple)
     nearby_entities: tuple[EntityRef, ...] = field(default_factory=tuple)
     active_effects: tuple[EffectEntry, ...] = field(default_factory=tuple)
 

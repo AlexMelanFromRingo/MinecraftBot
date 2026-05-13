@@ -14,7 +14,6 @@ Skipped if ``pytest-benchmark`` is not installed.
 
 from __future__ import annotations
 
-
 import pytest
 
 pytestmark = pytest.mark.skipif(
@@ -36,17 +35,23 @@ def _decode_one_packet(reader_cls, varint_mod, registry, raw):
 # Module-level imports kept lazy so the top-level pytestmark can decide.
 from minecraft_bot.codec import (
     Reader as _Reader,
+)
+from minecraft_bot.codec import (
     Writer as _Writer,
+)
+from minecraft_bot.codec import (
     varint as _varint,
-)  # noqa: E402
-from minecraft_bot.protocol.v763.packets.play.clientbound import (  # noqa: E402
+)
+from minecraft_bot.protocol.v763.packets.play.clientbound import (
     entity_head_rotation as _ehr,
 )
-from minecraft_bot.protocol.v763.registry import CodecRegistry  # noqa: E402
+from minecraft_bot.protocol.v763.registry import CodecRegistry
 from minecraft_bot.protocol.v763.states import (
     ConnectionState as _PLAY_S,
+)
+from minecraft_bot.protocol.v763.states import (
     Direction as _DIR,
-)  # noqa: E402
+)
 
 _PLAY = _PLAY_S.PLAY
 _CB = _DIR.CLIENTBOUND

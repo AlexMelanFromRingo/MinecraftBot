@@ -29,6 +29,7 @@ def test_connection_state_labels_match() -> None:
     # an unknown state label raises ValueError. Verify accepted set.
     import tempfile
     from pathlib import Path
+
     from minecraft_bot_accel import WireLog
 
     with tempfile.TemporaryDirectory() as tmp:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -15,7 +14,7 @@ PACKET_ID = 0x0E
 class EditBook:
     hand: int
     pages: tuple[str, ...]
-    title: Optional[str]
+    title: str | None
 
 
 def decode(reader: Reader) -> EditBook:
@@ -24,7 +23,7 @@ def decode(reader: Reader) -> EditBook:
     pages = tuple(string.read(reader) for _ in range(n))
     present = reader.read(1)[0]
     if present == 1:
-        title: Optional[str] = string.read(reader)
+        title: str | None = string.read(reader)
     elif present == 0:
         title = None
     else:

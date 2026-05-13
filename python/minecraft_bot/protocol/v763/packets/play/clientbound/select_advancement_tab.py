@@ -7,7 +7,6 @@ deselect (close the tab).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string
 from minecraft_bot.errors import ValueOutOfRange
@@ -17,7 +16,7 @@ PACKET_ID = 0x44
 
 @dataclass(frozen=True, slots=True)
 class SelectAdvancementTab:
-    id: Optional[str]  # advancement identifier, or None
+    id: str | None  # advancement identifier, or None
 
 
 def decode(reader: Reader) -> SelectAdvancementTab:

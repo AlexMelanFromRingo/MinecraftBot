@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Optional
 
 from minecraft_bot.codec import Reader, Writer, string, varint
 from minecraft_bot.errors import ValueOutOfRange
@@ -31,7 +30,7 @@ class ChatMessage:
     message: str               # max 256 chars
     timestamp: int             # i64, ms since epoch
     salt: int                  # i64
-    signature: Optional[bytes] # exactly 256 bytes if present
+    signature: bytes | None # exactly 256 bytes if present
     message_count: int         # varint
     acknowledged: bytes        # 3 bytes (20-bit fixed BitSet)
 
@@ -41,7 +40,7 @@ def decode(reader: Reader) -> ChatMessage:
     ts, salt = struct.unpack(">qq", reader.read(16))
     present = reader.read(1)[0]
     if present == 1:
-        sig: Optional[bytes] = reader.read(256)
+        sig: bytes | None = reader.read(256)
     elif present == 0:
         sig = None
     else:

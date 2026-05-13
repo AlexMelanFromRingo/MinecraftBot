@@ -11,7 +11,8 @@ import struct
 import uuid as _uuid_stdlib
 from dataclasses import dataclass
 
-from minecraft_bot.codec import Reader, Writer, string, uuid as uuid_codec, varint
+from minecraft_bot.codec import Reader, Writer, string, varint
+from minecraft_bot.codec import uuid as uuid_codec
 
 PACKET_ID = 0x6A
 

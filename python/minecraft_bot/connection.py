@@ -21,8 +21,9 @@ import inspect
 import logging
 import random
 import uuid as _uuid_stdlib
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any
 
 from minecraft_bot.codec import Reader, Writer, varint
 from minecraft_bot.errors import (
@@ -50,10 +51,10 @@ from minecraft_bot.protocol.v763.packets.login.clientbound import (
     login_plugin_request as p_l_cb_lpr,
 )
 from minecraft_bot.protocol.v763.packets.login.clientbound import success as p_l_cb_success
-from minecraft_bot.protocol.v763.packets.login.serverbound import login_start as p_l_sb_login_start
 from minecraft_bot.protocol.v763.packets.login.serverbound import (
     login_plugin_response as p_l_sb_lpr,
 )
+from minecraft_bot.protocol.v763.packets.login.serverbound import login_start as p_l_sb_login_start
 from minecraft_bot.protocol.v763.packets.play.clientbound import keep_alive as p_p_cb_ka
 from minecraft_bot.protocol.v763.packets.play.clientbound import (
     kick_disconnect as p_p_cb_kick,
@@ -73,7 +74,7 @@ _log = logging.getLogger("minecraft_bot.protocol.connection")
 # Module-shared registry — built once per process. Read-only after
 # construction; safe to share across multiple Connection instances per
 # FR-017a (multi-bot readiness).
-_REGISTRY: Optional[CodecRegistry] = None
+_REGISTRY: CodecRegistry | None = None
 
 
 def _registry() -> CodecRegistry:
@@ -138,7 +139,7 @@ class Reconnected:
 class Subscription:
     packet_type: type
     handler: Callable[..., Any]
-    _connection: "Connection" = field(repr=False)
+    _connection: Connection = field(repr=False)
 
     def cancel(self) -> None:
         self._connection.off(self)
@@ -164,9 +165,9 @@ class Connection:
         username: str,
         version: ProtocolVersion,
         auto_reconnect: bool,
-        reconnect_policy: Optional[ReconnectPolicy],
+        reconnect_policy: ReconnectPolicy | None,
         write_buffer_size: int,
-        wire_log: Optional[WireLog],
+        wire_log: WireLog | None,
     ) -> None:
         if version.number != 763:
             raise ValueError(
@@ -190,26 +191,26 @@ class Connection:
         self._compression_threshold: int = -1
         self._registry = _registry()
 
-        self._reader: Optional[asyncio.StreamReader] = None
-        self._writer: Optional[asyncio.StreamWriter] = None
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
         self._framer = Framer(compression_threshold=-1)
 
         self._write_lock = asyncio.Lock()
-        self._decode_task: Optional[asyncio.Task[None]] = None
+        self._decode_task: asyncio.Task[None] | None = None
         self._closed = asyncio.Event()
         self._closed.set()  # starts in closed state
 
         # subscribers: packet_type -> list of handlers
         self._handlers: dict[type, list[Callable[..., Any]]] = {}
         # one-shot wait_for futures: list of (packet_type, predicate, future)
-        self._waiters: list[tuple[type, Optional[Callable[..., bool]], asyncio.Future[Any]]] = []
+        self._waiters: list[tuple[type, Callable[..., bool] | None, asyncio.Future[Any]]] = []
 
         # Per-session derived state. Reset between sessions on reconnect.
-        self._entity_id: Optional[int] = None
-        self._game_mode: Optional[int] = None
-        self._world_name: Optional[str] = None
+        self._entity_id: int | None = None
+        self._game_mode: int | None = None
+        self._world_name: str | None = None
 
-        self._loop_error: Optional[BaseException] = None
+        self._loop_error: BaseException | None = None
 
     @classmethod
     def offline(
@@ -220,10 +221,10 @@ class Connection:
         *,
         version: ProtocolVersion = V_1_20_1,
         auto_reconnect: bool = False,
-        reconnect_policy: Optional[ReconnectPolicy] = None,
+        reconnect_policy: ReconnectPolicy | None = None,
         write_buffer_size: int = 1024,
-        wire_log: Optional[WireLog] = None,
-    ) -> "Connection":
+        wire_log: WireLog | None = None,
+    ) -> Connection:
         """Construct an offline-mode Connection (FR-017b)."""
         return cls(
             host=host, port=port, username=username, version=version,
@@ -262,24 +263,24 @@ class Connection:
         return not self._closed.is_set() and self._writer is not None and not self._writer.is_closing()
 
     @property
-    def wire_log(self) -> Optional[WireLog]:
+    def wire_log(self) -> WireLog | None:
         return self._wire_log
 
     @property
-    def entity_id(self) -> Optional[int]:
+    def entity_id(self) -> int | None:
         return self._entity_id
 
     @property
-    def game_mode(self) -> Optional[int]:
+    def game_mode(self) -> int | None:
         return self._game_mode
 
     @property
-    def world_name(self) -> Optional[str]:
+    def world_name(self) -> str | None:
         return self._world_name
 
     # ------ async context manager -----------------------------------------
 
-    async def __aenter__(self) -> "Connection":
+    async def __aenter__(self) -> Connection:
         return self
 
     async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
@@ -327,7 +328,7 @@ class Connection:
             # post-connect see a "PLAY but data unset" race.
             try:
                 await self.wait_for(p_p_cb_login.Login, timeout=10.0)
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 raise LoginFailed(
                     "did not receive Login (Play) packet within 10s of "
                     "transitioning to PLAY state"
@@ -371,7 +372,7 @@ class Connection:
                 delay = min(delay * self._reconnect_policy.multiplier,
                             self._reconnect_policy.max_delay)
 
-    async def disconnect(self, reason: Optional[str] = None) -> None:
+    async def disconnect(self, reason: str | None = None) -> None:
         """Close the connection cleanly. Idempotent."""
         if self._closed.is_set():
             return
@@ -462,8 +463,8 @@ class Connection:
         self,
         packet_type: type,
         *,
-        timeout: Optional[float] = None,
-        predicate: Optional[Callable[[Any], bool]] = None,
+        timeout: float | None = None,
+        predicate: Callable[[Any], bool] | None = None,
     ) -> Any:
         """One-shot: returns the next packet of ``packet_type`` (matching
         ``predicate`` if given) or raises ``asyncio.TimeoutError``."""
