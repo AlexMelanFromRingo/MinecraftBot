@@ -1,0 +1,4 @@
+//! 004 accel wrapper stub for the `state_getters` group. Filled in by the
+//! corresponding Phase 3 group.
+
+#![allow(dead_code)]

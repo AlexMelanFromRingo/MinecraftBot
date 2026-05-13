@@ -1,4 +1,20 @@
 //! PyO3 wrapper for `minecraft_bot::bot::Bot`.
+//!
+//! 004 split: the `PyBot` `#[pyclass]` itself + 003's 13 wrapper
+//! methods stay in this file. New 004 method groups land in the
+//! sub-files under `bot/` (combat_py.rs, containers_py.rs,
+//! inventory_py.rs, movement_py.rs, state_getters.rs, tasks_py.rs,
+//! world_query_py.rs). Each sub-file adds another `#[pymethods]
+//! impl PyBot { ... }` block — pyo3 0.22 allows multiple
+//! `#[pymethods]` blocks per pyclass.
+
+pub mod combat_py;
+pub mod containers_py;
+pub mod inventory_py;
+pub mod movement_py;
+pub mod state_getters;
+pub mod tasks_py;
+pub mod world_query_py;
 
 use std::sync::Arc;
 

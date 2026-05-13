@@ -22,16 +22,16 @@ description: "Task list for 004 full bot parity across three backends"
 
 **Purpose**: Split the monolithic `rust/src/bot.rs` and `python-ext/src/bot.rs` into per-method-group sub-modules; scaffold new top-level Rust modules (`behaviour/`, `foods.rs`, `recipes.rs`, `inventory/`); accept the one new Cargo dep (`async-trait`); make room for everything else.
 
-- [ ] T001 Split `rust/src/bot.rs` into `rust/src/bot/mod.rs` (re-exports + `Bot` struct) and the empty stubs `rust/src/bot/{state,movement,combat,world_query,inventory,containers,tasks,walk_to,packet_hooks}.rs`. Move existing 003 code (`walk_to`, `packet_hooks`, `connect/disconnect/position/entity_id/health/food/drop_held_item/send_raw`) into the right sub-files. Verify `cargo build -p minecraft_bot` still passes.
-- [ ] T002 [P] Split `python-ext/src/bot.rs` mirroring T001: create `python-ext/src/bot/mod.rs` + empty stubs `{state_getters,movement_py,combat_py,world_query_py,inventory_py,containers_py,tasks_py}.rs`. Move existing 003 wrappers. Verify `maturin develop --release` still builds.
-- [ ] T003 [P] Add `async-trait = "0.1"` to `rust/Cargo.toml` `[dependencies]`. Add a single-line comment cross-referencing research.md R-5.
-- [ ] T004 [P] Create skeleton `rust/src/behaviour/{mod.rs,leaf.rs,leaves/mod.rs}` plus empty `rust/src/behaviour/leaves/{walk_to,eat_when_hungry,follow_entity,attack_target}.rs`. `mod.rs` re-exports `Selector`, `Sequencer`, `Inverter`, `Repeater`, `Leaf`, `NodeStatus`, `BehaviourCtx`, `BehaviourValue`, `BehaviourRunner` (all stubs at this point).
-- [ ] T005 [P] Create skeleton `rust/src/foods.rs` with `FoodTable` + `FoodEntry` struct stubs and a `static FOOD_TABLE: OnceLock<FoodTable>` placeholder. Not loaded yet.
-- [ ] T006 [P] Create skeleton `rust/src/recipes.rs` with `RecipeIndex` + `RecipeEntry` struct stubs and a `static RECIPE_INDEX: OnceLock<RecipeIndex>` placeholder.
-- [ ] T007 [P] Create skeleton `rust/src/inventory/{mod.rs,item.rs,click.rs}`. `item.rs` defines `ItemSlot` (matching data-model.md). `click.rs` is empty.
-- [ ] T008 Wire the new modules into `rust/src/lib.rs`: `pub mod behaviour; pub mod foods; pub mod recipes; pub mod inventory;` and `pub use bot::Bot;`. Verify `cargo build -p minecraft_bot` passes.
-- [ ] T009 [P] Configure `python-ext/src/lib.rs` to register the new accel sub-modules (`behaviour_py`, `foods_py`). Stub the `behaviour_py.rs` and `foods_py.rs` files as empty `pub fn register(...) -> PyResult<()> { Ok(()) }` placeholders.
-- [ ] T010 [P] Add the introspection allow-list scaffold in `python/minecraft_bot/_parity_meta.py`: `PYTHON_ONLY_METHODS = {"_llm_chat_loop", "_llm_observe"}`. (Note: hidden methods already start with `_` so they're filtered; this set is for false-positive carve-outs.)
+- [X] T001 Split `rust/src/bot.rs` into `rust/src/bot/mod.rs` (re-exports + `Bot` struct) and the empty stubs `rust/src/bot/{state,movement,combat,world_query,inventory,containers,tasks,walk_to,packet_hooks}.rs`. Move existing 003 code (`walk_to`, `packet_hooks`, `connect/disconnect/position/entity_id/health/food/drop_held_item/send_raw`) into the right sub-files. Verify `cargo build -p minecraft_bot` still passes.
+- [X] T002 [P] Split `python-ext/src/bot.rs` mirroring T001: create `python-ext/src/bot/mod.rs` + empty stubs `{state_getters,movement_py,combat_py,world_query_py,inventory_py,containers_py,tasks_py}.rs`. Move existing 003 wrappers. Verify `maturin develop --release` still builds.
+- [X] T003 [P] Add `async-trait = "0.1"` to `rust/Cargo.toml` `[dependencies]`. Add a single-line comment cross-referencing research.md R-5.
+- [X] T004 [P] Create skeleton `rust/src/behaviour/{mod.rs,leaf.rs,leaves/mod.rs}` plus empty `rust/src/behaviour/leaves/{walk_to,eat_when_hungry,follow_entity,attack_target}.rs`. `mod.rs` re-exports `Selector`, `Sequencer`, `Inverter`, `Repeater`, `Leaf`, `NodeStatus`, `BehaviourCtx`, `BehaviourValue`, `BehaviourRunner` (all stubs at this point).
+- [X] T005 [P] Create skeleton `rust/src/foods.rs` with `FoodTable` + `FoodEntry` struct stubs and a `static FOOD_TABLE: OnceLock<FoodTable>` placeholder. Not loaded yet.
+- [X] T006 [P] Create skeleton `rust/src/recipes.rs` with `RecipeIndex` + `RecipeEntry` struct stubs and a `static RECIPE_INDEX: OnceLock<RecipeIndex>` placeholder.
+- [X] T007 [P] Create skeleton `rust/src/inventory/{mod.rs,item.rs,click.rs}`. `item.rs` defines `ItemSlot` (matching data-model.md). `click.rs` is empty.
+- [X] T008 Wire the new modules into `rust/src/lib.rs`: `pub mod behaviour; pub mod foods; pub mod recipes; pub mod inventory;` and `pub use bot::Bot;`. Verify `cargo build -p minecraft_bot` passes.
+- [X] T009 [P] Configure `python-ext/src/lib.rs` to register the new accel sub-modules (`behaviour_py`, `foods_py`). Stub the `behaviour_py.rs` and `foods_py.rs` files as empty `pub fn register(...) -> PyResult<()> { Ok(()) }` placeholders.
+- [X] T010 [P] Add the introspection allow-list scaffold in `python/minecraft_bot/_parity_meta.py`: `PYTHON_ONLY_METHODS = {"_llm_chat_loop", "_llm_observe"}`. (Note: hidden methods already start with `_` so they're filtered; this set is for false-positive carve-outs.)
 
 **Checkpoint**: Workspace compiles, all skeletons exist, no behaviour changed yet.
 

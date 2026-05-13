@@ -4,6 +4,21 @@
 //! dispatcher that updates the cache on map_chunk / block_change /
 //! unload_chunk events. Higher-level methods (walk_to, observation,
 //! drop_held_item, …) land in follow-on tasks.
+//!
+//! 004 split: this file owns the `Bot` struct, the dispatcher, and the
+//! 13 methods that shipped in 003. Methods added in 004 live in the
+//! per-group sub-modules under `bot/` (see [`state`], [`movement`],
+//! [`combat`], [`world_query`], [`inventory`], [`containers`],
+//! [`tasks`]). Each sub-module adds `impl Bot` blocks; the type
+//! definition itself stays here so all sub-modules can `use super::Bot`.
+
+pub mod combat;
+pub mod containers;
+pub mod inventory;
+pub mod movement;
+pub mod state;
+pub mod tasks;
+pub mod world_query;
 
 use std::collections::HashMap;
 use std::sync::Arc;

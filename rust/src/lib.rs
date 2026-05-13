@@ -17,6 +17,10 @@ pub mod wire_log;
 pub mod behaviour;
 pub mod bot;
 pub mod effects;
+// 004 — full Bot parity additions.
+pub mod foods;
+pub mod inventory;
+pub mod recipes;
 pub mod entities;
 pub mod observation;
 pub mod pathfinding;

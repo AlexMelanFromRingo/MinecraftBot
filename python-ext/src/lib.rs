@@ -5,12 +5,14 @@
 
 use pyo3::prelude::*;
 
+mod behaviour_py;
 mod bot;
 mod codec;
 mod effects_py;
 mod entities;
 mod error_map;
 mod errors;
+mod foods_py;
 mod framer;
 mod observation;
 mod pathfinding;
@@ -45,6 +47,9 @@ fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
     effects_py::register(py, &m)?;
     slots::register(py, &m)?;
     bot::register(py, &m)?;
+    // 004 additions (stubs until filled in by Group I / T017).
+    behaviour_py::register(py, &m)?;
+    foods_py::register(py, &m)?;
 
     Ok(())
 }

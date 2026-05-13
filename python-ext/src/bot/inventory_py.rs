@@ -1,0 +1,4 @@
+//! 004 accel wrapper stub for the `inventory_py` group. Filled in by the
+//! corresponding Phase 3 group.
+
+#![allow(dead_code)]
