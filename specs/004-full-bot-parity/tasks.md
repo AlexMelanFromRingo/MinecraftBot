@@ -117,32 +117,32 @@ description: "Task list for 004 full bot parity across three backends"
 
 ### Group G — Containers (FR-033..036, 6 methods)
 
-- [ ] T058 [ALL] Implement `Bot::open_block_container(x, y, z, kind, timeout)` in `rust/src/bot/containers.rs`. Subscribes to `OpenScreen` via packet-hook + `tokio::sync::oneshot` per R-8. On success, also subscribes to the first `WindowItems` for the new window_id to populate `container_slots`. Acquires inventory mutex for the duration.
-- [ ] T059 [ALL] Implement `Bot::open_chest`, `open_furnace`, `open_crafting_table` as thin wrappers (FR-034) with the correct `ContainerKind` enum value.
-- [ ] T060 [ALL] Implement `Bot::close_container` — sends `ServerboundCloseWindow(window_id)`, resets `window_id=0`, clears `container_slots`.
-- [ ] T061 [ALL] Implement `Bot::craft(recipe, x, y, z, repeat, timeout)` in `rust/src/bot/containers.rs`. Steps: call `open_crafting_table`, look up recipe via `RecipeIndex` (R-9), for each repeat iteration: pick up ingredients from player_slots, place into crafting grid slots 1..9, take output from slot 0. Sum output counts, return total. Times out per `timeout`.
-- [ ] T062 [ALL] Accel wrappers in `python-ext/src/bot/containers_py.rs`. All 6 are async; `open_*` return the `u8` window-id.
-- [ ] T063 [ALL] [P] Parity test `tests/python/parity/test_containers.py`. Use the test arena's static chest at a known position (place one for the test in setup). Open, read container_slots, close. Craft test: give bot 4 oak planks, craft a crafting table, verify count.
-- [ ] T064 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_containers_*`.
+- [X] T058 [ALL] Implement `Bot::open_block_container(x, y, z, kind, timeout)` in `rust/src/bot/containers.rs`. Subscribes to `OpenScreen` via packet-hook + `tokio::sync::oneshot` per R-8. On success, also subscribes to the first `WindowItems` for the new window_id to populate `container_slots`. Acquires inventory mutex for the duration.
+- [X] T059 [ALL] Implement `Bot::open_chest`, `open_furnace`, `open_crafting_table` as thin wrappers (FR-034) with the correct `ContainerKind` enum value.
+- [X] T060 [ALL] Implement `Bot::close_container` — sends `ServerboundCloseWindow(window_id)`, resets `window_id=0`, clears `container_slots`.
+- [X] T061 [ALL] Implement `Bot::craft(recipe, x, y, z, repeat, timeout)` in `rust/src/bot/containers.rs`. Steps: call `open_crafting_table`, look up recipe via `RecipeIndex` (R-9), for each repeat iteration: pick up ingredients from player_slots, place into crafting grid slots 1..9, take output from slot 0. Sum output counts, return total. Times out per `timeout`.
+- [X] T062 [ALL] Accel wrappers in `python-ext/src/bot/containers_py.rs`. All 6 are async; `open_*` return the `u8` window-id.
+- [X] T063 [ALL] [P] Parity test `tests/python/parity/test_containers.py`. Use the test arena's static chest at a known position (place one for the test in setup). Open, read container_slots, close. Craft test: give bot 4 oak planks, craft a crafting table, verify count.
+- [X] T064 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_containers_*`.
 
 ### Group H — High-level tasks (FR-037..041, 5 methods)
 
-- [ ] T065 [ALL] Implement `Bot::dig(x, y, z, expected_block)` in `rust/src/bot/tasks.rs`. Selects closest face (closest of 6 face-centres to bot eye), sends `ServerboundPlayerAction(start_break, face)`, waits `break_time_ticks` (R-4 formula) via `tokio::time::sleep`, sends `finish_break`. On `expected_block != current_block`, return `Err(BlockChanged)`.
-- [ ] T066 [ALL] Implement `Bot::eat(timeout)` in the same file. Find first food slot in hotbar via `FoodTable` lookup, `select_slot` if needed, `swing_arm`, send `ServerboundUseItem`, subscribe to `EntityStatus(eat_complete=24)` via packet hook + oneshot (3s timeout default).
-- [ ] T067 [ALL] Implement `Bot::follow(eid, distance, timeout)` — loop: read entity position from tracker, `look_at` it, `walk_to` to `entity_pos - normalize(entity_pos - bot_pos) * distance`. Loop body sleeps 200ms. Exits on distance-reached or timeout.
-- [ ] T068 [ALL] Implement `Bot::say(message)` and `Bot::chat(message)` (alias). `say` sends `ServerboundChatMessage` with current Unix ms timestamp and a 64-bit random salt seeded matching Python's RNG init.
-- [ ] T069 [ALL] Accel wrappers in `python-ext/src/bot/tasks_py.rs`. All 5 async.
-- [ ] T070 [ALL] [P] Parity test `tests/python/parity/test_tasks.py`. `dig` test against a known stone block, allow ±1 tick on `finish_break` tick offset (Q4 whitelist). `eat` test with bread pre-given to bot. `follow` test against `TestBot2` standing still 20 blocks away.
-- [ ] T071 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_tasks_*`.
+- [X] T065 [ALL] Implement `Bot::dig(x, y, z, expected_block)` in `rust/src/bot/tasks.rs`. Selects closest face (closest of 6 face-centres to bot eye), sends `ServerboundPlayerAction(start_break, face)`, waits `break_time_ticks` (R-4 formula) via `tokio::time::sleep`, sends `finish_break`. On `expected_block != current_block`, return `Err(BlockChanged)`.
+- [X] T066 [ALL] Implement `Bot::eat(timeout)` in the same file. Find first food slot in hotbar via `FoodTable` lookup, `select_slot` if needed, `swing_arm`, send `ServerboundUseItem`, subscribe to `EntityStatus(eat_complete=24)` via packet hook + oneshot (3s timeout default).
+- [X] T067 [ALL] Implement `Bot::follow(eid, distance, timeout)` — loop: read entity position from tracker, `look_at` it, `walk_to` to `entity_pos - normalize(entity_pos - bot_pos) * distance`. Loop body sleeps 200ms. Exits on distance-reached or timeout.
+- [X] T068 [ALL] Implement `Bot::say(message)` and `Bot::chat(message)` (alias). `say` sends `ServerboundChatMessage` with current Unix ms timestamp and a 64-bit random salt seeded matching Python's RNG init.
+- [X] T069 [ALL] Accel wrappers in `python-ext/src/bot/tasks_py.rs`. All 5 async.
+- [X] T070 [ALL] [P] Parity test `tests/python/parity/test_tasks.py`. `dig` test against a known stone block, allow ±1 tick on `finish_break` tick offset (Q4 whitelist). `eat` test with bread pre-given to bot. `follow` test against `TestBot2` standing still 20 blocks away.
+- [X] T071 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_tasks_*`.
 
 ### Group I — Behaviour trees (FR-042..044, BT-1..BT-10)
 
-- [ ] T072 [ALL] Implement `Selector`, `Sequencer`, `Inverter`, `Repeater` structs in `rust/src/behaviour/mod.rs` — each impls `Leaf`. Children stored as `Vec<Box<dyn Leaf>>` (or single `Box<dyn Leaf>` for Inverter/Repeater).
-- [ ] T073 [ALL] Implement `BehaviourRunner` in `rust/src/behaviour/mod.rs` with `tick_dt: Duration`, `cancel: Arc<tokio::sync::Notify>`, and `async fn run(...)` per data-model.md.
-- [ ] T074 [ALL] [P] Implement standard leaves in `rust/src/behaviour/leaves/{walk_to,eat_when_hungry,follow_entity,attack_target}.rs`. Each follows the Python equivalent in `python/minecraft_bot/behaviour/leaves.py`.
-- [ ] T075 [ALL] Implement `PyLeaf` adapter + `BehaviourCtx <-> PyDict` conversion in `python-ext/src/behaviour_py.rs` per R-6. Exposes `Selector`, `Sequencer`, `Inverter`, `Repeater`, `BehaviourRunner` as `#[pyclass]`. Each `__init__` accepts a list of children that are either `#[pyclass]` Rust leaves OR Python objects with `async def tick(self, bot, ctx)`.
-- [ ] T076 [ALL] [P] Parity test `tests/python/parity/test_behaviour.py`. Build the same tree `Selector([EatWhenHungry(15), WalkTo(...)])` on both backends, run for 5 ticks against a controlled scenario, compare packet traces tick-by-tick.
-- [ ] T077 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_behaviour_tree_eat_then_walk`.
+- [X] T072 [ALL] Implement `Selector`, `Sequencer`, `Inverter`, `Repeater` structs in `rust/src/behaviour/mod.rs` — each impls `Leaf`. Children stored as `Vec<Box<dyn Leaf>>` (or single `Box<dyn Leaf>` for Inverter/Repeater).
+- [X] T073 [ALL] Implement `BehaviourRunner` in `rust/src/behaviour/mod.rs` with `tick_dt: Duration`, `cancel: Arc<tokio::sync::Notify>`, and `async fn run(...)` per data-model.md.
+- [X] T074 [ALL] [P] Implement standard leaves in `rust/src/behaviour/leaves/{walk_to,eat_when_hungry,follow_entity,attack_target}.rs`. Each follows the Python equivalent in `python/minecraft_bot/behaviour/leaves.py`.
+- [X] T075 [ALL] Implement `PyLeaf` adapter + `BehaviourCtx <-> PyDict` conversion in `python-ext/src/behaviour_py.rs` per R-6. Exposes `Selector`, `Sequencer`, `Inverter`, `Repeater`, `BehaviourRunner` as `#[pyclass]`. Each `__init__` accepts a list of children that are either `#[pyclass]` Rust leaves OR Python objects with `async def tick(self, bot, ctx)`.
+- [X] T076 [ALL] [P] Parity test `tests/python/parity/test_behaviour.py`. Build the same tree `Selector([EatWhenHungry(15), WalkTo(...)])` on both backends, run for 5 ticks against a controlled scenario, compare packet traces tick-by-tick.
+- [X] T077 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_behaviour_tree_eat_then_walk`.
 
 ---
 

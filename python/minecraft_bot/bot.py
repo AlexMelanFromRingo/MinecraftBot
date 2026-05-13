@@ -1402,6 +1402,31 @@ class Bot:
 
     # --- auto-eat (FR-088..FR-092) -------------------------------------
 
+    async def chat(self, message: str) -> None:
+        """Alias for `say` (004 FR-041)."""
+        await self.say(message)
+
+    async def eat(self, *, timeout: float = 3.0) -> None:
+        """Eat the first food item in the hotbar.
+
+        004 FR-038: find a food slot in hotbar (36..44), `select_slot`
+        to it, send `use_item`, wait for eating animation (~1.6s).
+        Raises NoFoodError if no food in hotbar.
+        """
+        from minecraft_bot.foods import is_food
+        from minecraft_bot.inventory.tracker import SLOT_HOTBAR_FIRST, SLOT_HOTBAR_LAST
+        for i in range(SLOT_HOTBAR_FIRST, SLOT_HOTBAR_LAST + 1):
+            item = self.inventory.player_slots[i]
+            if item is None:
+                continue
+            if is_food(item.item_id):
+                await self.select_slot(i - SLOT_HOTBAR_FIRST)
+                await self.use_item(hand=0)
+                # Wait for eating animation, bounded by `timeout`.
+                await asyncio.sleep(min(timeout, 1.6))
+                return
+        raise RuntimeError("eat: no food in hotbar")
+
     def auto_eat(
         self,
         *,
