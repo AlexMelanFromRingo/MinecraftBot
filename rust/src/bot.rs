@@ -35,8 +35,11 @@ use crate::errors::ProtocolError;
 use crate::pathfinding::{find_path, Pos};
 use crate::physics::{self as rphys, PhysicsIntent, PhysicsState};
 use crate::protocol::v763::packets::play::clientbound::{
-    block_change::BlockChange, map_chunk::MapChunk, multi_block_change::MultiBlockChange,
-    position::Position as CbPosition, unload_chunk::UnloadChunk, update_health::UpdateHealth,
+    block_change::BlockChange, experience::Experience as CbExperience,
+    game_state_change::GameStateChange, held_item_slot::HeldItemSlot as CbHeldItemSlot,
+    login::Login as CbLogin, map_chunk::MapChunk, multi_block_change::MultiBlockChange,
+    position::Position as CbPosition, respawn::Respawn as CbRespawn, unload_chunk::UnloadChunk,
+    update_health::UpdateHealth,
 };
 use crate::protocol::v763::packets::play::serverbound::block_dig::BlockDig;
 use crate::protocol::v763::packets::play::serverbound::position::Position as SbPosition;
@@ -56,6 +59,12 @@ const ACTION_DROP_STACK: i32 = 4;
 const MAX_PREDICTION_RADIUS: f64 = 2.0;
 
 // Clientbound packet IDs we care about in the dispatcher.
+// 004 — extended set for full BotState coverage (FR-001).
+const ID_LOGIN: i32 = 0x28;
+const ID_RESPAWN: i32 = 0x41;
+const ID_HELD_ITEM_SLOT: i32 = 0x4D;
+const ID_GAME_STATE_CHANGE: i32 = 0x20;
+const ID_EXPERIENCE: i32 = 0x56;
 const ID_BLOCK_CHANGE: i32 = 0x0A;
 const ID_UNLOAD_CHUNK: i32 = 0x1E;
 const ID_MAP_CHUNK: i32 = 0x24;
@@ -64,18 +73,58 @@ const ID_MULTI_BLOCK_CHANGE: i32 = 0x43;
 const ID_UPDATE_HEALTH: i32 = 0x57;
 
 /// Public bot state snapshot fields kept up-to-date by the dispatch
-/// task.
-#[derive(Default, Debug, Clone, Copy)]
-struct BotState {
-    health: f32,
-    food: i32,
-    saturation: f32,
-    x: f64,
-    y: f64,
-    z: f64,
-    yaw: f32,
-    pitch: f32,
-    position_known: bool,
+/// task. Mirrors the Python `Bot` instance attributes 1:1 (004 FR-001).
+#[derive(Debug, Clone)]
+pub(crate) struct BotState {
+    pub health: f32,
+    pub food: i32,
+    pub saturation: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub yaw: f32,
+    pub pitch: f32,
+    pub on_ground: bool,
+    pub position_known: bool,
+    // 004 additions:
+    pub entity_id: Option<i32>,
+    pub xp_level: i32,
+    pub xp_total: i32,
+    pub game_mode: Option<u8>,
+    pub held_slot: u8,
+    pub world_name: Option<String>,
+    pub dimension: Option<String>,
+    pub is_sneaking: bool,
+    pub is_sprinting: bool,
+}
+
+impl Default for BotState {
+    fn default() -> Self {
+        // Match Python's __init__ defaults so accessors return the
+        // same starter values pre-connect (parity per FR-001).
+        Self {
+            // Python `PhysicsState` defaults to (x=0.0, y=64.0, z=0.5).
+            x: 0.0,
+            y: 64.0,
+            z: 0.5,
+            yaw: 0.0,
+            pitch: 0.0,
+            on_ground: true,
+            health: 20.0,
+            food: 20,
+            saturation: 5.0,
+            position_known: false,
+            entity_id: None,
+            xp_level: 0,
+            xp_total: 0,
+            game_mode: None,
+            held_slot: 0,
+            world_name: None,
+            dimension: None,
+            is_sneaking: false,
+            is_sprinting: false,
+        }
+    }
 }
 
 /// User-supplied callback for a packet hook. Takes the packet id
@@ -238,6 +287,56 @@ impl Bot {
                         }
                         Ok(())
                     }
+                    ID_LOGIN => {
+                        if let Ok(pkt) = CbLogin::decode(&mut br) {
+                            let mut s = state.lock().await;
+                            s.entity_id = Some(pkt.entity_id);
+                            s.game_mode = Some(pkt.game_mode);
+                            s.world_name = Some(pkt.world_name.clone());
+                            s.dimension = Some(pkt.world_type.clone());
+                        }
+                        Ok(())
+                    }
+                    ID_RESPAWN => {
+                        if let Ok(pkt) = CbRespawn::decode(&mut br) {
+                            let mut s = state.lock().await;
+                            s.game_mode = Some(pkt.game_mode);
+                            s.world_name = Some(pkt.world_name.clone());
+                            s.dimension = Some(pkt.dimension.clone());
+                            // Respawn resets health; the next UpdateHealth
+                            // packet refines this.
+                            s.health = 20.0;
+                        }
+                        Ok(())
+                    }
+                    ID_HELD_ITEM_SLOT => {
+                        if let Ok(pkt) = CbHeldItemSlot::decode(&mut br) {
+                            let mut s = state.lock().await;
+                            // Clamp to 0..8 hotbar range; server sometimes
+                            // sends out-of-range values on weird state.
+                            s.held_slot = pkt.slot.clamp(0, 8) as u8;
+                        }
+                        Ok(())
+                    }
+                    ID_GAME_STATE_CHANGE => {
+                        if let Ok(pkt) = GameStateChange::decode(&mut br) {
+                            // Reason 3 = change game mode; value carries
+                            // the new mode as an f32. Mirrors Python ref.
+                            if pkt.reason == 3 {
+                                let mut s = state.lock().await;
+                                s.game_mode = Some(pkt.value as u8);
+                            }
+                        }
+                        Ok(())
+                    }
+                    ID_EXPERIENCE => {
+                        if let Ok(pkt) = CbExperience::decode(&mut br) {
+                            let mut s = state.lock().await;
+                            s.xp_level = pkt.level;
+                            s.xp_total = pkt.total_experience;
+                        }
+                        Ok(())
+                    }
                     ID_SYNC_PLAYER_POSITION => {
                         if let Ok(pkt) = CbPosition::decode(&mut br) {
                             // Flags bits: 0x01=x rel, 0x02=y rel, 0x04=z rel,
@@ -316,16 +415,14 @@ impl Bot {
         self.state.lock().await.food
     }
 
-    /// Bot's last-known position `(x, y, z, yaw, pitch)`. Returns
-    /// `None` until the server has sent at least one
-    /// `synchronize_player_position` packet.
-    pub async fn position(&self) -> Option<(f64, f64, f64, f32, f32)> {
-        let s = *self.state.lock().await;
-        if s.position_known {
-            Some((s.x, s.y, s.z, s.yaw, s.pitch))
-        } else {
-            None
-        }
+    /// Bot's last-known `(x, y, z)` position. Mirrors the Python
+    /// `Bot.position` property exactly: always returns a 3-tuple
+    /// (defaults to `(0.0, 64.0, 0.5)` before the first
+    /// `synchronize_player_position` lands, matching Python's
+    /// PhysicsState init).
+    pub async fn position(&self) -> (f64, f64, f64) {
+        let s = self.state.lock().await;
+        (s.x, s.y, s.z)
     }
 
     /// Drop the currently-held item via a `BlockDig` Player Action.
@@ -452,7 +549,7 @@ impl Bot {
                     "walk_to called before initial position arrived".into(),
                 ));
             }
-            *s
+            s.clone()
         };
         let start_pos: Pos = (
             start_state.x.floor() as i32,
@@ -628,6 +725,21 @@ impl Bot {
                 on_ground: phys.on_ground,
             };
             self.connection.send(&pkt).await?;
+
+            // Mirror the locally-integrated physics back into BotState
+            // so accessors (`bot.x`, `bot.on_ground`, …) read the
+            // most-recent walk_to tick result. Server-side corrections
+            // arrive via `synchronize_player_position` and clobber
+            // this on the next dispatcher loop, which is the desired
+            // behaviour (server wins when they disagree).
+            {
+                let mut s = self.state.lock().await;
+                s.x = phys.x;
+                s.y = phys.y;
+                s.z = phys.z;
+                s.on_ground = phys.on_ground;
+                s.position_known = true;
+            }
 
             tokio::time::sleep(Duration::from_millis(50)).await;
         }

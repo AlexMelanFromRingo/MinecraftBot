@@ -227,6 +227,9 @@ class Bot:
         self._entity_id: int | None = None
         self._world_name: str | None = None
         self._dimension: str | None = None
+        # 004 — sneak/sprint state mirrors. Toggled by sneak() / sprint().
+        self._is_sneaking: bool = False
+        self._is_sprinting: bool = False
         self._spawn_position: tuple[int, int, int] | None = None
         self._has_initial_position = False
         self._server_position: tuple[float, float, float] | None = None
@@ -355,6 +358,11 @@ class Bot:
     def world_name(self) -> str | None: return self._world_name
     @property
     def dimension(self) -> str | None: return self._dimension
+    # 004 — sneak / sprint state, parity with Rust + accel.
+    @property
+    def is_sneaking(self) -> bool: return self._is_sneaking
+    @property
+    def is_sprinting(self) -> bool: return self._is_sprinting
 
     # --- subscription wiring ------------------------------------------
 

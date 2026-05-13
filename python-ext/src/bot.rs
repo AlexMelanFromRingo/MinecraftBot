@@ -68,44 +68,9 @@ impl PyBot {
         })
     }
 
-    /// Bot's server-assigned entity id (from Login packet). Async to
-    /// match `Connection::entity_id` semantics.
-    fn entity_id<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let inner = Arc::clone(&self.inner);
-        future_into_py(py, async move {
-            let bot = inner.lock().await;
-            Ok(bot.entity_id().await)
-        })
-    }
-
-    /// Last-known health.
-    fn health<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let inner = Arc::clone(&self.inner);
-        future_into_py(py, async move {
-            let bot = inner.lock().await;
-            Ok(bot.health().await)
-        })
-    }
-
-    /// Last-known food.
-    fn food<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let inner = Arc::clone(&self.inner);
-        future_into_py(py, async move {
-            let bot = inner.lock().await;
-            Ok(bot.food().await)
-        })
-    }
-
-    /// Last-known position `(x, y, z, yaw, pitch)`, or `None` if
-    /// the server has not yet sent a `synchronize_player_position`
-    /// packet.
-    fn position<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let inner = Arc::clone(&self.inner);
-        future_into_py(py, async move {
-            let bot = inner.lock().await;
-            Ok(bot.position().await)
-        })
-    }
+    // 004 Q1: `entity_id`, `health`, `food`, `position` are sync
+    // `#[getter]` properties in `state_getters.rs`. Old 003 async
+    // forms removed — see CHANGELOG entry for v0.3.0.
 
     /// `walk_to(x, y, z, *, timeout=30.0)` — plan a path and walk
     /// there, sending Player Position packets at 20 Hz. Returns

@@ -19,7 +19,10 @@ minecraft_bot = { path = "../rust" }
 
 # PyO3 stable-ABI extension. abi3-py311 means one wheel works for
 # Python 3.11+ without re-build.
-pyo3 = { version = "0.22", features = ["extension-module", "abi3-py311"] }
+# `multiple-pymethods` allows splitting the `PyBot` method block
+# across multiple files (one per 004 method group). The default
+# inventory linker only supports one `#[pymethods]` per pyclass.
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py311", "multiple-pymethods"] }
 
 # Bridges tokio futures to asyncio coroutines.
 pyo3-async-runtimes = { version = "0.22", features = ["tokio-runtime"] }

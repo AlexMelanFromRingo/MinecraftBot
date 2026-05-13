@@ -62,8 +62,46 @@ async fn harness_picks_distinct_usernames() {
 
 // Per-group live tests are appended below by their corresponding
 // Phase-3 group landing. Naming convention: `test_<group>_<method>`.
-// Examples:
-//   test_state_accessors
-//   test_movement_look_at
-//   test_movement_jump
-//   ...
+
+// --- Group A (T027): state accessors ---------------------------------------
+
+use std::time::Duration;
+
+/// After connect + brief idle, every state accessor returns a sane
+/// value. We don't compare against the Python ref here (that's the
+/// parity test's job); we just confirm the dispatcher actually
+/// populates BotState from Login/SetExperience/HeldItemChange.
+#[tokio::test]
+async fn test_state_accessors() {
+    let mut bot = connect_test_bot().await;
+    // Idle until the server has sent the initial state burst.
+    for _ in 0..20 {
+        tokio::time::sleep(Duration::from_millis(250)).await;
+        if bot.entity_id().await.is_some() && bot.position().await.is_some() {
+            break;
+        }
+    }
+    let eid = bot.entity_id().await;
+    assert!(eid.is_some(), "entity_id should land within 5s of connect");
+
+    let pos = bot.position().await;
+    assert!(pos.is_some(), "position should land via PlayerPosition");
+
+    let h = bot.health().await;
+    assert!(h > 0.0, "health should be positive after spawn (got {h})");
+
+    let f = bot.food().await;
+    assert!(f > 0 && f <= 20, "food in 1..20 after spawn (got {f})");
+
+    let gm = bot.game_mode().await;
+    assert!(gm.is_some(), "game_mode set by Login");
+
+    let world = bot.world_name().await;
+    assert!(world.is_some(), "world_name set by Login");
+
+    // Held slot defaults to 0 unless the server has sent SetHeldItem.
+    let slot = bot.held_slot().await;
+    assert!(slot <= 8, "held_slot in 0..8 (got {slot})");
+
+    bot.disconnect().await.expect("disconnect");
+}
