@@ -63,45 +63,76 @@ async fn harness_picks_distinct_usernames() {
 // Per-group live tests are appended below by their corresponding
 // Phase-3 group landing. Naming convention: `test_<group>_<method>`.
 
-// --- Group A (T027): state accessors ---------------------------------------
+// --- Combined live-smoke (Groups A + B + C) ----------------------------------
+//
+// Paper rate-limits per-IP reconnects (~3-5s lockout) so we batch all
+// the per-method assertions into one bot session per turn. Inside the
+// session each method is a tiny block; failure prints which one.
 
 use std::time::Duration;
 
-/// After connect + brief idle, every state accessor returns a sane
-/// value. We don't compare against the Python ref here (that's the
-/// parity test's job); we just confirm the dispatcher actually
-/// populates BotState from Login/SetExperience/HeldItemChange.
+// --- Group B + C combined (T031, T035) --------------------------------------
+//
+// Paper rate-limits per-IP reconnects (~3s lockout). Bundling all the
+// movement+combat assertions into one connection avoids the throttle.
+
 #[tokio::test]
-async fn test_state_accessors() {
+async fn test_state_movement_and_combat_combined() {
     let mut bot = connect_test_bot().await;
-    // Idle until the server has sent the initial state burst.
+
+    // --- Group A: state accessors populate from initial state burst ---
     for _ in 0..20 {
         tokio::time::sleep(Duration::from_millis(250)).await;
-        if bot.entity_id().await.is_some() && bot.position().await.is_some() {
+        if bot.entity_id().await.is_some() && bot.position().await != (0.0, 64.0, 0.5) {
             break;
         }
     }
-    let eid = bot.entity_id().await;
-    assert!(eid.is_some(), "entity_id should land within 5s of connect");
-
+    assert!(bot.entity_id().await.is_some(), "entity_id from Login");
     let pos = bot.position().await;
-    assert!(pos.is_some(), "position should land via PlayerPosition");
-
+    assert_ne!(pos, (0.0, 64.0, 0.5), "position from PlayerPosition");
     let h = bot.health().await;
-    assert!(h > 0.0, "health should be positive after spawn (got {h})");
-
+    assert!(h > 0.0, "health positive after spawn (got {h})");
     let f = bot.food().await;
-    assert!(f > 0 && f <= 20, "food in 1..20 after spawn (got {f})");
+    assert!(f > 0 && f <= 20, "food 1..20 after spawn (got {f})");
+    assert!(bot.game_mode().await.is_some(), "game_mode from Login");
+    assert!(bot.world_name().await.is_some(), "world_name from Login");
+    assert!(bot.held_slot().await <= 8, "held_slot <= 8");
 
-    let gm = bot.game_mode().await;
-    assert!(gm.is_some(), "game_mode set by Login");
+    // --- look_at ---
+    bot.look_at(10005.0, 200.0, 10005.0)
+        .await
+        .expect("look_at");
+    let yaw = bot.yaw().await;
+    let pitch = bot.pitch().await;
+    assert!(
+        (0.0..=360.0).contains(&yaw),
+        "yaw should be in 0..360 (got {yaw})"
+    );
+    assert!(
+        (-90.0..=90.0).contains(&pitch),
+        "pitch in -90..90 (got {pitch})"
+    );
 
-    let world = bot.world_name().await;
-    assert!(world.is_some(), "world_name set by Login");
+    // --- sneak / sprint toggles ---
+    assert!(!bot.is_sneaking().await, "starts not sneaking");
+    bot.sneak(true).await.expect("sneak true");
+    assert!(bot.is_sneaking().await, "after sneak(true)");
+    bot.sneak(false).await.ok();
+    assert!(!bot.is_sneaking().await);
+    bot.sprint(true).await.expect("sprint true");
+    assert!(bot.is_sprinting().await);
+    bot.sprint(false).await.ok();
 
-    // Held slot defaults to 0 unless the server has sent SetHeldItem.
-    let slot = bot.held_slot().await;
-    assert!(slot <= 8, "held_slot in 0..8 (got {slot})");
+    // --- swing_arm / jump ---
+    bot.swing_arm(0).await.expect("swing_arm");
+    bot.jump().await.expect("jump");
 
-    bot.disconnect().await.expect("disconnect");
+    // --- combat ---
+    bot.use_item(0).await.expect("use_item");
+    bot.attack(999_999).await.expect("attack unknown eid");
+    bot.interact_entity(999_999, 0)
+        .await
+        .expect("interact unknown eid");
+
+    bot.disconnect().await.ok();
 }

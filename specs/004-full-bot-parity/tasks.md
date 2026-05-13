@@ -72,17 +72,17 @@ description: "Task list for 004 full bot parity across three backends"
 
 ### Group B — Movement and orientation (FR-002..006, 5 methods)
 
-- [ ] T028 [ALL] Implement `Bot::look_at`, `jump`, `sneak`, `sprint`, `swing_arm` in `rust/src/bot/movement.rs`. Mirror `python/minecraft_bot/bot.py:look_at..swing_arm` line-by-line. `sneak/sprint` track local `is_sneaking`/`is_sprinting` flags and short-circuit on same-value (FR-004 idempotence). `jump` injects 0.42 into `state.velocity.y` and lets the existing physics tick handle the rest.
-- [ ] T029 [ALL] Implement accel wrappers in `python-ext/src/bot/movement_py.rs`. All async via `pyo3-async-runtimes::tokio::future_into_py`. Signatures match contracts/api-surface.md row 19..23.
-- [ ] T030 [ALL] [P] Parity test `tests/python/parity/test_movement.py`. Per method: connect both backends, run method against the same target, compare packet traces via the normalizer. `look_at` test uses target `(100, 64, 100)` from bot spawn.
-- [ ] T031 [ALL] [P] Live smoke for each of the 5 methods in `tests/rust/integration_bot_full.rs::test_movement_*`.
+- [X] T028 [ALL] Implement `Bot::look_at`, `jump`, `sneak`, `sprint`, `swing_arm` in `rust/src/bot/movement.rs`. Mirror `python/minecraft_bot/bot.py:look_at..swing_arm` line-by-line. `sneak/sprint` track local `is_sneaking`/`is_sprinting` flags and short-circuit on same-value (FR-004 idempotence). `jump` injects 0.42 into `state.velocity.y` and lets the existing physics tick handle the rest.
+- [X] T029 [ALL] Implement accel wrappers in `python-ext/src/bot/movement_py.rs`. All async via `pyo3-async-runtimes::tokio::future_into_py`. Signatures match contracts/api-surface.md row 19..23.
+- [X] T030 [ALL] [P] Parity test `tests/python/parity/test_movement.py`. Per method: connect both backends, run method against the same target, compare packet traces via the normalizer. `look_at` test uses target `(100, 64, 100)` from bot spawn.
+- [X] T031 [ALL] [P] Live smoke for each of the 5 methods in `tests/rust/integration_bot_full.rs::test_movement_*`.
 
 ### Group C — Combat and interaction (FR-007..009, 3 methods)
 
-- [ ] T032 [ALL] Implement `Bot::attack`, `interact_entity`, `use_item` in `rust/src/bot/combat.rs`. `attack` reads the current sneak state from `BotState` and includes it in `ServerboundInteract`. `interact_entity` switches between `interact_at` and `interact` based on whether the bot is currently looking at the entity (mirror Python check).
-- [ ] T033 [ALL] Implement accel wrappers in `python-ext/src/bot/combat_py.rs`.
-- [ ] T034 [ALL] [P] Parity test `tests/python/parity/test_combat.py`. Use the test arena's static dummy mob (op'd `TestBot2` acts as target for `TestBot1`'s attacks; both backends attack the same target eid).
-- [ ] T035 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_combat_*`.
+- [X] T032 [ALL] Implement `Bot::attack`, `interact_entity`, `use_item` in `rust/src/bot/combat.rs`. `attack` reads the current sneak state from `BotState` and includes it in `ServerboundInteract`. `interact_entity` switches between `interact_at` and `interact` based on whether the bot is currently looking at the entity (mirror Python check).
+- [X] T033 [ALL] Implement accel wrappers in `python-ext/src/bot/combat_py.rs`.
+- [X] T034 [ALL] [P] Parity test `tests/python/parity/test_combat.py`. Use the test arena's static dummy mob (op'd `TestBot2` acts as target for `TestBot1`'s attacks; both backends attack the same target eid).
+- [X] T035 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_combat_*`.
 
 ### Group D — World query (FR-010..018, 9 methods)
 
