@@ -123,9 +123,12 @@ jobs:
           - platform: linux-x86_64
             runs-on: ubuntu-latest
           - platform: macos-arm64
+            # macos-latest now defaults to arm64 (M-series).
             runs-on: macos-latest
           - platform: macos-x86_64
-            runs-on: macos-latest
+            # macos-13 is the last Intel runner GitHub provides; an
+            # arm64 host cannot install an x86_64 wheel.
+            runs-on: macos-13
           - platform: windows-x86_64
             runs-on: windows-latest
     steps:
