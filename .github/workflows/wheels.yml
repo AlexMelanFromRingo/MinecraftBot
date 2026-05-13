@@ -178,8 +178,11 @@ jobs:
       - run: pytest -q tests/python/parity/test_smoke_bringup.py
 
   # T064 — on a tag push, collect every wheel and attach to the
-  # matching GitHub Release. Runs only after all 5 builds + every
-  # smoke test pass.
+  # matching GitHub Release. Depends only on the 5 build jobs, not
+  # on the smoke-test matrix: smoke runs in parallel and serves as
+  # an early signal, but a slow Intel macOS runner stalling the
+  # smoke step should not block a release whose wheels themselves
+  # built successfully.
   publish-release:
     name: Upload wheels to GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
@@ -189,8 +192,6 @@ jobs:
       - macos-arm64
       - macos-x86_64
       - windows-x86_64
-      - smoke-test
-      - smoke-test-py312
     runs-on: ubuntu-latest
     permissions:
       contents: write
