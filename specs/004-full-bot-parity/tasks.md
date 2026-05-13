@@ -96,9 +96,9 @@ description: "Task list for 004 full bot parity across three backends"
 
 ### Group E — Observation (FR-019..020, 2 methods)
 
-- [ ] T043 [ALL] Extend `rust/src/observation.rs` with `Bot::snapshot(nearby_radius)` and `Bot::observation()` returning the structs from data-model.md. `snapshot` populates `inventory_summary` by iterating `player_slots` and aggregating by `ItemSlot::name`. `nearby_blocks` is a small voxel sample (radius=4 by default).
-- [ ] T044 [ALL] Accel wrappers in `python-ext/src/bot/observation_py.rs` (note: file already exists from 003; extend, don't replace). Both methods are sync.
-- [ ] T045 [ALL] [P] Parity test `tests/python/parity/test_observation.py` + live smoke `tests/rust/integration_bot_full.rs::test_observation_*`. Compare returned struct field-by-field.
+- [X] T043 [ALL] Extend `rust/src/observation.rs` with `Bot::snapshot(nearby_radius)` and `Bot::observation()` returning the structs from data-model.md. `snapshot` populates `inventory_summary` by iterating `player_slots` and aggregating by `ItemSlot::name`. `nearby_blocks` is a small voxel sample (radius=4 by default).
+- [X] T044 [ALL] Accel wrappers in `python-ext/src/bot/observation_py.rs` (note: file already exists from 003; extend, don't replace). Both methods are sync.
+- [X] T045 [ALL] [P] Parity test `tests/python/parity/test_observation.py` + live smoke `tests/rust/integration_bot_full.rs::test_observation_*`. Compare returned struct field-by-field.
 
 ### Group F — Inventory (FR-021..032, 12 methods + iter_accessible_slots)
 

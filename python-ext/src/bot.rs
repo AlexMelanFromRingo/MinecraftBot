@@ -12,6 +12,7 @@ pub mod combat_py;
 pub mod containers_py;
 pub mod inventory_py;
 pub mod movement_py;
+pub mod observation_py;
 pub mod state_getters;
 pub mod tasks_py;
 pub mod world_query_py;

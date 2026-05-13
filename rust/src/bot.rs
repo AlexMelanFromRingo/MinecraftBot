@@ -16,6 +16,7 @@ pub mod combat;
 pub mod containers;
 pub mod inventory;
 pub mod movement;
+pub mod observation;
 pub mod state;
 pub mod tasks;
 pub mod world_query;
