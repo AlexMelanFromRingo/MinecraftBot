@@ -833,6 +833,21 @@ class Bot:
         """Total count of items named ``name`` across the inventory."""
         return self.inventory.count_item(name)
 
+    def iter_accessible_slots(self) -> list[tuple[int, "ItemSlot | None"]]:
+        """All visible slots — player_slots followed by container_slots.
+
+        Use this for operations that genuinely need the merged view
+        (e.g. chest-to-inv transfer). `held_item`, `find_item`, and
+        `count_item` deliberately scan only `player_slots` so an open
+        chest never silently changes their result (004 Q5 invariant).
+        """
+        player = list(enumerate(self.inventory.player_slots))
+        offset = len(self.inventory.player_slots)
+        container = [
+            (offset + i, s) for i, s in enumerate(self.inventory.container_slots)
+        ]
+        return player + container
+
     async def select_slot(self, hotbar_index: int) -> None:
         """Switch the active hotbar slot (action slot). 0..8."""
         if not 0 <= hotbar_index <= 8:

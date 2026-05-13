@@ -102,18 +102,18 @@ description: "Task list for 004 full bot parity across three backends"
 
 ### Group F — Inventory (FR-021..032, 12 methods + iter_accessible_slots)
 
-- [ ] T046 [ALL] Implement `Bot::held_item`, `find_item`, `count_item` in `rust/src/bot/inventory.rs`. All three read `player_slots` only (Q5 invariant). `find_item` resolves names through `ItemSlot::name`.
-- [ ] T047 [ALL] Implement `Bot::iter_accessible_slots` (FR-024a) returning `impl Iterator<Item=(usize, Option<ItemSlot>)>` over `player_slots ++ container_slots`. Verified zero-alloc.
-- [ ] T048 [ALL] Implement `Bot::select_slot` in `rust/src/bot/inventory.rs`. Sends `ServerboundHeldItemChange` + updates `BotState.held_slot` locally.
-- [ ] T049 [ALL] Implement `Bot::drop_item(drop_stack)` — sends `ServerboundPlayerAction(drop_one|drop_stack)` against currently-held slot. Acquires inventory mutex (R-2).
-- [ ] T050 [ALL] Implement `Bot::click_slot(window_id, slot, button, mode, items_changed)` in `rust/src/inventory/click.rs`. Implements the optimistic-update + WindowConfirmation handshake from R-7. 5s timeout; rollback + error on mismatch.
-- [ ] T051 [ALL] Implement `Bot::move_item(from, to, count)` in `rust/src/inventory/click.rs`. Sequence: pickup `from`, place `to`, place leftover back (if count != full stack). Matches Python `bot.py:move_item`.
-- [ ] T052 [ALL] Implement `Bot::quick_move(slot)` — single click with `button=0, mode=1` (shift-click).
-- [ ] T053 [ALL] Implement `Bot::equip_armor(armor_slot, src_slot)` and `unequip_armor(armor_slot, dst_slot)` — both via `quick_move` into the right slot index (5..8).
-- [ ] T054 [ALL] Implement `Bot::swap_to_offhand(src_slot)` — `ServerboundPlayerAction(swap_with_offhand)`.
-- [ ] T055 [ALL] Accel wrappers for all 12 inventory methods in `python-ext/src/bot/inventory_py.rs`. `held_item` is a `#[getter]` returning `Option<ItemSlot>`; the rest are async methods. Add `ItemSlot` as `#[pyclass(frozen)]` in the same file.
-- [ ] T056 [ALL] [P] Parity test `tests/python/parity/test_inventory.py` covering all 12 methods. Read-only methods compared by return value; mutating methods compared via packet trace.
-- [ ] T057 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_inventory_*` — give bot a known kit via `/give @s` issued by the spec server, run move/quick_move/equip/drop sequences.
+- [X] T046 [ALL] Implement `Bot::held_item`, `find_item`, `count_item` in `rust/src/bot/inventory.rs`. All three read `player_slots` only (Q5 invariant). `find_item` resolves names through `ItemSlot::name`.
+- [X] T047 [ALL] Implement `Bot::iter_accessible_slots` (FR-024a) returning `impl Iterator<Item=(usize, Option<ItemSlot>)>` over `player_slots ++ container_slots`. Verified zero-alloc.
+- [X] T048 [ALL] Implement `Bot::select_slot` in `rust/src/bot/inventory.rs`. Sends `ServerboundHeldItemChange` + updates `BotState.held_slot` locally.
+- [X] T049 [ALL] Implement `Bot::drop_item(drop_stack)` — sends `ServerboundPlayerAction(drop_one|drop_stack)` against currently-held slot. Acquires inventory mutex (R-2).
+- [X] T050 [ALL] Implement `Bot::click_slot(window_id, slot, button, mode, items_changed)` in `rust/src/inventory/click.rs`. Implements the optimistic-update + WindowConfirmation handshake from R-7. 5s timeout; rollback + error on mismatch.
+- [X] T051 [ALL] Implement `Bot::move_item(from, to, count)` in `rust/src/inventory/click.rs`. Sequence: pickup `from`, place `to`, place leftover back (if count != full stack). Matches Python `bot.py:move_item`.
+- [X] T052 [ALL] Implement `Bot::quick_move(slot)` — single click with `button=0, mode=1` (shift-click).
+- [X] T053 [ALL] Implement `Bot::equip_armor(armor_slot, src_slot)` and `unequip_armor(armor_slot, dst_slot)` — both via `quick_move` into the right slot index (5..8).
+- [X] T054 [ALL] Implement `Bot::swap_to_offhand(src_slot)` — `ServerboundPlayerAction(swap_with_offhand)`.
+- [X] T055 [ALL] Accel wrappers for all 12 inventory methods in `python-ext/src/bot/inventory_py.rs`. `held_item` is a `#[getter]` returning `Option<ItemSlot>`; the rest are async methods. Add `ItemSlot` as `#[pyclass(frozen)]` in the same file.
+- [X] T056 [ALL] [P] Parity test `tests/python/parity/test_inventory.py` covering all 12 methods. Read-only methods compared by return value; mutating methods compared via packet trace.
+- [X] T057 [ALL] [P] Live smoke `tests/rust/integration_bot_full.rs::test_inventory_*` — give bot a known kit via `/give @s` issued by the spec server, run move/quick_move/equip/drop sequences.
 
 ### Group G — Containers (FR-033..036, 6 methods)
 

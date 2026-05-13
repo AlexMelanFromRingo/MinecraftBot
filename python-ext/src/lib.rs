@@ -47,7 +47,8 @@ fn minecraft_bot_accel(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
     effects_py::register(py, &m)?;
     slots::register(py, &m)?;
     bot::register(py, &m)?;
-    // 004 additions (stubs until filled in by Group I / T017).
+    // 004 additions.
+    bot::inventory_py::register(py, &m)?;
     behaviour_py::register(py, &m)?;
     foods_py::register(py, &m)?;
 

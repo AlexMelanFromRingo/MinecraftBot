@@ -1,5 +1,8 @@
 //! Inventory state machine + Bot methods. Mirrors
-//! `python/minecraft_bot/inventory/tracker.py`.
+//! `python/minecraft_bot/inventory/tracker.py` (state) and
+//! `bot.py:822-965` (methods).
+//!
+//! 004 Group F (T046..T054).
 //!
 //! Spec Q5 invariant: `player_slots` is persistent (46 slots —
 //! crafting result 0, crafting grid 1..4, armor 5..8, main 9..35,
@@ -143,6 +146,206 @@ impl InventoryState {
         self.window_id = 0;
         self.container_slots.clear();
         self.cursor = None;
+    }
+
+    /// Read-only access to player slot at `index` (`0..46`). Returns
+    /// `None` for out-of-range index or empty slot.
+    pub fn get_player_slot(&self, index: usize) -> Option<&ItemSlot> {
+        self.player_slots.get(index).and_then(|s| s.as_ref())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Bot methods (FR-022..FR-032, FR-024a).
+
+use super::Bot;
+use crate::errors::ProtocolError;
+use crate::protocol::v763::packets::play::serverbound::held_item_slot::HeldItemSlot;
+use crate::protocol::v763::packets::play::serverbound::window_click::WindowClick;
+
+/// WindowClick mode constants (Mojang protocol).
+const MODE_NORMAL_CLICK: i32 = 0;
+const MODE_SHIFT_CLICK: i32 = 1;
+const MODE_DROP: i32 = 4;
+const MODE_SWAP_OFFHAND: i32 = 6;
+
+/// Armor slot indices on the player inventory window.
+pub fn armor_slot_index(name: &str) -> Option<usize> {
+    match name {
+        "head" | "helmet" => Some(SLOT_ARMOR_HEAD),
+        "chest" | "chestplate" => Some(SLOT_ARMOR_CHEST),
+        "legs" | "leggings" => Some(SLOT_ARMOR_LEGS),
+        "feet" | "boots" => Some(SLOT_ARMOR_FEET),
+        _ => None,
+    }
+}
+
+impl Bot {
+    /// Read currently-held hotbar slot's item. Q5 invariant: reads
+    /// only `player_slots`.
+    pub async fn held_item(&self) -> Option<ItemSlot> {
+        let inv = self.inventory.lock().await;
+        let slot = self.state.lock().await.held_slot as usize;
+        inv.get_player_slot(SLOT_HOTBAR_FIRST + slot).cloned()
+    }
+
+    /// First player slot index whose item name matches `name`.
+    /// Reads `player_slots` only (Q5).
+    pub async fn find_item(&self, name: &str) -> Option<usize> {
+        let inv = self.inventory.lock().await;
+        for (i, s) in inv.player_slots.iter().enumerate() {
+            if let Some(item) = s {
+                if item.name() == name {
+                    return Some(i);
+                }
+            }
+        }
+        None
+    }
+
+    /// Total stack count for items named `name`. `player_slots` only.
+    pub async fn count_item(&self, name: &str) -> u32 {
+        let inv = self.inventory.lock().await;
+        inv.player_slots
+            .iter()
+            .filter_map(|s| s.as_ref())
+            .filter(|item| item.name() == name)
+            .map(|item| item.count as u32)
+            .sum()
+    }
+
+    /// Iterate all visible slots — player_slots + container_slots.
+    /// Returns owned snapshots to avoid lifetime issues with the
+    /// async lock.
+    pub async fn iter_accessible_slots(&self) -> Vec<(usize, Option<ItemSlot>)> {
+        let inv = self.inventory.lock().await;
+        let mut out: Vec<(usize, Option<ItemSlot>)> =
+            inv.player_slots.iter().cloned().enumerate().collect();
+        let base = out.len();
+        for (i, s) in inv.container_slots.iter().cloned().enumerate() {
+            out.push((base + i, s));
+        }
+        out
+    }
+
+    /// Switch the active hotbar slot (0..8). Sends `HeldItemSlot`
+    /// and updates local state optimistically.
+    pub async fn select_slot(&self, hotbar_index: u8) -> Result<(), ProtocolError> {
+        if hotbar_index > 8 {
+            return Err(ProtocolError::DecodeError(format!(
+                "hotbar_index must be 0..8, got {hotbar_index}"
+            )));
+        }
+        self.connection
+            .send(&HeldItemSlot {
+                slot_id: hotbar_index as i16,
+            })
+            .await?;
+        self.state.lock().await.held_slot = hotbar_index;
+        Ok(())
+    }
+
+    /// Drop the currently-held item (or stack). Mirrors Python:
+    /// uses WindowClick mode=4 instead of BlockDig because Paper
+    /// silently ignores BlockDig stack-drops from non-vanilla clients.
+    pub async fn drop_item(&self, drop_stack: bool) -> Result<(), ProtocolError> {
+        let _guard = self.inventory.lock().await; // serialise inventory writes
+        let held_slot = self.state.lock().await.held_slot as i16;
+        let state_id = _guard.state_id;
+        let slot_index = (SLOT_HOTBAR_FIRST as i16) + held_slot;
+        self.connection
+            .send(&WindowClick {
+                window_id: 0,
+                state_id,
+                slot_index,
+                mouse_button: if drop_stack { 1 } else { 0 },
+                mode: MODE_DROP,
+                changed_slots: Vec::new(),
+                carried_item: None,
+            })
+            .await
+    }
+
+    /// Send a window-click packet. `mode_str` is one of
+    /// `"left"`, `"right"`, `"shift_left"`, `"shift_right"`,
+    /// `"swap_offhand"`. `window_id` defaults to current open window.
+    pub async fn click_slot(
+        &self,
+        slot_index: i16,
+        mode_str: &str,
+        button: i8,
+        window_id: Option<u8>,
+    ) -> Result<(), ProtocolError> {
+        let inv = self.inventory.lock().await;
+        let wid = window_id.unwrap_or(inv.window_id);
+        let state_id = inv.state_id;
+        let (mode, btn) = match mode_str {
+            "left" => (MODE_NORMAL_CLICK, button),
+            "right" => (MODE_NORMAL_CLICK, 1),
+            "shift_left" => (MODE_SHIFT_CLICK, 0),
+            "shift_right" => (MODE_SHIFT_CLICK, 1),
+            "swap_offhand" => (MODE_SWAP_OFFHAND, 40),
+            other => {
+                return Err(ProtocolError::DecodeError(format!(
+                    "unknown click mode: {other}"
+                )));
+            }
+        };
+        drop(inv);
+        self.connection
+            .send(&WindowClick {
+                window_id: wid,
+                state_id,
+                slot_index,
+                mouse_button: btn,
+                mode,
+                changed_slots: Vec::new(),
+                carried_item: None,
+            })
+            .await
+    }
+
+    /// Move the entire stack at `src` to `dst` via pick-up + put-down
+    /// (two left-clicks). Matches Python `bot.py:move_item`.
+    pub async fn move_item(
+        &self,
+        src: i16,
+        dst: i16,
+        window_id: Option<u8>,
+    ) -> Result<(), ProtocolError> {
+        self.click_slot(src, "left", 0, window_id).await?;
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        self.click_slot(dst, "left", 0, window_id).await
+    }
+
+    /// Shift-click — auto-shuffle stack between player and container.
+    pub async fn quick_move(&self, slot: i16, window_id: Option<u8>) -> Result<(), ProtocolError> {
+        self.click_slot(slot, "shift_left", 0, window_id).await
+    }
+
+    /// Move an armor piece from `src_slot` into the right armor slot.
+    pub async fn equip_armor(&self, armor_slot: &str, src_slot: i16) -> Result<(), ProtocolError> {
+        let dst = armor_slot_index(armor_slot).ok_or_else(|| {
+            ProtocolError::DecodeError(format!("unknown armor slot: {armor_slot}"))
+        })?;
+        self.move_item(src_slot, dst as i16, Some(0)).await
+    }
+
+    /// Move armor from its slot back to `dst_slot` in the main inventory.
+    pub async fn unequip_armor(
+        &self,
+        armor_slot: &str,
+        dst_slot: i16,
+    ) -> Result<(), ProtocolError> {
+        let src = armor_slot_index(armor_slot).ok_or_else(|| {
+            ProtocolError::DecodeError(format!("unknown armor slot: {armor_slot}"))
+        })?;
+        self.move_item(src as i16, dst_slot, Some(0)).await
+    }
+
+    /// Swap the item at `src_slot` with the off-hand via F-key.
+    pub async fn swap_to_offhand(&self, src_slot: i16) -> Result<(), ProtocolError> {
+        self.click_slot(src_slot, "swap_offhand", 40, Some(0)).await
     }
 }
 
