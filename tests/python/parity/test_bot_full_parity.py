@@ -9,16 +9,14 @@ xfail until 004 Group I lands; it becomes a hard gate once all
 
 from __future__ import annotations
 
-import pytest
-
 import minecraft_bot_accel
+import pytest
 from minecraft_bot.bot import Bot as PyBot
 
 from tests.python.parity._method_collector import (
     MethodSpec,
     collect_public_methods,
 )
-
 
 # Flipped to True at 004 close-out: introspection now passes
 # 65 == 65 across both backends with the PYTHON_ONLY + ACCEL_ONLY

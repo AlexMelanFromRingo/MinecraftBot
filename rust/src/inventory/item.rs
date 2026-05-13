@@ -88,8 +88,7 @@ impl ItemTable {
     }
 }
 
-const ITEM_TABLE_JSON: &str =
-    include_str!("../../../protocol-data/v763/item_table.json");
+const ITEM_TABLE_JSON: &str = include_str!("../../../protocol-data/v763/item_table.json");
 
 fn parse_item_table() -> ItemTable {
     let parsed: HashMap<String, ItemRow> = serde_json::from_str(ITEM_TABLE_JSON)

@@ -5,7 +5,6 @@ from __future__ import annotations
 import minecraft_bot_accel
 from minecraft_bot.bot import Bot as PyBot
 
-
 METHODS = (
     # Group G containers
     "open_block_container",

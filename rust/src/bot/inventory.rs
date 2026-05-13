@@ -61,12 +61,7 @@ impl InventoryState {
     /// Apply a `SetSlot` packet. `window_id == 0` -> player_slots;
     /// otherwise the slot index is interpreted relative to the
     /// currently-open window, with overflow into the player tail.
-    pub fn apply_set_slot(
-        &mut self,
-        window_id: u8,
-        slot_index: i16,
-        item: Option<ItemSlot>,
-    ) {
+    pub fn apply_set_slot(&mut self, window_id: u8, slot_index: i16, item: Option<ItemSlot>) {
         if window_id == 0 || self.container_slots.is_empty() {
             if let Ok(idx) = usize::try_from(slot_index) {
                 if idx < self.player_slots.len() {
@@ -369,15 +364,15 @@ mod tests {
     #[test]
     fn set_slot_player_window() {
         let mut inv = InventoryState::new();
-        inv.apply_set_slot(0, 36, slot(853, 1));  // bread into hotbar[0]
+        inv.apply_set_slot(0, 36, slot(853, 1)); // bread into hotbar[0]
         assert_eq!(inv.player_slots[SLOT_HOTBAR_FIRST], slot(853, 1));
     }
 
     #[test]
     fn set_slot_container_window_in_range() {
         let mut inv = InventoryState::new();
-        inv.apply_open_screen(7, 27);  // single chest
-        inv.apply_set_slot(7, 5, slot(1, 64));  // stone into chest slot 5
+        inv.apply_open_screen(7, 27); // single chest
+        inv.apply_set_slot(7, 5, slot(1, 64)); // stone into chest slot 5
         assert_eq!(inv.container_slots[5], slot(1, 64));
     }
 
@@ -406,8 +401,8 @@ mod tests {
         let mut inv = InventoryState::new();
         inv.apply_open_screen(7, 27);
         let mut items = vec![None; 27 + 36];
-        items[0] = slot(1, 64);  // chest first slot
-        items[27] = slot(2, 1);  // first player main slot
+        items[0] = slot(1, 64); // chest first slot
+        items[27] = slot(2, 1); // first player main slot
         inv.apply_window_items(7, items);
         assert_eq!(inv.container_slots[0], slot(1, 64));
         assert_eq!(inv.player_slots[9], slot(2, 1));
@@ -438,7 +433,7 @@ mod tests {
         inv.apply_open_screen(7, 27);
         inv.apply_set_slot(7, 0, slot(1, 1));
         // Opening a different window resets container_slots.
-        inv.apply_open_screen(9, 54);  // double chest
+        inv.apply_open_screen(9, 54); // double chest
         assert_eq!(inv.container_slots.len(), 54);
         assert!(inv.container_slots[0].is_none());
     }

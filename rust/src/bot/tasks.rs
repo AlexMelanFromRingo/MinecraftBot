@@ -49,8 +49,7 @@ impl Bot {
         // formula is `hardness * 5.0` seconds (Mojang wiki). Add a
         // small safety margin so finish_dig isn't sent before the
         // server has registered the break.
-        let secs = crate::world::hardness::hardness_table()
-            .break_time_seconds(block_id);
+        let secs = crate::world::hardness::hardness_table().break_time_seconds(block_id);
         // Clamp to a sensible minimum (50 ms for instant-break
         // blocks) and maximum (5 s — anything slower means the wrong
         // tool, fall back to retry-on-next-call).
@@ -79,9 +78,7 @@ impl Bot {
             let inv = self.inventory.lock().await;
             for (i, s) in inv.player_slots.iter().enumerate() {
                 if let Some(item) = s {
-                    if foods.get(&item.item_id).is_some()
-                        && (36..=44).contains(&i)
-                    {
+                    if foods.get(&item.item_id).is_some() && (36..=44).contains(&i) {
                         food_slot = Some((i - 36) as u8);
                         break;
                     }
@@ -91,9 +88,7 @@ impl Bot {
         let slot = match food_slot {
             Some(s) => s,
             None => {
-                return Err(ProtocolError::DecodeError(
-                    "eat: no food in hotbar".into(),
-                ));
+                return Err(ProtocolError::DecodeError("eat: no food in hotbar".into()));
             }
         };
         self.select_slot(slot).await?;

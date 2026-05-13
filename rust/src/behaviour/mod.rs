@@ -27,7 +27,10 @@ pub struct Selector {
 impl Selector {
     /// New selector with given children.
     pub fn new(children: Vec<Box<dyn Leaf>>) -> Self {
-        Self { children, current: 0 }
+        Self {
+            children,
+            current: 0,
+        }
     }
 }
 
@@ -67,7 +70,10 @@ pub struct Sequencer {
 impl Sequencer {
     /// New sequencer.
     pub fn new(children: Vec<Box<dyn Leaf>>) -> Self {
-        Self { children, current: 0 }
+        Self {
+            children,
+            current: 0,
+        }
     }
 }
 
@@ -135,7 +141,11 @@ pub struct Repeater {
 impl Repeater {
     /// New repeater. `max_count = None` means infinite.
     pub fn new(child: Box<dyn Leaf>, max_count: Option<u32>) -> Self {
-        Self { child, max_count, count: 0 }
+        Self {
+            child,
+            max_count,
+            count: 0,
+        }
     }
 }
 

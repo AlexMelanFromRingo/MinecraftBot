@@ -10,9 +10,9 @@ Python-side live integration suite when 004 lands.
 from __future__ import annotations
 
 import inspect
+
 import minecraft_bot_accel
 from minecraft_bot.bot import Bot as PyBot
-
 
 METHODS = ("look_at", "jump", "sneak", "sprint", "swing_arm")
 

@@ -56,3 +56,4 @@ Thumbs.db
 # Allowlist: keep wire-log captures committed when they're test fixtures
 !tests/**/*.jsonl
 !protocol-data/**/*.jsonl
+.claude/scheduled_tasks.lock

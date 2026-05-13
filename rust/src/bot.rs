@@ -36,13 +36,12 @@ use crate::errors::ProtocolError;
 use crate::pathfinding::{find_path, Pos};
 use crate::physics::{self as rphys, PhysicsIntent, PhysicsState};
 use crate::protocol::v763::packets::play::clientbound::{
-    block_change::BlockChange, entity_destroy::EntityDestroy,
-    entity_teleport::EntityTeleport, experience::Experience as CbExperience,
-    game_state_change::GameStateChange, held_item_slot::HeldItemSlot as CbHeldItemSlot,
-    login::Login as CbLogin, map_chunk::MapChunk, multi_block_change::MultiBlockChange,
-    named_entity_spawn::NamedEntitySpawn, position::Position as CbPosition,
-    respawn::Respawn as CbRespawn, spawn_entity::SpawnEntity, unload_chunk::UnloadChunk,
-    update_health::UpdateHealth,
+    block_change::BlockChange, entity_destroy::EntityDestroy, entity_teleport::EntityTeleport,
+    experience::Experience as CbExperience, game_state_change::GameStateChange,
+    held_item_slot::HeldItemSlot as CbHeldItemSlot, login::Login as CbLogin, map_chunk::MapChunk,
+    multi_block_change::MultiBlockChange, named_entity_spawn::NamedEntitySpawn,
+    position::Position as CbPosition, respawn::Respawn as CbRespawn, spawn_entity::SpawnEntity,
+    unload_chunk::UnloadChunk, update_health::UpdateHealth,
 };
 use crate::protocol::v763::packets::play::serverbound::block_dig::BlockDig;
 use crate::protocol::v763::packets::play::serverbound::position::Position as SbPosition;

@@ -55,8 +55,6 @@ impl Bot {
     /// torch). `hand` is `0` for main, `1` for off. Mirrors Python's
     /// `use_item`.
     pub async fn use_item(&self, hand: i32) -> Result<(), ProtocolError> {
-        self.connection
-            .send(&UseItem { hand, sequence: 0 })
-            .await
+        self.connection.send(&UseItem { hand, sequence: 0 }).await
     }
 }

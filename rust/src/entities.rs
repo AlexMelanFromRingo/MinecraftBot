@@ -96,7 +96,11 @@ impl EntityTracker {
             .values()
             .filter_map(|e| {
                 let d2 = sq(e.x - ox) + sq(e.y - oy) + sq(e.z - oz);
-                if d2 <= r2 { Some((d2, e.clone())) } else { None }
+                if d2 <= r2 {
+                    Some((d2, e.clone()))
+                } else {
+                    None
+                }
             })
             .collect();
         out.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());

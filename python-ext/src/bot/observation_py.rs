@@ -14,11 +14,7 @@ use super::PyBot;
 impl PyBot {
     /// `snapshot(*, nearby_radius=32.0) -> dict`.
     #[pyo3(signature = (*, nearby_radius = 32.0))]
-    fn snapshot<'py>(
-        &self,
-        py: Python<'py>,
-        nearby_radius: f64,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn snapshot<'py>(&self, py: Python<'py>, nearby_radius: f64) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;

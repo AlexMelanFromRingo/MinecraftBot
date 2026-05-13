@@ -93,11 +93,7 @@ impl PyBot {
     }
 
     /// `select_slot(hotbar_index)`.
-    fn select_slot<'py>(
-        &self,
-        py: Python<'py>,
-        hotbar_index: u8,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn select_slot<'py>(&self, py: Python<'py>, hotbar_index: u8) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;
@@ -107,11 +103,7 @@ impl PyBot {
 
     /// `drop_item(*, drop_stack=False)`.
     #[pyo3(signature = (*, drop_stack = false))]
-    fn drop_item<'py>(
-        &self,
-        py: Python<'py>,
-        drop_stack: bool,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn drop_item<'py>(&self, py: Python<'py>, drop_stack: bool) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;
@@ -203,11 +195,7 @@ impl PyBot {
     }
 
     /// `swap_to_offhand(src_slot)`.
-    fn swap_to_offhand<'py>(
-        &self,
-        py: Python<'py>,
-        src_slot: i16,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn swap_to_offhand<'py>(&self, py: Python<'py>, src_slot: i16) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;

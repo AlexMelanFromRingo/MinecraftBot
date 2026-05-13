@@ -59,8 +59,7 @@ impl FoodTable {
 /// keeps the standalone Rust crate self-contained — consumers don't
 /// have to ship the JSON alongside the binary. The file is small
 /// (~5 KiB) and rarely changes within a protocol version.
-const FOOD_TABLE_JSON: &str =
-    include_str!("../../protocol-data/v763/food_table.json");
+const FOOD_TABLE_JSON: &str = include_str!("../../protocol-data/v763/food_table.json");
 
 #[derive(Deserialize)]
 struct FoodRow {

@@ -20,7 +20,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # Whitelist of packets where one named field may drift by +/-1 tick.
 # Each key MUST carry a one-line justification — review board enforces.
 TOLERANT_PACKETS: dict[str, list[str]] = {

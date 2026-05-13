@@ -11,13 +11,11 @@ per-method packet-trace tests in Phase 3.
 
 from __future__ import annotations
 
-import pytest
-
 import minecraft_bot_accel
+import pytest
 from minecraft_bot.bot import Bot as PyBot
 
 from tests.python.parity._method_collector import collect_public_methods
-
 
 _PARITY_COMPLETE = True
 

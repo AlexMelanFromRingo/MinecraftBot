@@ -62,11 +62,7 @@ impl Bot {
     /// Every block within Chebyshev `radius` of the bot. When
     /// `include_air` is false, air blocks are omitted. Returns
     /// `[(x, y, z, state_id), ...]` sorted by Chebyshev distance.
-    pub async fn scan_volume(
-        &self,
-        radius: i32,
-        include_air: bool,
-    ) -> Vec<(i32, i32, i32, i32)> {
+    pub async fn scan_volume(&self, radius: i32, include_air: bool) -> Vec<(i32, i32, i32, i32)> {
         let (bx, by, bz) = self.position().await;
         let cx0 = bx.floor() as i32;
         let cy0 = by.floor() as i32;
@@ -221,9 +217,21 @@ fn dda_raycast(
         f64::INFINITY
     };
 
-    let t_delta_x = if dx.abs() > 1e-12 { 1.0 / dx.abs() } else { f64::INFINITY };
-    let t_delta_y = if dy.abs() > 1e-12 { 1.0 / dy.abs() } else { f64::INFINITY };
-    let t_delta_z = if dz.abs() > 1e-12 { 1.0 / dz.abs() } else { f64::INFINITY };
+    let t_delta_x = if dx.abs() > 1e-12 {
+        1.0 / dx.abs()
+    } else {
+        f64::INFINITY
+    };
+    let t_delta_y = if dy.abs() > 1e-12 {
+        1.0 / dy.abs()
+    } else {
+        f64::INFINITY
+    };
+    let t_delta_z = if dz.abs() > 1e-12 {
+        1.0 / dz.abs()
+    } else {
+        f64::INFINITY
+    };
 
     let mut face: u8 = 1; // default to "top" when origin starts inside a block
     let mut travelled = 0.0f64;

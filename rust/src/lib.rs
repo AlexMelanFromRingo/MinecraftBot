@@ -18,13 +18,13 @@ pub mod behaviour;
 pub mod bot;
 pub mod effects;
 // 004 — full Bot parity additions.
+pub mod entities;
 pub mod foods;
 pub mod inventory;
-pub mod recipes;
-pub mod entities;
 pub mod observation;
 pub mod pathfinding;
 pub mod physics;
+pub mod recipes;
 pub mod world;
 
 pub use crate::connection::{offline_uuid, Connection, ReconnectPolicy, Reconnected};

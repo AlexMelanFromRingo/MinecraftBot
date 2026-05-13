@@ -15,13 +15,7 @@ use crate::error_map::IntoPyResult;
 #[pymethods]
 impl PyBot {
     /// `look_at(x, y, z)` — rotate to face world point.
-    fn look_at<'py>(
-        &self,
-        py: Python<'py>,
-        x: f64,
-        y: f64,
-        z: f64,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn look_at<'py>(&self, py: Python<'py>, x: f64, y: f64, z: f64) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;

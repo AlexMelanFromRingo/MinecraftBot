@@ -13,8 +13,8 @@ both `minecraft_bot.Bot` and `minecraft_bot_accel.Bot` expose a
 
 from __future__ import annotations
 
-import asyncio
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from minecraft_bot.protocol.v763.states import Direction
 from minecraft_bot.wire_log import InMemory, WireLog, WireLogEntry

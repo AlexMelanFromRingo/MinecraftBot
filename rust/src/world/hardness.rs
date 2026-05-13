@@ -62,8 +62,8 @@ impl HardnessTable {
 const BLOCKS_JSON: &str = include_str!("../../../protocol-data/v763/blocks.json");
 
 fn parse_table() -> HardnessTable {
-    let rows: Vec<BlockRow> = serde_json::from_str(BLOCKS_JSON)
-        .expect("blocks.json must parse as a JSON list");
+    let rows: Vec<BlockRow> =
+        serde_json::from_str(BLOCKS_JSON).expect("blocks.json must parse as a JSON list");
     let mut by_block_id = HashMap::with_capacity(rows.len());
     for r in rows {
         by_block_id.insert(r.id, (r.name, r.hardness, r.diggable));

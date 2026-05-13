@@ -48,7 +48,9 @@ fn next_username() -> &'static str {
 #[allow(dead_code)]
 pub(crate) async fn connect_test_bot() -> Bot {
     let mut bot = Bot::offline(test_host(), test_port(), next_username());
-    bot.connect().await.expect("Bot::connect against test arena");
+    bot.connect()
+        .await
+        .expect("Bot::connect against test arena");
     bot
 }
 
@@ -99,9 +101,7 @@ async fn test_state_movement_and_combat_combined() {
     assert!(bot.held_slot().await <= 8, "held_slot <= 8");
 
     // --- look_at ---
-    bot.look_at(10005.0, 200.0, 10005.0)
-        .await
-        .expect("look_at");
+    bot.look_at(10005.0, 200.0, 10005.0).await.expect("look_at");
     let yaw = bot.yaw().await;
     let pitch = bot.pitch().await;
     assert!(
@@ -145,7 +145,10 @@ async fn test_state_movement_and_combat_combined() {
     assert_eq!(side, 5, "voxel_grid side = 2*radius+1");
     assert_eq!(grid.len(), 5 * 5 * 5);
     let chunks = bot.chunks_around(1).await;
-    assert!(!chunks.is_empty(), "chunks_around should have ≥1 loaded chunk");
+    assert!(
+        !chunks.is_empty(),
+        "chunks_around should have ≥1 loaded chunk"
+    );
     let (wm, dims) = bot.world_map_3d(2, Some(1)).await;
     assert_eq!(dims, (5, 3, 5));
     assert_eq!(wm.len(), 5 * 3 * 5);

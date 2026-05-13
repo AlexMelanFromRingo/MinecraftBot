@@ -7,9 +7,9 @@ suite (T035).
 from __future__ import annotations
 
 import inspect
+
 import minecraft_bot_accel
 from minecraft_bot.bot import Bot as PyBot
-
 
 METHODS = ("attack", "interact_entity", "use_item")
 

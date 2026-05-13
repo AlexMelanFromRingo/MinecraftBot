@@ -66,11 +66,11 @@ impl Bot {
     pub async fn jump(&self) -> Result<(), ProtocolError> {
         {
             let mut s = self.state.lock().await;
-            s.is_sneaking = s.is_sneaking;  // no-op touch
-            // Note: full physics intent tracking on Rust side will be
-            // wired in Group H (follow/walk_to share intent). For now
-            // we honour the Python contract: toggle the local flag,
-            // sleep, untoggle. Tests confirm the round-trip.
+            s.is_sneaking = s.is_sneaking; // no-op touch
+                                           // Note: full physics intent tracking on Rust side will be
+                                           // wired in Group H (follow/walk_to share intent). For now
+                                           // we honour the Python contract: toggle the local flag,
+                                           // sleep, untoggle. Tests confirm the round-trip.
         }
         // Without a physics loop running this method has no visible
         // effect — exactly the Python behaviour when called outside a

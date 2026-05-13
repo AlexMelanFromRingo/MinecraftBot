@@ -52,11 +52,7 @@ impl PyBot {
 
     /// `nearby_players(*, radius=32.0) -> list[(eid, type_id, (x, y, z))]`.
     #[pyo3(signature = (*, radius = 32.0))]
-    fn nearby_players<'py>(
-        &self,
-        py: Python<'py>,
-        radius: f64,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn nearby_players<'py>(&self, py: Python<'py>, radius: f64) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;
@@ -79,11 +75,7 @@ impl PyBot {
 
     /// `raycast(*, max_distance=32.0) -> Optional[(x, y, z, state_id, face)]`.
     #[pyo3(signature = (*, max_distance = 32.0))]
-    fn raycast<'py>(
-        &self,
-        py: Python<'py>,
-        max_distance: f64,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn raycast<'py>(&self, py: Python<'py>, max_distance: f64) -> PyResult<Bound<'py, PyAny>> {
         let inner = Arc::clone(&self.inner);
         future_into_py(py, async move {
             let bot = inner.lock().await;

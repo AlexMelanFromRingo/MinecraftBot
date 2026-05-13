@@ -95,10 +95,13 @@ impl Bot {
             (s.x, s.y, s.z, s.yaw, s.pitch, s.health, s.food)
         };
         let (voxel_grid, side) = self.voxel_grid(voxel_radius).await;
-        let look_hit = self.raycast(look_distance).await.map(|(bx, by, bz, st, face)| {
-            (bx, by, bz, st, face)
-        });
-        let nearby_entities = self.entities_tracker.nearby_entities((x, y, z), nearby_radius);
+        let look_hit = self
+            .raycast(look_distance)
+            .await
+            .map(|(bx, by, bz, st, face)| (bx, by, bz, st, face));
+        let nearby_entities = self
+            .entities_tracker
+            .nearby_entities((x, y, z), nearby_radius);
         Observation {
             position: (x, y, z),
             orientation: (yaw, pitch),

@@ -5,7 +5,6 @@ from __future__ import annotations
 import minecraft_bot_accel
 from minecraft_bot.bot import Bot as PyBot
 
-
 METHODS = (
     "held_item",
     "find_item",
