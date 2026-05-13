@@ -833,7 +833,7 @@ class Bot:
         """Total count of items named ``name`` across the inventory."""
         return self.inventory.count_item(name)
 
-    def iter_accessible_slots(self) -> list[tuple[int, "ItemSlot | None"]]:
+    def iter_accessible_slots(self) -> list[tuple[int, ItemSlot | None]]:
         """All visible slots — player_slots followed by container_slots.
 
         Use this for operations that genuinely need the merged view
