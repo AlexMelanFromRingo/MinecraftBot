@@ -5,6 +5,31 @@
 **Status**: Draft
 **Input**: User description: "Port the entire Python Bot surface (~60 methods across bot.py, dig.py, behaviour/, observation.py, inventory/, foods.py) to the standalone Rust crate and the PyO3 facade so that `minecraft_bot`, the Rust `minecraft_bot` crate, and `minecraft_bot_accel` expose the identical Bot API. Python remains the spec of record."
 
+## Clarifications
+
+### Session 2026-05-13
+
+- Q: Accessor style on accel — sync property or async method? → A: Accel exposes sync properties (`bot.x`, `bot.health`, …) backed by `Python::with_gil` + blocking poll over the Rust async accessor. Pure Rust crate keeps `async fn` accessors for tokio-embedding consumers. Existing Python user scripts that read `bot.x` continue to work unchanged when they swap the import line.
+- Q: Recipe identifier format for `craft` → A: Mirror the Python reference exactly. `craft(recipe: [Option<String>; 9], x: i32, y: i32, z: i32, *, repeat: u32 = 1, timeout: Duration = 8s) -> i32`. The `recipe` parameter is a 9-element row-major grid of Minecraft item-ids (`"minecraft:oak_planks"` or `None` for empty). `(x, y, z)` is the position of the crafting table block. Return value is the count of output items actually produced.
+- Q: Inventory state model — single flat list, dual player/container, or full Python mirror? → A: Dual player/container, mirroring the Python `InventoryTracker`. `InventoryState { player_slots: [Option<ItemSlot>; 46], container_slots: Vec<Option<ItemSlot>>, window_id: u8, state_id: i32 }`. `container_slots` is empty when no container window is open. **Invariant**: `held_item()`, `find_item(name)`, `count_item(name)` operate **only** on `player_slots` — opening a chest never silently changes what those return. A separate explicit helper `iter_accessible_slots()` is provided for operations that genuinely need the merged view (e.g., chest-to-inv transfer logic, scripted scanners). The merged view is **derived**, never canonical.
+- Q: Packet-trace parity — exact vs tolerant for timing-dependent packets? → A: **Tolerant only for an explicit whitelist** of timing-derived completion packets — currently `finish_break` (dig completion), `EntityStatus(eat_complete)` (eat completion), and cooldown-expiry packets of the same shape. For every other packet (movement, look, attack, swing, click_slot, drop, container open/close, etc.) the comparison is strict byte equality. The whitelist lives in `tests/python/parity/_parity_normalizer.py` and additions require explicit code review. Tolerance is **field-scoped**: only the timing field / send-tick offset may differ, and by at most ±1 tick. Packet kind and payload must match exactly. No "any packet within N ticks" matching — that path degrades quickly into "close enough" and is forbidden.
+- Q: Behaviour-tree leaf signature for Rust + accel → A: Mirror the Python `async def tick(self, bot, ctx) -> NodeStatus` shape. Rust trait `Leaf` has `async fn tick(&mut self, bot: &Bot, ctx: &BehaviourCtx) -> NodeStatus`. The context uses a closed value enum (no opaque `PyAny` in the pure-Rust core), so the pure-Rust crate stays free of pyo3:
+
+  ```rust
+  pub enum BehaviourValue {
+      Int(i64),
+      Float(f64),
+      Bool(bool),
+      String(String),
+      Bytes(Vec<u8>),
+      Json(serde_json::Value),
+  }
+  pub type BehaviourCtx =
+      Arc<RwLock<HashMap<String, BehaviourValue>>>;
+  ```
+
+  `NodeStatus` keeps the canonical BT names `Running | Success | Failure` (not `Continue`) — `Running` carries the specific BT semantics "tick me again next time". The accel facade converts between `BehaviourCtx` and a Python `dict[str, int | float | bool | str | bytes | dict | list]` on each entry/exit so Python users see a regular dict and can mutate it freely. `serde_json::Value` is reserved for future nested/complex use; the initial accel<->Python conversion goes through the primitive variants plus a recursive `serde_json::Value` fallback for nested dicts/lists.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — High-level bot script swaps backends without code changes (Priority: P1)
@@ -86,7 +111,7 @@ The user's existing performance gates (chunk decode 31×, batched VarInt 25×, A
 
 **State accessors (read-only):**
 
-- **FR-001**: Rust `Bot` and accel `Bot` MUST expose accessors with the same return shape as the Python reference: `x`, `y`, `z`, `yaw`, `pitch`, `on_ground`, `health`, `food`, `saturation`, `is_dead`, `xp_level`, `xp_total`, `game_mode`, `held_slot`, `entity_id`, `world_name`, `dimension`. Each accessor MUST be `async` on the Rust side to mirror the existing accessor style in `rust/src/bot.rs`.
+- **FR-001**: The accel `Bot` MUST expose accessors as **sync Python properties** (`bot.x`, `bot.health`, …) so existing Python user scripts that read these attributes work unchanged when the import is swapped from `minecraft_bot` to `minecraft_bot_accel`. The pure-Rust `Bot` keeps `async fn` accessors for tokio-embedding consumers. The accel `#[pymethods]` `#[getter]` wrappers acquire `Python::with_gil`, drive the Rust async accessor to completion via the existing tokio runtime, and return the resolved value. Accessors covered: `x`, `y`, `z`, `yaw`, `pitch`, `on_ground`, `health`, `food`, `saturation`, `is_dead`, `xp_level`, `xp_total`, `game_mode`, `held_slot`, `entity_id`, `world_name`, `dimension`.
 
 **Movement & orientation:**
 
@@ -121,10 +146,11 @@ The user's existing performance gates (chunk decode 31×, batched VarInt 25×, A
 
 **Inventory:**
 
-- **FR-021**: Each backend MUST maintain an `InventoryState` of 45 slots (slot 0 = crafting result, 5..8 = armor, 9..35 = main, 36..44 = hotbar, 45 = offhand) and update it from clientbound `SetSlot` and `WindowItems` packets.
-- **FR-022**: `Bot::held_item()` MUST return the slot at index `36 + held_slot` (or `None` if empty).
-- **FR-023**: `Bot::find_item(name)` MUST return the first slot index matching `name` (by Minecraft item-id from `protocol-data/v763/items.json`) or `None`.
-- **FR-024**: `Bot::count_item(name)` MUST sum item counts across all 45 slots.
+- **FR-021**: Each backend MUST maintain `InventoryState { player_slots: [Option<ItemSlot>; 46], container_slots: Vec<Option<ItemSlot>>, window_id: u8, state_id: i32 }`. Player slot layout: slot 0 = crafting result, 1..4 = crafting grid, 5..8 = armor (helmet/chest/legs/boots), 9..35 = main inventory, 36..44 = hotbar, 45 = offhand. `container_slots` is empty when no container window is open; populated from `WindowItems` on `open_*`, cleared on `close_container`. Both slot vectors are updated from clientbound `SetSlot` and `WindowItems` packets according to which window-id and slot index the packet carries.
+- **FR-022**: `Bot::held_item()` MUST return `player_slots[36 + held_slot]` (or `None` if empty). It MUST NOT consult `container_slots`.
+- **FR-023**: `Bot::find_item(name)` MUST return the first index into `player_slots` matching `name` (by Minecraft item-id from `protocol-data/v763/items.json`) or `None`. It MUST NOT consult `container_slots`.
+- **FR-024**: `Bot::count_item(name)` MUST sum item counts across `player_slots` only.
+- **FR-024a**: `Bot::iter_accessible_slots()` MUST return an iterator that yields `(slot_index, Option<ItemSlot>)` over both `player_slots` and the currently-open `container_slots`. This is the **only** API path that exposes the merged view; it MUST be derived on each call and MUST NOT be cached as canonical state.
 - **FR-025**: `Bot::select_slot(hotbar_index)` MUST send `ServerboundHeldItemChange` and update `held_slot` locally.
 - **FR-026**: `Bot::drop_item(drop_stack)` MUST send `ServerboundPlayerAction(drop_one)` or `drop_stack` against the currently-held slot.
 - **FR-027**: `Bot::click_slot(window_id, slot, button, mode, items_changed)` MUST send `ServerboundClickWindow`. State-id and transaction-id are managed by the implementation.
@@ -139,7 +165,7 @@ The user's existing performance gates (chunk decode 31×, batched VarInt 25×, A
 - **FR-033**: `Bot::open_block_container(x, y, z, kind)` MUST send `ServerboundUseItemOn` at the block face pointing toward the bot and await a clientbound `OpenScreen` matching `kind`. Returns the new window-id. Times out after 5 seconds.
 - **FR-034**: `Bot::open_chest`, `open_furnace`, `open_crafting_table` MUST be thin aliases over FR-033 with the appropriate `kind`.
 - **FR-035**: `Bot::close_container()` MUST send `ServerboundCloseWindow` for the current open window and reset internal state.
-- **FR-036**: `Bot::craft(recipe, output_count)` MUST perform the click sequence to place ingredients in the crafting grid, then take `output_count` from the result slot. Recipe resolution uses the same `protocol-data/v763/recipes.json` table both backends already ship.
+- **FR-036**: `Bot::craft(recipe, x, y, z, *, repeat=1, timeout=8s)` MUST mirror the Python reference's signature exactly: `recipe` is a 9-element row-major grid of `Option<String>` Minecraft item-ids (`"minecraft:oak_planks"` or `None` for empty), `(x, y, z)` is the crafting-table block position, `repeat` is how many times to craft the recipe, `timeout` is the upper bound on completion. The method opens the crafting table (via `open_crafting_table`), performs the click sequence to place ingredients into the 3x3 grid for each repeat, takes the result, and returns the count of output items actually received. Recipe resolution uses the same `protocol-data/v763/recipes.json` table both backends already ship.
 
 **High-level tasks:**
 
@@ -151,9 +177,20 @@ The user's existing performance gates (chunk decode 31×, batched VarInt 25×, A
 
 **Behaviour trees:**
 
-- **FR-042**: Rust `behaviour` module MUST expose `Selector`, `Sequencer`, `Leaf` traits and a `BehaviourRunner` with a `tick_dt` duration. `Leaf::tick(&mut self, bot: &Bot) -> async TickResult { Continue, Success, Failure }`.
+- **FR-042**: Rust `behaviour` module MUST expose `Selector`, `Sequencer`, `Inverter`, `Repeater`, `Leaf` traits/structs and a `BehaviourRunner` with a `tick_dt` duration matching the Python `behaviour.nodes` module. Leaf signature:
+  ```rust
+  #[async_trait]
+  pub trait Leaf: Send + Sync {
+      async fn tick(&mut self, bot: &Bot, ctx: &BehaviourCtx) -> NodeStatus;
+      fn reset(&mut self) {}
+  }
+  pub enum NodeStatus { Running, Success, Failure }
+  pub enum BehaviourValue { Int(i64), Float(f64), Bool(bool), String(String), Bytes(Vec<u8>), Json(serde_json::Value) }
+  pub type BehaviourCtx = std::sync::Arc<parking_lot::RwLock<std::collections::HashMap<String, BehaviourValue>>>;
+  ```
+  The pure-Rust core does not import `pyo3`.
 - **FR-043**: Standard leaves: `WalkTo`, `EatWhenHungry(threshold)`, `FollowEntity(eid, distance)`, `AttackTarget(eid)`. Behaviour identical to Python `behaviour.WalkTo`, `EatWhenHungry`, etc.
-- **FR-044**: Accel facade MUST allow Python objects with a `tick(bot)` async method to be used as leaves. The runner calls them via `Python::with_gil` and awaits the returned coroutine through `pyo3-async-runtimes::tokio`.
+- **FR-044**: Accel facade MUST allow Python objects with an `async def tick(self, bot, ctx)` method to be used as leaves. The runner calls them via `Python::with_gil` and awaits the returned coroutine through `pyo3-async-runtimes::tokio`. The accel layer converts `BehaviourCtx` to/from a Python `dict[str, int | float | bool | str | bytes | dict | list]` on each entry and exit so Python users see and mutate a normal dict. Nested dicts/lists round-trip through the `BehaviourValue::Json(serde_json::Value)` variant.
 
 **Food table:**
 
@@ -162,7 +199,7 @@ The user's existing performance gates (chunk decode 31×, batched VarInt 25×, A
 **Parity test infrastructure:**
 
 - **FR-046**: A pytest collector MUST introspect both `minecraft_bot.Bot` and `minecraft_bot_accel.Bot` and assert symmetric method coverage modulo `PYTHON_ONLY_METHODS`.
-- **FR-047**: For each method (excluding accessors and Python-only methods), a parity test MUST capture the packet trace under both backends and assert byte-equality after normalising non-deterministic fields (transaction ids, timestamps).
+- **FR-047**: For each method (excluding accessors and Python-only methods), a parity test MUST capture the packet trace under both backends and assert byte-equality, with the narrow whitelist defined in SC-002 (timing-derived completion packets: `finish_break`, `EntityStatus(eat_complete)`, cooldown-expiry). Transaction ids and wall-clock timestamps are normalised before comparison. Tolerance applies field-scoped (timing field, +/-1 tick); packet kind and payload must match exactly.
 - **FR-048**: A `cargo test --features live-smoke` integration suite MUST exercise every Rust `Bot` method against the live Paper 1.20.1 server.
 
 **Version & docs:**
@@ -173,7 +210,7 @@ The user's existing performance gates (chunk decode 31×, batched VarInt 25×, A
 ### Key Entities
 
 - **BotState (Rust + accel)**: Internal mutable state of a connected Bot. Fields: `entity_id`, `position`, `yaw`, `pitch`, `on_ground`, `health`, `food`, `saturation`, `xp_level`, `xp_total`, `game_mode`, `held_slot`, `world_name`, `dimension`, `is_sneaking`, `is_sprinting`. Mirrors the Python Bot's instance attributes 1:1.
-- **InventoryState (Rust + accel)**: 46-slot array (45 player slots + cursor) plus current `window_id`, `state_id`, `last_click_transaction_id`. Updated from `SetSlot`/`WindowItems`/`SetCarriedItem` packets.
+- **InventoryState (Rust + accel)**: Dual-list model mirroring the Python `InventoryTracker`. Fields: `player_slots: [Option<ItemSlot>; 46]` (persistent), `container_slots: Vec<Option<ItemSlot>>` (transient, populated only while a container window is open), `window_id: u8`, `state_id: i32`, `last_click_transaction_id: u32`. Updated from `SetSlot`, `WindowItems`, `SetCarriedItem`. The merged "all visible slots" view is derived via `iter_accessible_slots()` and is never cached.
 - **BotSnapshot (all three)**: Frozen observation struct returned by `snapshot()`. Same field set on all three backends.
 - **Observation (all three)**: Lightweight observation struct returned by `observation()`. Subset of `BotSnapshot`.
 - **EntityRef (Rust + accel)**: Read-only view over a tracked entity: `eid`, `type`, `position`, `distance_from_bot`.
@@ -184,7 +221,7 @@ The user's existing performance gates (chunk decode 31×, batched VarInt 25×, A
 ### Measurable Outcomes
 
 - **SC-001**: All Python `Bot` public methods (~60) are callable on `minecraft_bot.Bot`, `minecraft_bot` (Rust crate), and `minecraft_bot_accel.Bot` with the same name and the same signature (modulo Rust-Python type mapping rules documented in `contracts/api-surface.md`).
-- **SC-002**: For each non-accessor method, packet-trace parity tests show byte-identical clientbound/serverbound exchanges across all three backends on the same scripted scenario. Allowed diff: zero bytes after normalisation of transaction-ids and timestamps.
+- **SC-002**: For each non-accessor method, packet-trace parity tests show byte-identical clientbound/serverbound exchanges across all three backends on the same scripted scenario, **with one narrow exception**: a small explicit whitelist of timing-derived completion packets (`finish_break`, `EntityStatus(eat_complete)`, cooldown-expiry packets) may differ on the timing field / send-tick offset by at most +/-1 tick. Packet kind and payload must still match exactly. The whitelist is enforced by `tests/python/parity/_parity_normalizer.py`; additions require code review.
 - **SC-003**: A user script that imports `minecraft_bot` and exercises >=30 distinct Bot methods runs to completion against the live Paper 1.20.1 server. The same script with the single import line swapped to `minecraft_bot_accel` runs to completion with the identical observable outcomes (final position within 0.1 block, identical inventory state, identical world deltas).
 - **SC-004**: All existing performance gates pass unchanged after 004 lands. New `find_blocks_nearby`/`raycast`/`scan_volume` perf tests show >=3x speedup on accel vs Python.
 - **SC-005**: CI runs the parity suite, the existing 979 unit tests, and 88+ parity/perf tests; all pass on every commit to `main`.
