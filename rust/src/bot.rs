@@ -101,6 +101,11 @@ pub struct Bot {
     /// inside the dispatcher task after the built-in world / state
     /// updates, before the auto keep-alive handler in `Connection`.
     hooks: Arc<Mutex<HashMap<i32, Vec<PacketHook>>>>,
+    /// Inventory tracker — populated by the dispatcher from SetSlot /
+    /// WindowItems / OpenScreen / CloseWindow packets. Behind the
+    /// dedicated `inventory_lock` mutex so concurrent inventory
+    /// mutations from user-side code serialise per spec R-2.
+    pub(crate) inventory: Arc<Mutex<crate::bot::inventory::InventoryState>>,
 }
 
 impl Bot {
@@ -113,7 +118,20 @@ impl Bot {
             state: Arc::new(Mutex::new(BotState::default())),
             dispatcher: None,
             hooks: Arc::new(Mutex::new(HashMap::new())),
+            inventory: Arc::new(Mutex::new(crate::bot::inventory::InventoryState::new())),
         }
+    }
+
+    /// Acquire the inventory mutex and run `f` against the locked
+    /// `InventoryState`. See research.md R-2: only inventory-mutating
+    /// methods (click_slot, move_item, drop_item, equip_armor, etc.)
+    /// acquire this lock; movement and queries stay parallel.
+    pub async fn with_inventory_lock<F, R>(&self, f: F) -> R
+    where
+        F: for<'a> FnOnce(&'a mut crate::bot::inventory::InventoryState) -> R,
+    {
+        let mut guard = self.inventory.lock().await;
+        f(&mut *guard)
     }
 
     /// Register a callback for a clientbound packet id. Multiple
