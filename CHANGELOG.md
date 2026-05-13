@@ -17,7 +17,9 @@ Three artefacts attach to the GitHub Release:
   `attack`, `follow`, `eat`, `say`, behaviour trees, inventory,
   containers, observation snapshot, entity tracker, packet hooks).
 - **`minecraft_bot_accel`** (PyO3 facade) — abi3 wheels for Linux
-  x86_64, Linux aarch64, macOS arm64, macOS x86_64, Windows x86_64.
+  x86_64, Linux aarch64, and Windows x86_64. macOS is built locally
+  via `maturin develop` (hosted macOS runners are too unreliable to
+  ship pre-built Mac wheels in CI).
   Mirrors the standalone Rust crate's surface: codec, Connection,
   dispatcher, world cache, A* pathfinder, physics tick, and the
   current Bot subset (`connect`, `walk_to`, `drop_held_item`,
@@ -47,7 +49,7 @@ stack.
   import line to run hot paths in Rust.
 - **abi3 wheel matrix** in `.github/workflows/wheels.yml`. One wheel
   per (OS, arch) covers Python 3.11 and 3.12. Targets: Linux x86_64,
-  Linux aarch64, macOS arm64, macOS x86_64, Windows x86_64.
+  Linux aarch64, Windows x86_64.
 - **`Bot.send_raw(payload)`** escape-hatch lets callers send any of
   the 176 protocol packets without per-packet PyO3 wrappers. Encode
   through the Python reference's typed dataclasses, forward bytes.

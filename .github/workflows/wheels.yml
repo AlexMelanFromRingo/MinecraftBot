@@ -12,9 +12,15 @@ on:
       - ".github/workflows/wheels.yml"
   workflow_dispatch:
 
-# T060 — abi3 maturin matrix building one wheel per (OS, arch). The
-# abi3-py311 feature in `python-ext/Cargo.toml` means each wheel
-# covers Python 3.11+ without rebuild.
+# abi3 maturin matrix. One wheel per (OS, arch) covers Python 3.11+
+# without rebuild (`abi3-py311` feature in python-ext/Cargo.toml).
+#
+# macOS targets are intentionally not built. Hosted macOS runners
+# (especially the macos-13 Intel pool) sit queued for hours on the
+# free plan and stall the whole workflow. Linux + Windows is the
+# supported wheel matrix; Mac users can `pip install -e python/` for
+# the pure-Python reference or `maturin develop` against the local
+# Rust crate.
 
 jobs:
   linux-x86_64:
@@ -56,42 +62,6 @@ jobs:
           path: target/wheels/*.whl
           if-no-files-found: error
 
-  macos-arm64:
-    name: macOS arm64
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - uses: PyO3/maturin-action@v1
-        with:
-          target: aarch64-apple-darwin
-          args: --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheel-macos-arm64
-          path: target/wheels/*.whl
-          if-no-files-found: error
-
-  macos-x86_64:
-    name: macOS x86_64
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - uses: PyO3/maturin-action@v1
-        with:
-          target: x86_64-apple-darwin
-          args: --release --strip --manifest-path python-ext/Cargo.toml --interpreter python3.11
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheel-macos-x86_64
-          path: target/wheels/*.whl
-          if-no-files-found: error
-
   windows-x86_64:
     name: Windows x86_64
     runs-on: windows-latest
@@ -110,35 +80,20 @@ jobs:
           path: target/wheels/*.whl
           if-no-files-found: error
 
-  # T062 — smoke-install: confirm every wheel can be installed and
-  # imported into a clean Python 3.11 venv.
+  # Smoke-install: confirm each wheel installs and imports in a
+  # clean Python 3.11 venv. Linux + Windows only; macOS is excluded
+  # at the build level so there is nothing to smoke there.
   smoke-test:
     name: Wheel smoke (${{ matrix.platform }})
-    needs: [linux-x86_64, macos-arm64, macos-x86_64, windows-x86_64]
+    needs: [linux-x86_64, windows-x86_64]
     runs-on: ${{ matrix.runs-on }}
-    # macos-13 (Intel) runners are in chronic short supply on
-    # hosted GitHub Actions and frequently sit queued > 1 h before
-    # being picked up. The build for macos-x86_64 succeeds via
-    # cross-compile on the arm64 macos-latest, so the smoke-install
-    # on Intel is purely a sanity check. Letting it continue-on-error
-    # at the matrix level means a stalled Intel runner does not stall
-    # the whole run; pair this with the 30-minute job timeout so the
-    # row eventually completes even when the runner never materialises.
-    continue-on-error: ${{ matrix.platform == 'macos-x86_64' }}
-    timeout-minutes: 30
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: linux-x86_64
             runs-on: ubuntu-latest
-          - platform: macos-arm64
-            # macos-latest defaults to arm64 (M-series).
-            runs-on: macos-latest
-          - platform: macos-x86_64
-            # macos-13 is the last Intel runner GitHub provides; an
-            # arm64 host cannot install an x86_64 wheel.
-            runs-on: macos-13
           - platform: windows-x86_64
             runs-on: windows-latest
     steps:
@@ -165,8 +120,8 @@ jobs:
         run: |
           pytest -q tests/python/parity/test_smoke_bringup.py
 
-  # T063 — Python 3.12 smoke on Linux only (the abi3 single wheel
-  # must accept both 3.11 and 3.12 interpreters).
+  # Python 3.12 smoke on Linux: the abi3 wheel must accept both
+  # 3.11 and 3.12 interpreters.
   smoke-test-py312:
     name: Wheel smoke py3.12 (linux-x86_64)
     needs: [linux-x86_64]
@@ -226,27 +181,23 @@ jobs:
         working-directory: rust
         run: cargo package --no-verify
       - name: List produced artefact
-        run: ls -lh rust/target/package
+        # Workspace builds put cargo package output in the workspace
+        # root `target/`, not `rust/target/`.
+        run: ls -lh target/package
       - uses: actions/upload-artifact@v4
         with:
           name: rust-crate
-          path: rust/target/package/*.crate
+          path: target/package/*.crate
           if-no-files-found: error
 
-  # T064 — on a tag push, collect every wheel and attach to the
-  # matching GitHub Release. Depends only on the 5 build jobs, not
-  # on the smoke-test matrix: smoke runs in parallel and serves as
-  # an early signal, but a slow Intel macOS runner stalling the
-  # smoke step should not block a release whose wheels themselves
-  # built successfully.
+  # On a `v*` tag push, collect every artefact and attach to the
+  # matching GitHub Release. Depends only on the build jobs.
   publish-release:
     name: Upload wheels to GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - linux-x86_64
       - linux-aarch64
-      - macos-arm64
-      - macos-x86_64
       - windows-x86_64
       - python-sdist-wheel
       - rust-crate-package
@@ -255,7 +206,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Download accel wheels (5 platforms)
+      - name: Download accel wheels (3 platforms)
         uses: actions/download-artifact@v4
         with:
           pattern: wheel-*
@@ -284,21 +235,25 @@ jobs:
             dist/*.tar.gz
             dist/*.crate
           body: |
-            Distributables for all three artefacts in the workspace:
+            Distributables for all three artefacts in the workspace.
 
             **`minecraft_bot_accel`** — PyO3 facade over the standalone
-            Rust framework. Pre-built ABI3 wheels for Linux x86_64 +
-            aarch64, macOS arm64 + x86_64, and Windows x86_64. One
-            wheel per platform; each covers Python 3.11+.
+            Rust framework. Pre-built ABI3 wheels for Linux x86_64,
+            Linux aarch64, and Windows x86_64. One wheel per
+            platform; each covers Python 3.11+.
 
             **`minecraft_bot`** — pure-Python reference implementation.
             One universal wheel (`py3-none-any`) plus the source
             tarball. Zero runtime dependencies; runs on any platform
-            with Python 3.11+.
+            with Python 3.11+ (including macOS).
 
             **`minecraft_bot` (Rust crate)** — standalone Rust
             framework, packaged via `cargo package`. Install from this
             tarball via `cargo install --path` or republish to
             crates.io.
+
+            macOS users: install the pure-Python wheel directly, or
+            build the accel wheel locally with
+            `maturin develop --release --manifest-path python-ext/Cargo.toml`.
 
             See [CHANGELOG.md](https://github.com/AlexMelanFromRingo/MinecraftBot/blob/main/CHANGELOG.md) for release notes.

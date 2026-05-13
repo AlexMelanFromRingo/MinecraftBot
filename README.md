@@ -115,8 +115,11 @@ print(minecraft_bot.implementation, minecraft_bot_accel.implementation)
 "
 ```
 
-Pre-built abi3 wheels for Linux x86_64/aarch64, macOS arm64/x86_64,
-Windows x86_64 land on GitHub Releases when a `v*` tag is pushed.
+Pre-built abi3 wheels for Linux x86_64/aarch64 and Windows x86_64
+land on GitHub Releases when a `v*` tag is pushed. macOS users
+install the pure-Python wheel or run `maturin develop --release
+--manifest-path python-ext/Cargo.toml` locally to get the native
+backend.
 
 ## Performance profile
 
