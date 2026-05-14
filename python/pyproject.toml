@@ -13,7 +13,7 @@ description = "Minecraft Java Edition bot/agent framework — Python reference i
 readme = { text = "Python reference implementation of the MinecraftBot framework. See repo README for full documentation.", content-type = "text/plain" }
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "Alex Melan", email = "cleverbotam@gmail.com" }]
+authors = [{ name = "Alex Melan" }]
 keywords = ["minecraft", "bot", "agent", "protocol", "asyncio"]
 classifiers = [
     "Development Status :: 3 - Alpha",
