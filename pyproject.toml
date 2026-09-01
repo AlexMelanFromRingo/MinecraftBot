@@ -1,55 +1,18 @@
-# Repo-root pytest configuration. The actual Python package config lives
-# under python/pyproject.toml; this file just lets `pytest` invoked from
-# the repo root pick up our markers and asyncio mode.
-
-[tool.pytest.ini_options]
-testpaths = ["tests/python"]
-asyncio_mode = "auto"
-# Make `python/` importable without an explicit PYTHONPATH and make
-# `tests/` importable so `tests.helpers.backend` resolves.
-pythonpath = ["python", "."]
-# Default: skip live tests (they need a Paper server + connection-throttle
-# delays). Run them explicitly with `pytest -m live`.
-addopts = "-m 'not live'"
-markers = [
-    "live: tests that require a reachable Paper 1.20.1 server (default 172.26.160.1:25565). Run with `pytest -m live`.",
-    "slow: long-running tests (e.g., 10-minute uptime). Run with `pytest -m 'live and slow'`.",
-]
-filterwarnings = [
-    "error::DeprecationWarning:minecraft_bot",
-]
-
-# Ruff config mirrored from python/pyproject.toml so ruff discovers
-# it when run from the repo root (CI invokes
-# `ruff check python/minecraft_bot tests`).
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "RUF"]
-ignore = [
-    "E501",  # line length handled by formatter
-    "E702",  # multi-statement on one line in compact codec utilities
-    "F841",  # unused local in test diagnostic snapshots
-    "B007",  # unused loop variable in legitimate enumerate idioms
-    "B011",  # assert False (preferable for explicit fail in tests)
-    "B027",  # empty abstract no-op hook (BehaviourNode.reset by design)
-    "B905",  # zip() without strict (Python <3.10 compat in some test files)
-    "E402",  # per-file-local imports are intentional in tests
-    "F821",  # forward-references inside TYPE_CHECKING blocks
-    "RUF002", # docstrings legitimately contain × U+00D7 (multiplication sign)
-    "RUF003", # comments may contain non-ASCII punctuation by design
-    "RUF022", # __all__ is grouped by concept in this project, not alphabetised
-    "RUF021", # parenthesise `or` chains in dispatchers — style preference
-    "RUF005", # collection-literal concat is sometimes more readable than unpack
-    "RUF012", # mutable class default for slots dataclasses
-    "RUF001", # ambiguous unicode in source strings (× / ≥ used intentionally)
-    "RUF003", # ambiguous unicode in comments
-    "RUF006", # dangling asyncio.create_task is intentional in some fire-and-forget paths
-    "RUF043", # pytest.raises pattern is fine as a plain string
-    "RUF059", # unused unpacked variables are sometimes left for diagnostic clarity
-    "UP007",  # non-PEP604 Optional[X] kept for Python 3.9 compat in shared dataclasses
-    "UP032",  # use f-string when the format-string carries meaning is fine
-    "UP015",  # explicit open mode "r"
+# Generated from the project's virtualenv.
+# `dependencies` lists what was installed directly; the full resolved
+# set, including everything pulled in behind them, is requirements.txt.
+[project]
+name = "minecraftbot"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic==0.101.0",
+    "black==26.3.1",
+    "build==1.5.0",
+    "maturin==1.13.3",
+    "minecraft_bot==0.2.0",
+    "minecraft_bot_accel==0.3.0",
+    "pytest-asyncio==1.3.0",
+    "pytest-benchmark==5.2.3",
+    "ruff==0.15.12",
 ]
