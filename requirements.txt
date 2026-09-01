@@ -1,6 +1,9 @@
 # Generated from .venv/ on 2026-09-01.
 # The complete resolved environment, Python 3.12.3 — install with:
 #     python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+# Installed deliberately (the rest are their dependencies): anthropic, black,
+# build, maturin, pytest-asyncio, pytest-benchmark, ruff, and the two editable
+# local packages below (python/ and python-ext/).
 annotated-types==0.7.0
 anthropic==0.101.0
 anyio==4.13.0
