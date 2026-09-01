@@ -190,7 +190,7 @@ WALK_TARGET_RADIUS = 1.5   # blocks; close enough to call it "arrived"
 MAX_PREDICTION_RADIUS = 5.0   # blocks from server's last-known position
 
 
-HandlerFn = Callable[[Event], None | Awaitable[None]]
+HandlerFn = Callable[[Event], Awaitable[None] | None]
 
 
 @dataclass(slots=True)
